@@ -1,0 +1,51 @@
+/* ==========================================================================
+   Iconografía propia (SVG en línea, trazo grabado)
+   ========================================================================== */
+const ICONS = {
+  sword: '<path d="M14.5 3.5 20.5 3.5 20.5 9.5 9 21 6 21 3 18 3 15Z" fill="currentColor" fill-opacity=".12"/><path d="M14.5 3.5h6v6L9.2 20.8M3.2 14.8 14.5 3.5M5 13l6 6M3 18l3 3M7.5 16.5l-3.5 3.5"/>',
+  bow: '<path d="M6 3c8 2 13 7 15 15"/><path d="M6 3 21 18"/><path d="M4 20l7-7M4 20h3M4 20v-3M14 10l3-3"/>',
+  shield: '<path d="M12 2.8 4.5 5.6v6.1c0 4.7 3.2 8.2 7.5 9.6 4.3-1.4 7.5-4.9 7.5-9.6V5.6Z" fill="currentColor" fill-opacity=".14"/><path d="M12 2.8 4.5 5.6v6.1c0 4.7 3.2 8.2 7.5 9.6 4.3-1.4 7.5-4.9 7.5-9.6V5.6Z"/><path d="M12 6.5v11M7.5 11h9"/>',
+  radiant: '<circle cx="12" cy="12" r="3.6" fill="currentColor" fill-opacity=".2"/><circle cx="12" cy="12" r="3.6"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  dagger: '<path d="M4 20l3.5-3.5M6 15l3 3M8.3 15.7 19.5 4.5l-.8 3.6-8.6 8.6"/><path d="M13 6l1.4 1.4M16 9l1.4 1.4" stroke-opacity=".5"/>',
+  shadowstep: '<path d="M7 19c-2 0-3-1.6-3-3.2C4 13 6.5 12 6.5 9.5" stroke-dasharray="2 2.2"/><path d="M14 4.5c2.6 0 5.5 2 5.5 5.6 0 3.4-2.6 5.4-5 5.4-2.2 0-3.6-1.5-3.6-3.3 0-1.7 1.2-2.9 2.8-2.9 1.4 0 2.3 1 2.3 2.1"/><circle cx="7" cy="19" r="1.4" fill="currentColor"/>',
+  bolt: '<path d="M4 20 13 11"/><path d="M13 11l1.2-4.6L18.8 5l-1.4 4.6Z" fill="currentColor" fill-opacity=".25"/><path d="M13 11l1.2-4.6L18.8 5l-1.4 4.6Z"/><path d="M17 15l1 2 2 1-2 1-1 2-1-2-2-1 2-1Z" fill="currentColor"/>',
+  starfire: '<path d="M12 2.5c.9 3.8 2.4 5.6 6.3 6.6-3.9 1-5.4 2.8-6.3 6.6-.9-3.8-2.4-5.6-6.3-6.6 3.9-1 5.4-2.8 6.3-6.6Z" fill="currentColor" fill-opacity=".2"/><path d="M12 2.5c.9 3.8 2.4 5.6 6.3 6.6-3.9 1-5.4 2.8-6.3 6.6-.9-3.8-2.4-5.6-6.3-6.6 3.9-1 5.4-2.8 6.3-6.6Z"/><path d="M6 18.5c1.8 1.6 4 2.5 6 2.5s4.2-.9 6-2.5"/>',
+  dawn: '<path d="M3 17h18M6.5 17a5.5 5.5 0 0 1 11 0"/><path d="M12 4v3M5.2 7.2l2 2M18.8 7.2l-2 2M2.8 12.5h2.5M18.7 12.5h2.5"/><path d="M10 20.5h4"/>',
+  search: '<circle cx="10.5" cy="10.5" r="6" fill="currentColor" fill-opacity=".1"/><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/><path d="M8 8.5a3 3 0 0 1 2.5-1.5" stroke-opacity=".6"/>',
+  hand: '<path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11M11 10.5V4a1.5 1.5 0 0 1 3 0v6.5M14 10.5V5.5a1.5 1.5 0 0 1 3 0V13c0 4.4-2.6 8-6.5 8-2.6 0-4-1.3-5.3-3.4L3.5 14c-.8-1.3.9-2.6 2-1.6L8 14.5"/>',
+  door: '<path d="M5 21V5.5C5 3.6 8.1 2.5 12 2.5s7 1.1 7 3V21Z" fill="currentColor" fill-opacity=".12"/><path d="M5 21V5.5C5 3.6 8.1 2.5 12 2.5s7 1.1 7 3V21M3 21h18M12 3v18"/><circle cx="14.4" cy="12.5" r=".9" fill="currentColor"/>',
+  chest: '<path d="M3.5 10h17v9.5h-17Z" fill="currentColor" fill-opacity=".12"/><path d="M3.5 10h17v9.5h-17ZM3.5 10c0-3.3 2.5-5.5 5.5-5.5h6c3 0 5.5 2.2 5.5 5.5M10.5 10v3.5h3V10M7.5 4.8V10M16.5 4.8V10"/>',
+  potion: '<path d="M9.5 2.8h5M10 3v5.2L5.6 15.6A3.7 3.7 0 0 0 8.8 21h6.4a3.7 3.7 0 0 0 3.2-5.4L14 8.2V3"/><path d="M6.8 14h10.4l1 1.8a3.4 3.4 0 0 1-3 5H8.8a3.4 3.4 0 0 1-3-5Z" fill="currentColor" fill-opacity=".45" stroke="none"/>',
+  elixir: '<path d="M9.5 2.8h5M10 3v4.4C7 8.6 5 11.4 5 14.6 5 18.2 8.1 21 12 21s7-2.8 7-6.4c0-3.2-2-6-5-7.2V3"/><path d="M12.8 10.5 10 15h3l-1.8 4" stroke-width="1.8"/>',
+  bomb: '<circle cx="10.5" cy="14" r="6.5" fill="currentColor" fill-opacity=".15"/><circle cx="10.5" cy="14" r="6.5"/><path d="M14.5 9l2.5-2.5M17 6.5c.8-1.8 2.4-2.5 3.8-2"/><path d="M19.5 2.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6Z" fill="currentColor"/>',
+  hourglass: '<path d="M6.5 3h11M6.5 21h11M7.5 3c0 5 4.5 6 4.5 9s-4.5 4-4.5 9M16.5 3c0 5-4.5 6-4.5 9s4.5 4 4.5 9"/><path d="M9 19.5c0-2 3-2.8 3-4.3 0 1.5 3 2.3 3 4.3Z" fill="currentColor"/>',
+  skull: '<path d="M12 3c-4.4 0-7.5 3.1-7.5 7.3 0 2.6 1.3 4.4 3 5.4V19h9v-3.3c1.7-1 3-2.8 3-5.4C19.5 6.1 16.4 3 12 3Z" fill="currentColor" fill-opacity=".14"/><path d="M12 3c-4.4 0-7.5 3.1-7.5 7.3 0 2.6 1.3 4.4 3 5.4V19h9v-3.3c1.7-1 3-2.8 3-5.4C19.5 6.1 16.4 3 12 3ZM10 19v2M14 19v2"/><circle cx="9" cy="11" r="1.8" fill="currentColor"/><circle cx="15" cy="11" r="1.8" fill="currentColor"/><path d="M12 13.5l-1 2h2Z" fill="currentColor"/>',
+  heart: '<path d="M12 20.5S3.5 15.2 3.5 9.2C3.5 6.3 5.6 4 8.3 4c1.6 0 2.9.8 3.7 2 .8-1.2 2.1-2 3.7-2 2.7 0 4.8 2.3 4.8 5.2 0 6-8.5 11.3-8.5 11.3Z" fill="currentColor" fill-opacity=".2"/><path d="M12 20.5S3.5 15.2 3.5 9.2C3.5 6.3 5.6 4 8.3 4c1.6 0 2.9.8 3.7 2 .8-1.2 2.1-2 3.7-2 2.7 0 4.8 2.3 4.8 5.2 0 6-8.5 11.3-8.5 11.3Z"/>',
+  boot: '<path d="M7 3h6v8.5l5.2 2.6c1.4.7 2.3 2.1 2.3 3.7V20H4.5V12.5L7 9.5Z" fill="currentColor" fill-opacity=".14"/><path d="M7 3h6v8.5l5.2 2.6c1.4.7 2.3 2.1 2.3 3.7V20H4.5V12.5L7 9.5ZM4.5 17h16"/>',
+  coin: '<ellipse cx="12" cy="12" rx="8" ry="8" fill="currentColor" fill-opacity=".18"/><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="5" stroke-opacity=".55"/><path d="M12 9.2v5.6M10.2 12h3.6" stroke-opacity=".8"/>',
+  gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8M18.5 18.5l-1.8-1.8M7.3 7.3 5.5 5.5"/><circle cx="12" cy="12" r="6.6" stroke-opacity=".5"/>',
+  scroll: '<path d="M6 4h11.5a2.5 2.5 0 0 1 0 5H17v9.5a2.5 2.5 0 0 1-2.5 2.5H5.5A2.5 2.5 0 0 1 3 18.5V17h11"/><path d="M6 4a2.5 2.5 0 0 0-2.5 2.5V17M8 9.5h6M8 13h6"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" fill="currentColor" fill-opacity=".1"/><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3" fill="currentColor"/>',
+  rotate: '<path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 3.5v4.5h-4.5"/>',
+  target: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M12 1.8v4M12 18.2v4M1.8 12h4M18.2 12h4"/>',
+  sound: '<path d="M4 9.5h3.5L12.5 5v14l-5-4.5H4Z" fill="currentColor" fill-opacity=".2"/><path d="M4 9.5h3.5L12.5 5v14l-5-4.5H4ZM16 9a4.2 4.2 0 0 1 0 6M18.6 6.4a8 8 0 0 1 0 11.2"/>',
+  mute: '<path d="M4 9.5h3.5L12.5 5v14l-5-4.5H4Z" fill="currentColor" fill-opacity=".2"/><path d="M4 9.5h3.5L12.5 5v14l-5-4.5H4ZM16 9.5l5 5M21 9.5l-5 5"/>',
+  close: '<path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/>',
+  menu: '<path d="M4 6.5h16M4 12h16M4 17.5h16"/>',
+  crown: '<path d="M3.5 18.5h17L19 8l-4.2 3.6L12 5l-2.8 6.6L5 8Z" fill="currentColor" fill-opacity=".15"/><path d="M3.5 18.5h17L19 8l-4.2 3.6L12 5l-2.8 6.6L5 8ZM4 21h16"/>',
+  trap: '<path d="M3 20h18M5 20l2-7 2 7M10 20l2-9 2 9M15 20l2-7 2 7"/><path d="M3 9.5h18" stroke-dasharray="1.5 2"/>',
+  lantern: '<path d="M9 4.5h6M12 2v2.5M8 7h8l1 2v8.5l-1.5 2.5h-7L7 17.5V9Z"/><path d="M12 11c1.4 1.3 1.8 2.5 1.2 3.6-.5.9-1.9 1-2.5.3-.8-.9-.2-2.4 1.3-3.9Z" fill="currentColor"/>',
+  revive: '<path d="M12 21V9M7.5 13.5 12 9l4.5 4.5"/><path d="M5 6.5c1.8-2.2 4.2-3.5 7-3.5s5.2 1.3 7 3.5" stroke-opacity=".6"/><circle cx="12" cy="21" r=".5" fill="currentColor"/>',
+  feather: '<path d="M20 4C11 4 6 10 6 18M6 18l-2.5 2.5M9.5 14.5H14M8 11h6.5"/><path d="M20 4c0 7-4.6 12.5-11.5 12.5" />',
+  map: '<path d="M3 6l6-2.5 6 2.5 6-2.5v14.5L15 20.5 9 18 3 20.5Z" fill="currentColor" fill-opacity=".1"/><path d="M3 6l6-2.5 6 2.5 6-2.5v14.5L15 20.5 9 18 3 20.5ZM9 3.5V18M15 6v14.5"/>',
+  fullscreen: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  play: '<path d="M7 4.5v15l12-7.5Z" fill="currentColor" fill-opacity=".25"/><path d="M7 4.5v15l12-7.5Z"/>',
+  ffwd: '<path d="M4 6v12l8-6ZM12 6v12l8-6Z" fill="currentColor" fill-opacity=".25"/><path d="M4 6v12l8-6ZM12 6v12l8-6Z"/>',
+  flame: '<path d="M12 21c3.9 0 6.5-2.6 6.5-6.3 0-4.2-3.3-6.6-4.3-11.2-2.6 1.6-3.6 4.4-3.3 6.8-1.3-.6-2-1.8-2.2-3.3C6.6 9 5.5 11.6 5.5 14.7 5.5 18.4 8.1 21 12 21Z" fill="currentColor" fill-opacity=".18"/><path d="M12 21c3.9 0 6.5-2.6 6.5-6.3 0-4.2-3.3-6.6-4.3-11.2-2.6 1.6-3.6 4.4-3.3 6.8-1.3-.6-2-1.8-2.2-3.3C6.6 9 5.5 11.6 5.5 14.7 5.5 18.4 8.1 21 12 21Z"/>',
+  key: '<circle cx="7.5" cy="12" r="4"/><path d="M11.5 12H21M17.5 12v3.5M20.5 12v2.5"/>',
+  check: '<path d="M4.5 12.5l5 5 10-11"/>',
+};
+function icon(name, cls = '') {
+  const p = ICONS[name] || ICONS.target;
+  return `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+}

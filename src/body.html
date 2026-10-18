@@ -1,0 +1,47 @@
+<div id="loading"><svg class="ico ld-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21c3.9 0 6.5-2.6 6.5-6.3 0-4.2-3.3-6.6-4.3-11.2-2.6 1.6-3.6 4.4-3.3 6.8-1.3-.6-2-1.8-2.2-3.3C6.6 9 5.5 11.6 5.5 14.7 5.5 18.4 8.1 21 12 21Z" fill="currentColor" fill-opacity=".25"/></svg><div class="ld-name">UMBRAL</div><div id="loading-text">Despertando la Hondura…</div></div>
+<div id="stage"></div>
+<div id="shadow-veil"></div>
+<div id="fx-layer"></div>
+<div id="hud" hidden>
+  <div class="hud-top">
+    <div id="quest" class="plate"><div class="q-num" id="q-num">I</div><div class="q-txt"><div class="q-loc" id="q-loc">Antecámara</div><div class="q-obj" id="q-obj">…</div></div></div>
+    <div class="res">
+      <span class="res-pill plate" title="Oro"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8" fill="currentColor" fill-opacity=".18"/><circle cx="12" cy="12" r="5" stroke-opacity=".55"/></svg><b id="r-gold">0</b></span>
+      <span class="res-pill plate" title="Pociones"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9.5 2.8h5M10 3v5.2L5.6 15.6A3.7 3.7 0 0 0 8.8 21h6.4a3.7 3.7 0 0 0 3.2-5.4L14 8.2V3"/><path d="M6.8 14h10.4l1 1.8a3.4 3.4 0 0 1-3 5H8.8a3.4 3.4 0 0 1-3-5Z" fill="currentColor" fill-opacity=".45" stroke="none"/></svg><b id="r-potion">0</b></span>
+      <span class="res-pill plate extra" title="Elixires"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9.5 2.8h5M10 3v4.4C7 8.6 5 11.4 5 14.6 5 18.2 8.1 21 12 21s7-2.8 7-6.4c0-3.2-2-6-5-7.2V3"/><path d="M12.8 10.5 10 15h3l-1.8 4"/></svg><b id="r-elixir">0</b></span>
+      <span class="res-pill plate extra" title="Bombas"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="14" r="6.5" fill="currentColor" fill-opacity=".15"/><path d="M14.5 9l2.5-2.5M17 6.5c.8-1.8 2.4-2.5 3.8-2"/></svg><b id="r-bomb">0</b></span>
+      <span class="res-pill plate round" title="Ronda">Ronda <b id="r-round">1</b></span>
+      <button class="icon-btn plate" id="btn-view" title="Vista cenital (V)" aria-label="Vista cenital"></button>
+      <button class="icon-btn plate" id="btn-rotate" title="Girar cámara (Q/E)" aria-label="Girar cámara"></button>
+      <button class="icon-btn plate" id="btn-center" title="Centrar en el héroe (C)" aria-label="Centrar en el héroe"></button>
+      <button class="icon-btn plate" id="btn-log" title="Crónica" aria-label="Crónica"></button>
+      <button class="icon-btn plate" id="btn-sound" title="Sonido" aria-label="Sonido"></button>
+      <button class="icon-btn plate" id="btn-menu" title="Menú (Esc)" aria-label="Menú"></button>
+    </div>
+  </div>
+  <div id="bossbar" class="plate" hidden><div id="boss-name">Jefe</div><div class="boss-track"><div id="boss-fill"></div></div><div id="boss-hp">0 / 0</div></div>
+  <div id="party"></div>
+  <div id="log"></div>
+  <div class="act-wrap">
+    <div id="preview" class="plate" hidden></div>
+    <button id="cancel-mode" class="plate" hidden>Cancelar selección · Esc</button>
+    <div class="act-bar"><div id="items-pop" class="plate" hidden></div><div id="actions" class="plate"></div></div>
+  </div>
+</div>
+<button id="ffwd" class="plate" hidden>Acelerar »</button>
+<div id="banner" class="banner"></div>
+<div id="dice" class="dice plate" hidden></div>
+<div id="letterbox"><i></i><i></i></div>
+<div id="dlg" class="dlg plate" hidden>
+  <div class="dlg-port" id="dlg-port"><img id="dlg-port-img" alt=""></div>
+  <div class="dlg-body"><div class="dlg-name" id="dlg-name"></div><div class="dlg-text" id="dlg-text"></div>
+    <div class="dlg-foot"><button id="dlg-skip">Saltar diálogo</button><span id="dlg-next"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg></span></div></div>
+</div>
+<div id="choice" class="plate" hidden></div>
+<div id="note" hidden><div class="note-paper"><h3 id="note-title"></h3><p id="note-text"></p><div class="note-tap">Toca para cerrar</div></div></div>
+<div id="hint" class="plate" hidden><div class="eyebrow">Consejo</div><p id="hint-text"></p><button class="btn small" id="hint-ok">Entendido</button></div>
+<div id="toast"></div>
+<div id="chronicle" class="plate" hidden><header><h3>Crónica</h3><button class="icon-btn" id="chronicle-close" aria-label="Cerrar crónica"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg></button></header><div id="chronicle-list"></div></div>
+<div id="scare" class="scare" hidden></div>
+<div id="fade"></div>
+<div id="screen" class="screen" hidden></div>
