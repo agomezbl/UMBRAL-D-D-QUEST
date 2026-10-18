@@ -7,7 +7,10 @@ const UI = {
     this.$ = (id) => document.getElementById(id);
     this.hud = this.$('hud');
     this.buildParty(); this.buildActions();
-    [['btn-view', 'map'], ['btn-rotate', 'rotate'], ['btn-center', 'target'], ['btn-log', 'scroll'], ['btn-sound', 'sound'], ['btn-menu', 'menu']].forEach(([id, ic]) => (this.$(id).innerHTML = icon(ic)));
+    [['btn-view', 'map'], ['btn-rotate', 'rotate'], ['btn-center', 'target'], ['btn-log', 'scroll'], ['btn-sound', 'sound'], ['btn-menu', 'menu'], ['btn-party', 'crown']].forEach(([id, ic]) => (this.$(id).innerHTML = icon(ic)));
+    this.$('btn-party').onclick = () => { audio.sfx('ui'); this.sheet(); };
+    this.$('undo-move').innerHTML = icon('rotate') + ' Deshacer movimiento <kbd>Z</kbd>';
+    this.$('undo-move').onclick = () => GAME.action('undo');
     this.$('ffwd').innerHTML = icon('ffwd') + ' Acelerar';
     this.$('cancel-mode').onclick = () => GAME.action('cancel');
     this.$('btn-log').onclick = () => { audio.sfx('ui'); this.$('chronicle').hidden = !this.$('chronicle').hidden; this.renderChronicle(); };
@@ -23,7 +26,7 @@ const UI = {
     this.$('hint-ok').onclick = () => { this.$('hint').hidden = true; };
     this.logs = [];
   },
-  hideAll() { ['dlg', 'choice', 'note', 'dice', 'hint', 'preview', 'chronicle'].forEach((id) => { const e = this.$(id); if (e) e.hidden = true; }); this.screen(null); },
+  hideAll() { ['dlg', 'choice', 'note', 'dice', 'hint', 'preview', 'chronicle', 'items-pop', 'acts-pop', 'sheet'].forEach((id) => { const e = this.$(id); if (e) e.hidden = true; }); this.screen(null); },
   showHUD(on) { this.hud.hidden = !on; document.body.classList.toggle('in-game', on); },
 
   /* ---------------- grupo ---------------- */
@@ -32,11 +35,12 @@ const UI = {
     ['aldric', 'sera', 'elian'].forEach((id) => {
       const d = HERO_DEFS[id];
       const c = U.el('button', 'hero-card', `
-        <span class="hc-port"><img alt="" data-port="${id}"><i class="hc-ring" style="--hc:${d.color}"></i></span>
+        <span class="hc-port"><img alt="" data-port="${id}"><i class="hc-ring" style="--hc:${d.color}"></i><i class="hc-b det" title="Determinación"></i>${id === 'elian' ? '<i class="hc-b eter" title="Éter"></i>' : ''}</span>
         <span class="hc-body">
           <span class="hc-name">${d.name}<small>${d.role}</small></span>
           <span class="hc-hp"><span class="hc-hpbar"><i></i></span><b class="hc-hpn"></b></span>
-          <span class="hc-st"><span class="st-mv">${icon('boot')}<b></b></span><span class="st-act">${icon('hand')}</span><span class="st-buff"></span></span>
+          <span class="hc-st"><span class="st-mv" title="Movimiento restante">${icon('boot')}<b></b></span><span class="st-act" title="Acción">${icon('hand')}</span><span class="st-det" title="Determinación"></span>${id === 'elian' ? '<span class="st-eter" title="Éter"></span>' : ''}</span>
+          <span class="hc-fx"></span>
         </span>
         <span class="hc-tag"></span>`);
       c.dataset.hero = id; c.style.setProperty('--hc', d.color);
@@ -46,18 +50,26 @@ const UI = {
   },
   buildActions() {
     const a = this.$('actions'); a.innerHTML = '';
-    const mk = (id, ic, label, key) => { const b = U.el('button', 'act', `<span class="act-ic">${icon(ic)}</span><span class="act-lb">${label}</span>${key ? `<kbd>${key}</kbd>` : ''}<span class="act-cd"></span>`); b.dataset.act = id; b.onclick = (e) => { e.stopPropagation(); if (id === 'items') this.toggleItems(); else { this.closeItems(); GAME.action(id); } }; a.appendChild(b); return b; };
+    const mk = (id, ic, label, key) => { const b = U.el('button', 'act', `<span class="act-ic">${icon(ic)}</span><span class="act-lb">${label}</span>${key ? `<kbd>${key}</kbd>` : ''}<span class="act-cd"></span>`); b.dataset.act = id; b.onclick = (e) => { e.stopPropagation(); if (id === 'items') this.togglePop('items-pop'); else if (id === 'acts') this.togglePop('acts-pop'); else { this.closeItems(); GAME.action(id); } }; a.appendChild(b); return b; };
     this.btn = {
       attack: mk('attack', 'sword', 'Atacar', '1'), s0: mk('s0', 'shield', 'Habilidad', '2'), s1: mk('s1', 'radiant', 'Habilidad', '3'),
-      search: mk('search', 'search', 'Registrar', '4'), items: mk('items', 'potion', 'Objetos', '5'), end: mk('end', 'hourglass', 'Fin de turno', '␣')
+      acts: mk('acts', 'hand', 'Acciones', '4'), items: mk('items', 'potion', 'Objetos', '5'), end: mk('end', 'hourglass', 'Fin de turno', '␣')
     };
     this.btn.end.classList.add('act-end');
     const pop = this.$('items-pop');
     pop.innerHTML = ['potion', 'elixir', 'bomb'].map((k) => { const s = SHOP.find((q) => q.id === k); return `<button class="item-row" data-item="${k}">${icon(s.icon)}<span><b>${s.name}</b><small>${s.desc}</small></span><em data-count="${k}">0</em></button>`; }).join('');
     U.$$('.item-row', pop).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); this.closeItems(); GAME.action(b.dataset.item); }));
+    const ap = this.$('acts-pop');
+    const acts = [['rally', 'crown', 'Arengar', 'Presencia: cada calavera inspira a un aliado (+1 dado en su próximo ataque o prueba) y le quita el miedo.'],
+      ['search', 'search', 'Registrar', 'Ingenio: revela las trampas de la sala y busca botín. Hace ruido (+1 Presagio).'],
+      ['guard', 'shield', 'En guardia', '+1 dado de defensa hasta tu próximo turno.'],
+      ['dash', 'boot', 'Correr', '+3 de movimiento este turno.']];
+    ap.innerHTML = acts.map(([k, ic, n, d]) => `<button class="item-row" data-actx="${k}">${icon(ic)}<span><b>${n}</b><small data-desc="${k}">${d}</small></span><em data-odds="${k}"></em></button>`).join('');
+    U.$$('.item-row', ap).forEach((b) => (b.onclick = (e) => { e.stopPropagation(); this.closeItems(); GAME.action(b.dataset.actx); }));
   },
-  toggleItems() { audio.sfx('ui'); const p = this.$('items-pop'); p.hidden = !p.hidden; this.btn.items.classList.toggle('mode', !p.hidden); },
-  closeItems() { this.$('items-pop').hidden = true; this.btn && this.btn.items.classList.remove('mode'); },
+  togglePop(id) { audio.sfx('ui'); const p = this.$(id), open = p.hidden; this.closeItems(); p.hidden = !open; const b = id === 'items-pop' ? this.btn.items : this.btn.acts; b.classList.toggle('mode', open); if (open) this.refresh(); },
+  toggleItems() { this.togglePop('items-pop'); },
+  closeItems() { ['items-pop', 'acts-pop'].forEach((id) => (this.$(id).hidden = true)); if (this.btn) { this.btn.items.classList.remove('mode'); this.btn.acts.classList.remove('mode'); } },
   refresh() {
     if (!this.hud || GAME.state !== 'play') return;
     // grupo
@@ -71,8 +83,11 @@ const UI = {
       c.querySelector('.hc-hpn').textContent = `${h.hp}/${h.maxHp}`;
       c.querySelector('.st-mv b').textContent = h.mvLeft;
       c.querySelector('.st-act').classList.toggle('used', h.actions <= 0);
-      c.querySelector('.st-buff').innerHTML = (h.status.wall ? icon('shield') : '') + (h.status.guard ? icon('shield', 'small') : '');
-      c.querySelector('.hc-tag').textContent = h.ko ? 'Caído' : h.ended ? 'Hecho' : (GAME.active === h && GAME.phase === 'hero') ? 'En turno' : '';
+      c.querySelector('.st-det').innerHTML = `<i class="pip-row">${Array.from({ length: h.detMax }, (_, i) => `<i class="pip det ${i < h.det ? 'on' : ''}"></i>`).join('')}</i>`;
+      c.querySelector('.hc-b.det').textContent = h.det; const eb = c.querySelector('.hc-b.eter'); if (eb) eb.textContent = h.eter;
+      const et = c.querySelector('.st-eter'); if (et) et.innerHTML = `<i class="pip-row">${Array.from({ length: h.eterMax }, (_, i) => `<i class="pip eter ${i < h.eter ? 'on' : ''}"></i>`).join('')}</i>`;
+      c.querySelector('.hc-fx').innerHTML = Object.keys(h.status).filter((k) => STATUS[k] && h.status[k]).map((k) => `<span class="fx-chip ${STATUS[k].bad ? 'bad' : 'good'}" title="${STATUS[k].name}: ${STATUS[k].desc}">${icon(STATUS[k].icon)}${k === 'desangrando' ? h.status[k] : ''}</span>`).join('') + (h.wounds ? `<span class="fx-chip bad" title="Herido: −${h.wounds} PV máximo hasta acampar">${icon('heart')}−${h.wounds}</span>` : '');
+      c.querySelector('.hc-tag').textContent = h.ko ? (h.status.desangrando ? `Se desangra · ${h.status.desangrando}` : 'Caído') : h.ended ? 'Hecho' : (GAME.active === h && GAME.phase === 'hero') ? 'En turno' : '';
     });
     // acciones
     const h = GAME.active, can = h && GAME.phase === 'hero' && !GAME.busy;
@@ -80,23 +95,31 @@ const UI = {
       h.skills.forEach((s, i) => {
         const b = this.btn['s' + i];
         b.querySelector('.act-ic').innerHTML = icon(s.icon); b.querySelector('.act-lb').textContent = s.name;
-        b.title = `${s.name}: ${s.desc}`;
-        const cd = b.querySelector('.act-cd'); cd.textContent = s.cd > 0 ? s.cd : ''; b.classList.toggle('cooling', s.cd > 0);
-        b.disabled = !can || s.cd > 0 || (!s.free && h.actions <= 0) || (s.id === 'step' && h.mvLeft <= 0);
+        const si = GAME.skillInfo(h, s);
+        b.title = `${s.name}: ${si.text}`;
+        const cd = b.querySelector('.act-cd');
+        if (s.eter) { cd.textContent = h.eter < si.cost ? si.cost : ''; b.classList.toggle('cooling', h.eter < si.cost); b.dataset.cost = si.cost; }
+        else { cd.textContent = s.cd > 0 ? s.cd : ''; b.classList.toggle('cooling', s.cd > 0); delete b.dataset.cost; }
+        b.disabled = !can || !!GAME.skillBlock(h, s);
         b.classList.toggle('mode', !!(GAME.mode && GAME.mode.key === 's' + i));
       });
       this.btn.attack.querySelector('.act-ic').innerHTML = icon(h.basic.icon);
       this.btn.attack.querySelector('.act-lb').textContent = h.basic.name;
-      this.btn.attack.title = h.basic.desc;
+      const w = HERO_DEFS[h.id].weapon;
+      this.btn.attack.title = `${h.basic.name}: ${h.atk} dados (${w.name}, ${VIRTUES[w.attr].name})${h.range > 1 ? `, alcance ${h.range}` : ''}.`;
       this.btn.attack.disabled = !can || h.actions <= 0;
       this.btn.attack.classList.toggle('mode', !!(GAME.mode && GAME.mode.key === 'attack'));
-      this.btn.search.disabled = !can || h.actions <= 0;
+      this.btn.acts.disabled = !can || h.actions <= 0;
+      const odds = { rally: `${h.virt.PRE + (RULES.perk(h, 'PRE') ? 1 : 0)}d`, search: `${h.virt.ING}d`, guard: '', dash: '' };
+      U.$$('[data-odds]', this.$('acts-pop')).forEach((e) => (e.textContent = odds[e.dataset.odds] || ''));
       this.btn.items.disabled = !can;
       this.btn.end.disabled = !can;
       this.btn.end.classList.toggle('pulse', can && h.mvLeft <= 0 && h.actions <= 0);
     } else Object.values(this.btn).forEach((b) => (b.disabled = true));
     this.$('actions').classList.toggle('targeting', !!GAME.mode);
     this.$('cancel-mode').hidden = !GAME.mode;
+    this.$('undo-move').hidden = !(GAME.undo && GAME.active === GAME.undo.h && !GAME.busy && GAME.phase === 'hero');
+    const dm = this.$('r-doom'); if (dm) { const mx = GAME.D.doom; dm.innerHTML = `${icon('eye')}<span class="doom-bar">${Array.from({ length: mx }, (_, i) => `<i class="${i < GAME.doom ? 'on' : ''}"></i>`).join('')}</span>`; dm.title = `Presagio ${GAME.doom}/${mx}: crece cada ronda y con el ruido. Al llenarse, algo errante sube a buscaros.`; dm.classList.toggle('warn', GAME.doom >= mx - 1); }
     // recursos
     this.$('r-gold').textContent = GAME.gold;
     this.$('r-potion').textContent = GAME.items.potion; this.$('r-elixir').textContent = GAME.items.elixir; this.$('r-bomb').textContent = GAME.items.bomb;
@@ -123,8 +146,18 @@ const UI = {
     if (d.atk) dice = `<div class="pv-dice"><span class="pv-a">${'<i class="dd skull"></i>'.repeat(Math.min(d.atk, 8))}</span><em>contra</em><span class="pv-d">${'<i class="dd bshield"></i>'.repeat(Math.min(d.def, 8))}</span></div>`;
     const u = d.unit;
     let stats = '';
-    if (u && u.side === 'enemy') stats = `<div class="pv-stats"><span class="hp-pips">${Array.from({ length: u.maxHp }, (_, i) => `<i class="${i < u.hp ? 'on' : ''}"></i>`).join('')}</span><span>${icon('sword')}${u.atk}</span><span>${icon('shield')}${u.def}</span><span>${icon('boot')}${u.mv}</span>${u.ranged ? `<span>${icon('bow')}${u.range}</span>` : ''}</div>`;
-    p.innerHTML = `<b>${U.esc(d.text)}</b>${d.sub ? `<small>${U.esc(d.sub)}</small>` : ''}${stats}${dice}${confirm ? '<span class="pv-confirm">Toca otra vez para confirmar</span>' : ''}`;
+    if (u && u.side === 'enemy') {
+      const tr = (u.T.traits || []).concat(u.champion ? ['campeon'] : []).map((k) => ETRAITS[k]).filter(Boolean);
+      const st = Object.keys(u.status).filter((k) => STATUS[k] && u.status[k]).map((k) => STATUS[k].name);
+      stats = `<div class="pv-stats"><span class="hp-pips">${Array.from({ length: u.maxHp }, (_, i) => `<i class="${i < u.hp ? 'on' : ''}"></i>`).join('')}</span><span title="Dados de ataque">${icon('sword')}${u.atk}</span><span title="Dados de defensa">${icon('shield')}${u.def}</span><span title="Movimiento">${icon('boot')}${u.mv}</span>${u.ranged ? `<span title="Alcance">${icon('bow')}${u.range}</span>` : ''}</div>
+        <div class="pv-virt">${VKEYS.map((k) => `<span title="${VIRTUES[k].name}"><em>${k}</em>${u.virt[k]}</span>`).join('')}<span class="pv-iq" title="Cómo piensa (según su Ingenio y la dificultad)">${GAME.iqLabel(u)} · ${(ROLES[u.role] || '').split(' · ')[0]}</span></div>
+        ${tr.length || st.length ? `<div class="pv-traits">${tr.map((t) => `<span title="${U.esc(t.desc)}">${U.esc(t.name)}</span>`).join('')}${st.map((t) => `<span class="bad">${U.esc(t)}</span>`).join('')}</div>` : ''}`;
+    } else if (u && u.side === 'hero' && d.kind === 'self') {
+      stats = `<div class="pv-virt">${VKEYS.map((k) => `<span title="${VIRTUES[k].name}"><em>${k}</em>${u.virt[k]}</span>`).join('')}</div>`;
+    }
+    const mods = d.mods && d.mods.length ? `<div class="pv-mods">${d.mods.map(([t, v]) => `<span class="${v > 0 ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v} ${U.esc(t)}</span>`).join('')}</div>` : '';
+    const sub = d.sub ? d.sub.replace(/ \(.*?\) contra/, ' contra') : '';
+    p.innerHTML = `<b>${U.esc(d.text)}</b>${sub ? `<small>${U.esc(sub)}</small>` : ''}${mods}${stats}${dice}${confirm ? '<span class="pv-confirm">Toca otra vez para confirmar</span>' : ''}`;
     p.classList.toggle('confirm', !!confirm);
   },
 
@@ -216,15 +249,6 @@ const UI = {
       setTimeout(() => n.addEventListener('pointerup', close), 300);
     });
   },
-  choice(prompt, options) {
-    return new Promise((resolve) => {
-      const c = this.$('choice');
-      c.innerHTML = `<div class="ch-prompt">${U.esc(prompt)}</div><div class="ch-opts">${options.map((o, i) => `<button class="ch-opt" data-i="${i}"><b>${U.esc(o[0])}</b><small>${U.esc(o[1])}</small></button>`).join('')}</div>`;
-      c.hidden = false; this.$('dlg').hidden = true;
-      audio.sfx('reveal', { vol: 0.5 });
-      U.$$('.ch-opt', c).forEach((b) => (b.onclick = () => { audio.sfx('ui'); c.hidden = true; resolve(options[+b.dataset.i]); }));
-    });
-  },
   /* ---------------- dados ---------------- */
   dieHTML(face, counted, roll) {
     const ic = face === 'skull' ? 'skull' : 'shield';
@@ -238,9 +262,10 @@ const UI = {
     const roll = () => [U.randi(2, 4) * 360 + U.randi(-40, 40), U.randi(2, 4) * 360 + U.randi(-40, 40), U.randi(-30, 30)];
     const atkRow = r.A.map((f) => this.dieHTML(f, f === 'skull', roll())).join('');
     const defRow = r.D.map((f) => this.dieHTML(f, f === r.shieldFace, roll())).join('');
-    el.className = 'dice plate ' + (r.att.side === 'hero' ? 'by-hero' : 'by-foe') + (r.quick ? ' quick' : '');
+    el.className = 'dice plate ' + (r.att.side === 'hero' ? 'by-hero' : 'by-foe') + (r.quick ? ' quick' : '') + (r.reroll ? ' reroll' : '');
+    const mods = r.mods && r.mods.length ? `<div class="dc-mods">${r.mods.map(([t, v]) => `<span class="${v > 0 ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v} ${U.esc(t)}</span>`).join('')}</div>` : '';
     el.innerHTML = `
-      <div class="dc-head"><b>${U.esc(r.label || r.att.name)}</b><span>${U.esc(r.att.name)} → ${U.esc(r.tgt.name)}</span></div>
+      <div class="dc-head"><b>${U.esc(r.label || r.att.name)}</b><span>${U.esc(r.att.name)} → ${U.esc(r.tgt.name)}</span></div>${mods}
       <div class="dc-row atk">${atkRow}</div>
       <div class="dc-row def">${defRow || '<em class="nodef">sin defensa</em>'}</div>
       <div class="dc-res"><span>${r.skulls} ${icon('skull')}</span><i>−</i><span>${r.shields} ${icon('shield')}</span><i>=</i><strong class="${r.dmg ? 'hit' : 'miss'}">${r.dmg ? r.dmg + ' de daño' : 'Bloqueado'}</strong></div>`;
@@ -248,9 +273,10 @@ const UI = {
     audio.sfx('dice');
     const t = (r.quick ? 520 : 820) / U.speed;
     setTimeout(() => audio.sfx('diceLand'), t * 0.8);
-    clearTimeout(this._dh); this._dh = setTimeout(() => { el.classList.remove('roll'); el.hidden = true; }, t + (r.quick ? 900 : 1500) / U.speed);
+    this.scheduleDiceHide(t + (r.quick ? 900 : 1500) / U.speed);
     return U.sleep(r.quick ? 520 : 820);
   },
+  scheduleDiceHide(ms) { const el = this.$('dice'); clearTimeout(this._dh); this._dh = setTimeout(() => { if (this._holdDice) return; el.classList.remove('roll'); el.hidden = true; }, ms); },
 
   /* ---------------- sustos ---------------- */
   async scare(kind) {
@@ -299,11 +325,11 @@ const UI = {
       s.querySelector('#v-go').onclick = () => { audio.sfx('ui'); this.screen(null); resolve(); };
     });
   },
-  defeatCard() {
+  defeatCard(dead) {
     return new Promise((resolve) => {
       this.showHUD(false);
-      const s = this.screen(`<div class="card defeat"><div class="eyebrow">Fin del camino</div><h2>Las sombras os reclaman</h2>
-        <p class="lead">El farol rueda por el suelo de piedra. Arriba, en Aldmere, nadie sabrá cómo terminó la historia.</p>
+      const s = this.screen(`<div class="card defeat"><div class="eyebrow">Fin del camino</div><h2>${dead ? `${U.esc(dead.name)} no volverá a levantarse` : 'Las sombras os reclaman'}</h2>
+        <p class="lead">${dead ? 'Nadie llegó a tiempo. Sin los tres, el descenso no puede continuar.' : 'El farol rueda por el suelo de piedra. Arriba, en Aldmere, nadie sabrá cómo terminó la historia.'}</p>
         <div class="row"><button class="btn primary" id="d-retry">${icon('rotate')} Reintentar el capítulo</button><button class="btn" id="d-menu">Volver al inicio</button></div></div>`, 'dim red');
       s.querySelector('#d-retry').onclick = () => { audio.sfx('ui'); this.screen(null); resolve('retry'); };
       s.querySelector('#d-menu').onclick = () => { audio.sfx('ui'); this.screen(null); resolve('menu'); };
@@ -316,18 +342,22 @@ const UI = {
         const item = (it) => {
           const owned = it.kind === 'up' ? GAME.upgrades[it.id] : it.kind === 'kit' ? GAME.kit : false;
           const cnt = it.kind === 'item' ? GAME.items[it.id] : null;
-          const can = !owned && GAME.gold >= it.cost;
+          const cost = price(it), can = !owned && GAME.gold >= cost;
           return `<div class="shop-item ${owned ? 'owned' : ''}"><span class="si-ic">${icon(it.icon)}</span><span class="si-t"><b>${it.name}</b><small>${it.desc}</small></span>
-            <span class="si-buy">${cnt != null ? `<em>Tenéis ${cnt}</em>` : ''}<button class="btn small" data-buy="${it.id}" ${can ? '' : 'disabled'}>${owned ? 'Adquirido' : `${icon('coin')} ${it.cost}`}</button></span></div>`;
+            <span class="si-buy">${cnt != null ? `<em>Tenéis ${cnt}</em>` : ''}<button class="btn small" data-buy="${it.id}" ${can ? '' : 'disabled'}>${owned ? 'Adquirido' : `${icon('coin')} ${cost}${cost < it.cost ? ` <s>${it.cost}</s>` : ''}`}</button></span></div>`;
         };
         s.querySelector('.shop-gold b').textContent = GAME.gold;
+        s.querySelector('.shop-haggle').innerHTML = disc ? `${icon('crown')} ${U.esc(haggler.name)} regatea con su Presencia ${haggler.virt.PRE}: −${Math.round(disc * 100)}% en todo.` : 'Nadie del grupo tiene Presencia para regatear (hace falta 3 o más).';
         s.querySelector('.shop-cons').innerHTML = SHOP.filter((i) => i.kind !== 'up').map(item).join('');
         s.querySelector('.shop-ups').innerHTML = heroes.map((h) => `<div class="shop-hero"><div class="sh-h"><img src="${this.portraits[h] || ''}" alt=""><b>${HERO_DEFS[h].full}</b></div>${SHOP.filter((i) => i.hero === h).map(item).join('')}</div>`).join('');
         U.$$('[data-buy]', s).forEach((b) => (b.onclick = () => buy(b.dataset.buy)));
       };
+      const haggler = HERO_IDS.map((id) => ({ name: HERO_DEFS[id].name, virt: GAME.virtOf(id) })).sort((a, b) => b.virt.PRE - a.virt.PRE)[0];
+      const disc = Math.max(0, haggler.virt.PRE - 2) * 0.05;
+      const price = (it) => Math.round(it.cost * (1 - disc));
       const buy = (id) => {
-        const it = SHOP.find((i) => i.id === id); if (!it || GAME.gold < it.cost) return;
-        GAME.gold -= it.cost; audio.sfx('buy');
+        const it = SHOP.find((i) => i.id === id); if (!it || GAME.gold < price(it)) return;
+        GAME.gold -= price(it); audio.sfx('buy');
         if (it.kind === 'item') GAME.items[id]++;
         else if (it.kind === 'kit') GAME.kit = true;
         else {
@@ -339,6 +369,7 @@ const UI = {
       };
       const s = this.screen(`<div class="card shop"><div class="shop-head"><div><div class="eyebrow">Arcón de la Orden</div><h2>Antes de descender</h2></div><div class="shop-gold">${icon('coin')}<b></b><span>monedas</span></div></div>
         <p class="lead">Las hermanas del Archivo dejaron provisiones en el rellano. Pagad lo justo: la Orden lleva las cuentas.</p>
+        <p class="shop-haggle"></p>
         <div class="shop-grid"><section><h3>Provisiones</h3><div class="shop-cons"></div></section><section><h3>Reliquias</h3><div class="shop-ups"></div></section></div>
         <div class="row end"><button class="btn primary" id="shop-go">${icon('play')} Descender</button></div></div>`, 'dim shop-screen');
       render();
@@ -393,7 +424,7 @@ const UI = {
   title() {
     GAME.state = 'title';
     this.showHUD(false); this.hideAll();
-    const save = U.store.get('umbral.save.v1', null);
+    const save = U.store.get('umbral.save.v2', null);
     const s = this.screen(`<div class="title">
       <div class="tt-top"><div class="tt-eyebrow">Crónicas de la Última Llama</div>
       <h1 class="tt-name" aria-label="Umbral">UMBRAL</h1>
@@ -415,19 +446,20 @@ const UI = {
     MAIN.titleScene();
   },
   difficulty() {
-    const opts = [
-      ['relato', 'Relato', 'Para disfrutar de la historia. Los héroes tienen +3 PV y los enemigos golpean con un dado menos.'],
-      ['heroe', 'Héroe', 'La experiencia pensada: táctica, tensa y justa.'],
-      ['pesadilla', 'Pesadilla', 'Enemigos más resistentes y rápidos, jefes feroces y menos pociones. Cada error se paga.']
-    ];
+    const opts = ['relato', 'heroe', 'pesadilla'].map((id) => DIFFICULTY[id]);
     const s = this.screen(`<div class="card diff"><div class="eyebrow">Nueva partida</div><h2>¿Cuánta oscuridad soportáis?</h2>
-      <div class="diff-opts">${opts.map(([id, n, d]) => `<button class="diff-opt ${id === 'heroe' ? 'sel' : ''}" data-d="${id}"><b>${n}</b><small>${d}</small></button>`).join('')}</div>
-      <div class="row"><button class="btn" id="df-back">Volver</button><button class="btn primary" id="df-go">${icon('flame')} Descender</button></div></div>`, 'dim title-screen');
+      <div class="diff-opts">${opts.map((d) => `<button class="diff-opt ${d.id === 'heroe' ? 'sel' : ''}" data-d="${d.id}"><b>${d.name}</b><small>${d.blurb}</small>
+        <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: cada ${d.doom} rondas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}</ul></button>`).join('')}</div>
+      <div class="row"><button class="btn" id="df-back">Volver</button><button class="btn primary" id="df-go">${icon('crown')} Forjar el grupo</button></div></div>`, 'dim title-screen');
     let pick = 'heroe';
     U.$$('.diff-opt', s).forEach((b) => (b.onclick = () => { pick = b.dataset.d; U.$$('.diff-opt', s).forEach((q) => q.classList.toggle('sel', q === b)); audio.sfx('ui'); }));
     s.querySelector('#df-back').onclick = () => { audio.sfx('uiBack'); this.title(); };
     s.querySelector('#df-go').onclick = async () => {
-      audio.sfx('ui'); GAME.newGame(pick); U.store.del('umbral.save.v1');
+      audio.sfx('ui');
+      GAME.newGame(pick);
+      const build = await this.forge();
+      if (!build) { this.difficulty(); return; }
+      GAME.newGame(pick, build.custom ? build.virt : null); U.store.del('umbral.save.v2');
       this.screen(null); await this.fadeOut(); MAIN.stopTitle();
       await this.prologue();
       GAME.startChapter(0);
@@ -453,12 +485,17 @@ const UI = {
         <section><h3>${icon('boot')} El turno</h3><p>Cada héroe tiene <b>movimiento</b> y <b>una acción</b>. Puedes moverte antes y después de actuar. Cuando los tres terminan, actúa la Sombra.</p></section>
         <section><h3>${icon('skull')} Los dados</h3><p>Al atacar se tiran dados de combate: cada <b>calavera</b> es un golpe. El defensor tira los suyos: los héroes paran con <b>escudos blancos</b> (2 de 6 caras) y los monstruos con <b>escudos negros</b> (1 de 6). Daño = calaveras − escudos.</p></section>
         <section><h3>${icon('door')} Puertas y salas</h3><p>Las salas están ocultas hasta que abres su puerta. Detrás puede haber tesoros, enemigos… o algo peor. La luz que se filtra bajo una puerta roja anuncia a un guardián.</p></section>
-        <section><h3>${icon('search')} Registrar</h3><p>Revela las trampas de la sala y puede encontrar oro, pociones o bombas. A veces despierta a un monstruo errante. Solo se puede sin enemigos en la sala.</p></section>
-        <section><h3>${icon('revive')} Caer y levantarse</h3><p>Un héroe a 0 PV cae. Un aliado a su lado puede levantarle gastando su acción, o Elian con Luz de la Aurora. Si caen los tres, la partida termina.</p></section>
-        <section><h3>${icon('trap')} Trampas</h3><p>Sera detecta trampas a dos casillas. Una trampa revelada se puede desarmar desde una casilla vecina.</p></section>
+        <section><h3>${icon('crown')} Las cinco virtudes</h3><p><b>Fuerza</b> (vida, armas pesadas, romper), <b>Agilidad</b> (movimiento, defensa, ganzúas, trampas), <b>Ingenio</b> (magia, registrar, sellos), <b>Voluntad</b> (Determinación, resistir el miedo) y <b>Presencia</b> (arengar, convencer, regatear). Con 4 o más, cada una da un don. Todo sale de ellas: mira la ficha del grupo (corona).</p></section>
+        <section><h3>${icon('target')} Pruebas</h3><p>Para forzar una cerradura, convencer a un espíritu o resistir el miedo se tiran tantos dados como la virtud. Éxito si salen tantas calaveras como la dificultad (1 fácil, 2 media, 3 difícil). Siempre ves la probabilidad antes de elegir.</p></section>
+        <section><h3>${icon('flame')} Determinación y Éter</h3><p>La Determinación (tanta como la Voluntad) permite repetir los dados fallados de tu tirada; si un golpe va a derribarte, se gasta sola. Elian lanza sus hechizos con Éter (tanto como su Ingenio, +1 por ronda).</p></section>
+        <section><h3>${icon('sword')} Posición</h3><p><b>Flanqueo:</b> +1 dado si otro aliado está junto a tu objetivo (Sera, +2). <b>Ataque de oportunidad:</b> alejarte de un enemigo cuerpo a cuerpo le da un golpe gratis; los ágiles (Agilidad 4+) se escurren sin provocarlo.</p></section>
+        <section><h3>${icon('eye')} Estados</h3><p><b>Aterrado</b> (−2 mov., −1 dado), <b>Envenenado</b> y <b>Ardiendo</b> (−1 PV por turno), <b>Aturdido</b> (pierde la acción), <b>Inspirado</b> (+1 dado). Los enemigos con poca Voluntad pueden <b>huir</b> si cae su líder o la mitad de su grupo.</p></section>
+        <section><h3>${icon('search')} Registrar y Presagio</h3><p>Registrar usa el Ingenio: más calaveras, mejor botín y trampas reveladas. El <b>Presagio</b> (ojo de arriba) crece cada ronda y con el ruido; al llenarse, algo errante sube a buscaros.</p></section>
+        <section><h3>${icon('revive')} Caer y levantarse</h3><p>Un héroe a 0 PV cae. Un aliado a su lado puede levantarle con su acción, o Elian con Luz de la Aurora. Vuelve Herido (−1 PV máximo hasta acampar). En Pesadilla, quien cae se desangra.</p></section>
+        <section><h3>${icon('door')} Cerraduras y sellos</h3><p>Algunas puertas se abren con Agilidad (ganzúa) o Fuerza (con estruendo); otras con Ingenio o Voluntad. Elige bien quién lo intenta.</p></section>
       </div>
       <div class="help-grid controls">
-        <section><h3>Ordenador</h3><p>Clic: mover, atacar, abrir · Arrastrar: desplazar · Clic derecho y arrastrar: girar · Rueda: zoom · <kbd>1</kbd>–<kbd>5</kbd> acciones · <kbd>Espacio</kbd> fin de turno · <kbd>Tab</kbd> siguiente héroe · <kbd>Q</kbd>/<kbd>E</kbd> girar · <kbd>WASD</kbd> mover cámara · <kbd>Esc</kbd> cancelar</p></section>
+        <section><h3>Ordenador</h3><p>Clic: mover, atacar, abrir · Arrastrar: desplazar · Clic derecho y arrastrar: girar · Rueda: zoom · <kbd>1</kbd>–<kbd>5</kbd> acciones · <kbd>Z</kbd> deshacer movimiento · <kbd>G</kbd> ficha del grupo · <kbd>Espacio</kbd> fin de turno · <kbd>Tab</kbd> siguiente héroe · <kbd>Q</kbd>/<kbd>E</kbd> girar · <kbd>WASD</kbd> mover cámara · <kbd>Esc</kbd> cancelar</p></section>
         <section><h3>Móvil</h3><p>Toca para ver qué pasará y toca otra vez para confirmar · Arrastra con un dedo para mover la cámara · Pellizca para acercar · Gira con dos dedos.</p></section>
       </div>
       <div class="row end"><button class="btn primary" id="h-back">Entendido</button></div></div>`, 'dim');
@@ -488,13 +525,14 @@ const UI = {
           ${chk('s-follow', 'La cámara sigue la acción', S.follow)}
           ${chk('s-confirm', 'Confirmar con segundo toque (táctil)', S.confirmTouch)}
           ${chk('s-qdice', 'Dados rápidos en el turno enemigo', S.quickEnemyDice)}
+          ${chk('s-det', 'Ofrecer Determinación tras mis tiradas', S.detOffer)}
         </section>
       </div>
       <div class="row end"><button class="btn primary" id="s-back">Hecho</button></div></div>`, 'dim');
     const $ = (id) => s.querySelector('#' + id);
     const apply = () => {
       const q = $('s-q').value; const qChanged = q !== S.quality;
-      Object.assign(S, { quality: q, tilt: $('s-tilt').checked, shake: $('s-shake').checked, flashes: $('s-flash').checked, music: +$('s-music').value, sfx: +$('s-sfx').value, amb: +$('s-amb').value, voice: $('s-voice').value, textSpeed: $('s-text').value, autoText: $('s-auto').checked, speed: +$('s-speed').value, follow: $('s-follow').checked, confirmTouch: $('s-confirm').checked, quickEnemyDice: $('s-qdice').checked });
+      Object.assign(S, { quality: q, tilt: $('s-tilt').checked, shake: $('s-shake').checked, flashes: $('s-flash').checked, music: +$('s-music').value, sfx: +$('s-sfx').value, amb: +$('s-amb').value, voice: $('s-voice').value, textSpeed: $('s-text').value, autoText: $('s-auto').checked, speed: +$('s-speed').value, follow: $('s-follow').checked, confirmTouch: $('s-confirm').checked, quickEnemyDice: $('s-qdice').checked, detOffer: $('s-det').checked });
       MAIN.applySettings(qChanged);
     };
     U.$$('select,input', s).forEach((i) => i.addEventListener('change', apply));

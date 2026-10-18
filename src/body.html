@@ -11,6 +11,8 @@
       <span class="res-pill plate extra" title="Elixires"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9.5 2.8h5M10 3v4.4C7 8.6 5 11.4 5 14.6 5 18.2 8.1 21 12 21s7-2.8 7-6.4c0-3.2-2-6-5-7.2V3"/><path d="M12.8 10.5 10 15h3l-1.8 4"/></svg><b id="r-elixir">0</b></span>
       <span class="res-pill plate extra" title="Bombas"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="14" r="6.5" fill="currentColor" fill-opacity=".15"/><path d="M14.5 9l2.5-2.5M17 6.5c.8-1.8 2.4-2.5 3.8-2"/></svg><b id="r-bomb">0</b></span>
       <span class="res-pill plate round" title="Ronda">Ronda <b id="r-round">1</b></span>
+      <span class="res-pill plate doom" id="r-doom" title="Presagio"></span>
+      <button class="icon-btn plate" id="btn-party" title="Ficha del grupo (G)" aria-label="Ficha del grupo"></button>
       <button class="icon-btn plate" id="btn-view" title="Vista cenital (V)" aria-label="Vista cenital"></button>
       <button class="icon-btn plate" id="btn-rotate" title="Girar cámara (Q/E)" aria-label="Girar cámara"></button>
       <button class="icon-btn plate" id="btn-center" title="Centrar en el héroe (C)" aria-label="Centrar en el héroe"></button>
@@ -25,7 +27,8 @@
   <div class="act-wrap">
     <div id="preview" class="plate" hidden></div>
     <button id="cancel-mode" class="plate" hidden>Cancelar selección · Esc</button>
-    <div class="act-bar"><div id="items-pop" class="plate" hidden></div><div id="actions" class="plate"></div></div>
+    <button id="undo-move" class="plate" hidden></button>
+    <div class="act-bar"><div id="items-pop" class="plate pop" hidden></div><div id="acts-pop" class="plate pop" hidden></div><div id="actions" class="plate"></div></div>
   </div>
 </div>
 <button id="ffwd" class="plate" hidden>Acelerar »</button>
@@ -41,6 +44,7 @@
 <div id="note" hidden><div class="note-paper"><h3 id="note-title"></h3><p id="note-text"></p><div class="note-tap">Toca para cerrar</div></div></div>
 <div id="hint" class="plate" hidden><div class="eyebrow">Consejo</div><p id="hint-text"></p><button class="btn small" id="hint-ok">Entendido</button></div>
 <div id="toast"></div>
+<div id="sheet" class="plate" hidden></div>
 <div id="chronicle" class="plate" hidden><header><h3>Crónica</h3><button class="icon-btn" id="chronicle-close" aria-label="Cerrar crónica"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg></button></header><div id="chronicle-list"></div></div>
 <div id="scare" class="scare" hidden></div>
 <div id="fade"></div>

@@ -4,7 +4,7 @@
 const SETTINGS = Object.assign({
   quality: (() => { const touch = U.isTouch(), cores = navigator.hardwareConcurrency || 4; if (touch && Math.min(screen.width, screen.height) < 820) return 'medio'; return cores <= 4 ? 'medio' : 'alto'; })(),
   autoQ: true, tilt: true, shake: true, flashes: true, music: 0.55, sfx: 0.85, amb: 0.6, voice: 'narrador', textSpeed: 'normal', autoText: false,
-  speed: 1, follow: true, confirmTouch: true, quickEnemyDice: true
+  speed: 1, follow: true, confirmTouch: true, quickEnemyDice: true, detOffer: true
 }, U.store.get('umbral.settings', {}));
 
 const INPUT = {
@@ -88,10 +88,14 @@ const INPUT = {
     this.keys[k] = down;
     if (!down) return;
     if (!UI.$('dlg').hidden && (k === ' ' || k === 'enter')) { e.preventDefault(); UI.advance(); return; }
+    if (k === 'g' && (GAME.state === 'play' || GAME.state === 'camp')) { UI.sheet(); return; }
+    if (k === 'escape' && !UI.$('sheet').hidden) { UI.$('sheet').hidden = true; return; }
     if (GAME.state !== 'play') { if (k === 'escape' && GAME.state === 'camp') UI.pause(); return; }
-    const map = { '1': 'attack', '2': 's0', '3': 's1', '4': 'search' };
+    const map = { '1': 'attack', '2': 's0', '3': 's1' };
     if (map[k]) { GAME.action(map[k]); return; }
-    if (k === '5') { UI.toggleItems(); return; }
+    if (k === '4') { UI.togglePop('acts-pop'); return; }
+    if (k === '5') { UI.togglePop('items-pop'); return; }
+    if (k === 'z') { GAME.action('undo'); return; }
     if (k === ' ') { e.preventDefault(); GAME.action('end'); return; }
     if (k === 'tab') { e.preventDefault(); GAME.action('next'); return; }
     if (k === 'escape') { if (GAME.mode) GAME.action('cancel'); else if (!UI.$('screen').hidden) UI.screen(null); else UI.pause(); return; }
@@ -204,5 +208,5 @@ const MAIN = {
   }
 };
 
-window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio };
+window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, VIRTUES, TALENTS, VIGILS, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, STATUS };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => MAIN.boot()); else MAIN.boot();

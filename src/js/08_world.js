@@ -512,6 +512,37 @@ const WORLD = {
   },
   rebuildUnit(u) { const p = u.mesh ? u.mesh.rotation.y : 0; const vis = u.mesh ? u.mesh.visible : true; this.removeUnit(u); this.addUnit(u, { face: p }); u.mesh.visible = vis; },
 
+  /* ----------------- cerraduras, sellos y campeones ----------------- */
+  addLock(d) {
+    const pv = d.mesh.userData.pivot, g = new THREE.Group();
+    const mk = () => {
+      if (d.lock === 'sello') {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.95), new THREE.MeshBasicMaterial({ map: TEX.runeRing(9), color: new THREE.Color('#c08bff').multiplyScalar(1.7), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide }));
+        m.userData.spin = true; return m;
+      }
+      const p = new THREE.Group();
+      p.add(new THREE.Mesh(G.box(0.3, 0.38, 0.05), MAT.std('#2a2624', 0.35, 0.9)));
+      const k = new THREE.Mesh(G.box(0.05, 0.13, 0.06), MAT.glow('#ffcf6b', 1.4)); k.position.y = -0.03; p.add(k);
+      const ring = new THREE.Mesh(G.tor(0.11, 0.02, 6, 16, Math.PI), MAT.std('#6a5a3a', 0.35, 0.9)); ring.position.y = 0.2; p.add(ring);
+      return p;
+    };
+    const a = mk(), b = mk();
+    if (d.lock === 'sello') { a.position.set(0.74, 1.12, 0.075); b.position.set(0.74, 1.12, -0.075); b.rotation.y = Math.PI; }
+    else { a.position.set(1.2, 1.0, 0.09); b.position.set(1.2, 1.0, -0.09); b.rotation.y = Math.PI; }
+    g.add(a); g.add(b); pv.add(g); d.lockMesh = g;
+  },
+  removeLock(d) {
+    if (!d.lockMesh) return;
+    const g = d.lockMesh; d.lockMesh = null;
+    FX.burst(d.lock === 'sello' ? 'magic' : 'block', new THREE.Vector3(d.x * TILE, 1.1, d.y * TILE), { color: '#c08bff' });
+    U.tween(350, (k) => g.scale.setScalar(Math.max(0.01, 1 - k))).then(() => g.parent && g.parent.remove(g));
+  },
+  markChampion(e) {
+    const ud = e.mesh.userData;
+    ud.base.userData.ring.material = MAT.glow('#ffcf5a', 1.9);
+    ud.model.scale.multiplyScalar(1.1);
+  },
+
   /* ----------------- campamento ----------------- */
   buildCamp() {
     const def = { map: [
@@ -577,6 +608,8 @@ const WORLD = {
       const lk = d.mesh.userData.leak;
       if (lk.visible) lk.material.opacity = (lk.userData.boss ? 0.5 + Math.sin(now * 3) * 0.25 : 0.22 + Math.sin(now * 7 + d.x) * 0.06);
     });
+    // sellos rúnicos en puertas
+    this.L && this.L.doors.forEach((d) => { if (d.lockMesh) d.lockMesh.children.forEach((c) => { if (c.userData.spin) c.rotation.z = now * 0.6 * (c.rotation.y ? -1 : 1); }); });
     // cofres, altares, notas
     this.L && this.L.chests.forEach((c) => { if (c.mesh && c.mesh.visible && !c.looted && c.mesh.userData.glow) { c.mesh.userData.glow.visible = true; c.mesh.userData.glow.material.opacity = 1; } });
     this.L && this.L.altars.forEach((a) => { if (a.mesh) { a.mesh.userData.ring.rotation.z = now * 0.3; a.mesh.userData.gem.rotation.y = now; a.mesh.userData.gem.position.y = 1.45 + Math.sin(now * 2) * 0.06; } });
