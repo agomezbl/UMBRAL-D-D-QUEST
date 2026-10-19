@@ -321,3 +321,25 @@ Mazmorras que se generan solas, nivel a nivel, sin final. Se elige dificultad y 
 | Generador | 960 niveles (60 semillas × 16 niveles) comprobados uno a uno: todos conectados, con salida, inicio y guardián donde toca, puertas bien orientadas y libres, cofres y escritos alcanzables. Media de 11 criaturas por nivel (máximo 16); mapas de 21×15 casillas de media |
 | Armería | Compra, requisitos («Sera necesita Fuerza 3»), cambio de hueco y arcón comprobados en ordenador y móvil |
 | Campaña y tutorial | Una campaña completa automática y el tutorial guiado, sin errores |
+
+## 9. Salto visual (tarea 9)
+
+Las miniaturas ya tenían modelado propio, animaciones de golpe y caída, luz dinámica, bruma y partículas. El salto se centró en lo que más se nota a la distancia de juego y casi no cuesta en el móvil:
+
+- **Miniaturas pintadas.** Un sombreado propio para todas las figuras: los huecos se oscurecen, lo alto recibe un toque de «pincel seco» y un contraluz recorta la silueta contra el suelo. El héroe en turno tiene un contraluz más intenso que late. Al recibir un golpe la figura destella; al curarse, destello verde. Respiran levemente.
+- **Golpes con tajo.** Cada ataque cuerpo a cuerpo dibuja un arco de luz del color del atacante delante de él.
+- **Ondas en el suelo** para golpes de área, explosiones, escudos, invocaciones, curaciones y el Himno de Nyra.
+- **Paredes con vida.** Cada sala recibe uno a tres adornos según el lugar: estandartes raídos, estantes con calaveras y cadenas en la cripta; panoplias con hachas, tuberías y estandartes en la forja; racimos de cristal y círculos de runas que giran en el vacío. Nunca junto a las antorchas ni al lado de una puerta.
+- **Rayos de luz** que caen de grietas del techo sobre algunas salas grandes, con su charco de luz (solo en calidad media y alta).
+- **La escalera se ve:** el suelo tiene ahora un hueco con pozo y peldaños; la de salida del Descenso brilla y tiene luz propia.
+
+Rendimiento: los adornos se unen en una sola malla por material. Con un capítulo entero a la vista, las llamadas de dibujo pasan de 584 a 603 en calidad baja (+3 %) y de 746 a 800 en media (+7 %, con los rayos de luz).
+
+## 10. Cooperativo en el mismo aparato (tarea 10)
+
+- Al empezar (campaña o Descenso) se elige cuántos juegan en este aparato: 1, 2 o 3. Con más de uno, cada jugador escribe su nombre y elige qué héroes lleva; nadie puede quedarse sin héroe.
+- Cuando le toca a un héroe de otro jugador, una pantalla tapa el tablero: «Turno de Ana. Pásale el aparato a Ana». Se sigue con un botón, Intro o Espacio. Mientras está abierta no se puede tocar nada del tablero.
+- Cada jugador mueve todos sus héroes antes de pasar el aparato, y cada ronda empieza un jugador distinto para que nadie abra siempre.
+- El retrato de cada héroe lleva el nombre de su jugador (en el móvil, su inicial en un círculo de color). Los talentos y dones del campamento también lo indican.
+- Desde la pausa, «Jugadores en este aparato» permite cambiar nombres, reparto o número de jugadores a mitad de partida (por ejemplo, si alguien se va).
+- El reparto se guarda con la partida: al continuar, lo primero es la pantalla de paso para quien tenga el turno.

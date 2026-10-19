@@ -18,7 +18,7 @@ const GAME = {
   /* ------------------------------------------------------------ partida */
   setDifficulty(d) { this.difficulty = DIFFICULTY[d] ? d : 'heroe'; this.D = DIFFICULTY[this.difficulty]; window.GAME_DIFF = this.difficulty; },
   newGame(difficulty, build, party) {
-    this.setDifficulty(difficulty); this.descent = null;
+    this.setDifficulty(difficulty); this.descent = null; this.players = [{ name: 'Jugador 1' }]; this.owner = {}; this.curPlayer = -1;
     this.party = party && party.length === 3 ? party.slice() : HERO_IDS.slice();
     this.gold = 60; this.items = { potion: this.D.potions, elixir: 0, bomb: 1 }; this.flags = {};
     this.gear = {}; this.stash = []; this.talents = {};
@@ -27,7 +27,7 @@ const GAME = {
     this.stats = this.newStats();
   },
   snapshot(stage) {
-    return { v: 2, stage, chIdx: this.chIdx, gold: this.gold, items: Object.assign({}, this.items), party: this.party.slice(), gear: JSON.parse(JSON.stringify(this.gear || {})), stash: (this.stash || []).slice(), flags: JSON.parse(JSON.stringify(this.flags)), difficulty: this.difficulty, stats: Object.assign({}, this.stats), talents: JSON.parse(JSON.stringify(this.talents)), build: this.build ? JSON.parse(JSON.stringify(this.build)) : null, descent: this.descent ? JSON.parse(JSON.stringify(this.descent)) : null };
+    return { v: 2, stage, chIdx: this.chIdx, gold: this.gold, items: Object.assign({}, this.items), party: this.party.slice(), gear: JSON.parse(JSON.stringify(this.gear || {})), stash: (this.stash || []).slice(), flags: JSON.parse(JSON.stringify(this.flags)), difficulty: this.difficulty, stats: Object.assign({}, this.stats), talents: JSON.parse(JSON.stringify(this.talents)), build: this.build ? JSON.parse(JSON.stringify(this.build)) : null, descent: this.descent ? JSON.parse(JSON.stringify(this.descent)) : null, players: (this.players || []).map((p) => ({ name: p.name })), owner: Object.assign({}, this.owner || {}) };
   },
   restore(s) {
     this.chIdx = s.chIdx; this.gold = s.gold; this.items = Object.assign({}, s.items);
@@ -37,6 +37,7 @@ const GAME = {
     this.party.forEach((id) => { this.talents[id] = ((s.talents || {})[id] || []).slice(); this.gear[id] = ((s.gear || {})[id] || []).slice(); });
     this.stash = (s.stash || []).slice(); this.build = s.build ? JSON.parse(JSON.stringify(s.build)) : null;
     this.descent = s.descent ? JSON.parse(JSON.stringify(s.descent)) : null;
+    this.setPlayers(s.players, s.owner);
     // partidas guardadas antes del equipo con requisitos: las reliquias pasan a su héroe y las ganzúas a Sera
     if (!s.gear) {
       GEAR.forEach((it) => { if (s.upgrades && s.upgrades[it.id] && it.hero && this.gear[it.hero]) this.gear[it.hero].push(it.id); });
@@ -461,7 +462,7 @@ const GAME = {
     if (!resumed && (!this.boss || !this.boss.alive)) audio.setMusic(anyHostile ? 'combat' : 'explore');
     UI.banner(resumed ? `Ronda ${this.round}` : this.round === 1 ? 'Vuestro turno' : `Ronda ${this.round}`, resumed ? 'Seguís donde lo dejasteis' : anyHostile ? 'La Sombra os observa' : 'Explorad con cautela', 'hero');
     audio.sfx('turnHero');
-    const first = this.heroes.find((h) => !h.ended && !h.ko);
+    const first = this.isMulti() ? this.firstHeroForRound() : this.heroes.find((h) => !h.ended && !h.ko);
     if (!first) { await this.shadowPhase(); return; }
     this.selectHero(first, true);
     UI.refresh();
@@ -470,6 +471,8 @@ const GAME = {
   selectHero(h, auto) {
     if (!h || h.ko || h.ended || this.state !== 'play') return;
     if (this.active !== h) this.undo = null;
+    // mismo aparato: si el héroe es de otro jugador, se pide pasar el aparato
+    if (this.isMulti() && !this.tutorial && this.heroOwner(h.id) !== this.curPlayer) { this.curPlayer = this.heroOwner(h.id); UI.handoff(this.curPlayer, h); }
     this.active = h; this.mode = null; this.pending = null;
     WORLD.setSelection(h);
     if (SETTINGS.follow || !auto) ENGINE.focusTile(h.x, h.y);
@@ -486,7 +489,7 @@ const GAME = {
   async endTurn(h = this.active) {
     if (!h || this.busy || this.phase !== 'hero') return;
     h.ended = true; this.mode = null; this.undo = null;
-    const nxt = this.heroes.find((x) => !x.ended && !x.ko);
+    const nxt = (this.isMulti() && this.heroFor(this.curPlayer)) || this.heroes.find((x) => !x.ended && !x.ko);
     if (nxt) { this.selectHero(nxt); return; }
     await this.shadowPhase();
   },
@@ -1132,6 +1135,7 @@ const GAME = {
       audio.sfx('swing', { pan });
       const md = m.userData.model;
       await U.tween(170, (k) => { m.position.x = from.x + dir.x * 0.55 * U.easeIn(k); m.position.z = from.z + dir.z * 0.55 * U.easeIn(k); md.rotation.x = 0.2 * k; });
+      FX.slash(m.position, dir, att.side === 'hero' ? (att.color || '#fff2d0') : att.boss ? '#ff6a4a' : '#ffb0a0');
     }
     await diceP;
     // Determinación del atacante (héroe): repetir los dados fallados
@@ -1194,6 +1198,7 @@ const GAME = {
   },
   hitReact(u, dir) {
     const m = u.mesh; if (!m) return;
+    const mi = m.userData.mini; if (mi) { mi.uFlashCol.value.set('#fff1dc'); mi.uFlash.value = 1; }
     const md = m.userData.model;
     U.tween(260, (k) => { const s = Math.sin(k * Math.PI); md.position.x = dir.x * 0.18 * s; md.position.z = dir.z * 0.18 * s; md.rotation.z = -0.25 * s * (dir.x || 1); });
     const ring = m.userData.base.userData.ring;
@@ -1217,6 +1222,7 @@ const GAME = {
     if (u.ko) { u.ko = false; u.hp = 0; this.standUp(u); }
     const got = Math.min(n, u.maxHp - u.hp); u.hp += got;
     FX.burst('heal', u.mesh.position); audio.sfx('heal');
+    const mi = u.mesh && u.mesh.userData.mini; if (mi) { mi.uFlashCol.value.set('#8dffc0'); mi.uFlash.value = 0.8; }
     FX.text(new THREE.Vector3(u.mesh.position.x, 1.8, u.mesh.position.z), `+${got}`, 'heal');
     UI.refresh(); audio.heartbeat(this.heroes.some((h) => !h.ko && h.hp <= 2));
   },
@@ -1364,6 +1370,7 @@ const GAME = {
       UI.log(`${h.name} aprieta los dientes: el próximo golpe le hará ${si.absorb} de daño menos.`, 'good');
     } else if (s.id === 'hymn') {
       audio.sfx('levelUp', { vol: 0.7 }); ENGINE.flashLight(new THREE.Vector3(h.x * TILE, 1.6, h.y * TILE), '#ffd0e0', 3.5, 0.8);
+      FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#ffd0e0', si.radius * TILE + 1, 800);
       const allies = this.heroes.filter((a) => !a.ko && U.cheb(a.x, a.y, h.x, h.y) <= si.radius);
       for (const a of allies) { a.status.inspirado = 2; delete a.status.aterrado; FX.burst('heal', a.mesh.position); if (a.hp < a.maxHp) await this.heal(a, si.heal); FX.text(this.headPos(a), 'Inspirado', 'heal'); }
       UI.log(`${h.name} canta el Himno de batalla: ${allies.length} héroe${allies.length === 1 ? '' : 's'} inspirado${allies.length === 1 ? '' : 's'}.`, 'good');

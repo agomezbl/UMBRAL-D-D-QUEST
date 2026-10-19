@@ -38,6 +38,44 @@ const MAT = {
   }
 };
 
+/* Miniatura pintada: huecos más oscuros, pincel seco en lo alto, contraluz que
+   recorta la silueta y un destello al recibir un golpe o una curación. Cada figura
+   lleva sus propios valores (contraluz, destello); el programa es el mismo para todas. */
+const MINI = {
+  shared: { uUpView: { value: new THREE.Vector3(0, 1, 0) } },
+  cache: new WeakMap(),
+  uniforms(rimHex, rim) { return { uFlash: { value: 0 }, uFlashCol: { value: new THREE.Color('#fff1dc') }, uRimCol: { value: new THREE.Color(rimHex) }, uRim: { value: rim }, base: rim }; },
+  patch(mat, mu) {
+    const m = mat.clone();
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.uUpView = MINI.shared.uUpView; sh.uniforms.uFlash = mu.uFlash; sh.uniforms.uFlashCol = mu.uFlashCol; sh.uniforms.uRimCol = mu.uRimCol; sh.uniforms.uRim = mu.uRim;
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform vec3 uUpView; uniform float uFlash; uniform vec3 uFlashCol; uniform vec3 uRimCol; uniform float uRim;')
+        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+          {
+            float upd = dot(normal, uUpView);
+            float fres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
+            fres *= 1.0 - smoothstep(0.35, 0.9, abs(upd));
+            diffuseColor.rgb *= mix(0.68, 1.0, smoothstep(-0.55, 0.3, upd));
+            totalEmissiveRadiance += diffuseColor.rgb * smoothstep(0.6, 1.0, upd) * 0.1;
+            totalEmissiveRadiance += uRimCol * fres * uRim;
+            totalEmissiveRadiance += uFlashCol * uFlash * (0.3 + fres * 1.2);
+          }`);
+    };
+    m.customProgramCacheKey = () => 'umbral-mini';
+    return m;
+  },
+  apply(root, mu) {
+    root.traverse((o) => {
+      if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
+      const mt = o.material;
+      if (!mt.isMeshStandardMaterial || mt.transparent) return;
+      o.material = MINI.patch(mt, mu);
+    });
+  },
+  update(camera) { MINI.shared.uUpView.value.set(0, 1, 0).transformDirection(camera.matrixWorldInverse); }
+};
+
 const MODELS = (() => {
   const P = (parent, geo, mat, p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1], shadow = true) => {
     const m = new THREE.Mesh(geo, mat);
@@ -620,6 +658,116 @@ const MODELS = (() => {
     P(g, G.cyl(0.045, 0.035, 0.42, 8), MAT.std('#3b2618', 0.9), [0, 0.12, 0.35], [0.12, 0, 0]);
     return g;
   }
+  /* Une las piezas fijas de un adorno en una malla por material: muchas menos llamadas de dibujo */
+  function merged(g) {
+    g.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), groups = new Map();
+    g.traverse((o) => {
+      if (!o.isMesh || Array.isArray(o.material)) return;
+      const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+      if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
+      if (!groups.has(o.material)) groups.set(o.material, []);
+      groups.get(o.material).push(geo);
+    });
+    const out = new THREE.Group();
+    groups.forEach((geos, mat) => {
+      const n = geos.reduce((a, q) => a + q.attributes.position.count, 0);
+      const P = new Float32Array(n * 3), N = new Float32Array(n * 3), UV = new Float32Array(n * 2);
+      let off = 0;
+      geos.forEach((q) => { P.set(q.attributes.position.array, off * 3); N.set(q.attributes.normal.array, off * 3); UV.set(q.attributes.uv.array, off * 2); off += q.attributes.position.count; q.dispose(); });
+      const bg = new THREE.BufferGeometry();
+      bg.setAttribute('position', new THREE.BufferAttribute(P, 3)); bg.setAttribute('normal', new THREE.BufferAttribute(N, 3)); bg.setAttribute('uv', new THREE.BufferAttribute(UV, 2));
+      const m = new THREE.Mesh(bg, mat); m.userData.own = true; out.add(m);
+    });
+    out.userData = Object.assign({}, g.userData);
+    return out;
+  }
+  /* ----------------------- adornos de pared (la cara frontal mira a +z) ----------------------- */
+  function banner(color, emblem) {
+    const g = new THREE.Group(), iron = MAT.std('#2e2a26', 0.5, 0.8);
+    P(g, G.cyl(0.02, 0.02, 0.86, 6), iron, [0, 0.62, 0.08], [0, 0, Math.PI / 2]);
+    [-1, 1].forEach((sx) => P(g, G.sph(0.035, 8, 6), iron, [sx * 0.44, 0.62, 0.08]));
+    const geo = G.k('banner', [], () => {
+      const w = 0.66, h = 1.25, gg = new THREE.PlaneGeometry(w, h, 6, 10), pos = gg.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), y = pos.getY(i), t = (h / 2 - y) / h;
+        let yy = y; if (t > 0.92) yy = y + Math.abs(x) * 0.5 * (t - 0.92) * 10 - 0.08 * Math.abs(Math.sin(x * 20)); // cola en V raída
+        pos.setY(i, yy); pos.setZ(i, Math.sin(x * 6 + t * 2) * 0.025 + t * 0.04);
+      }
+      gg.translate(0, -h / 2, 0); gg.computeVertexNormals(); return gg;
+    });
+    P(g, geo, MAT.std(color, 0.9, 0, { side: THREE.DoubleSide }), [0, 0.62, 0.09]);
+    P(g, G.cyl(0.13, 0.13, 0.012, 20), MAT.std(emblem, 0.4, 0.7), [0, 0.12, 0.13], [Math.PI / 2, 0, 0]);
+    P(g, G.oct(0.07), MAT.std(emblem, 0.4, 0.7), [0, 0.12, 0.145], [0, 0, 0], [1, 1.4, 0.3]);
+    P(g, G.box(0.66, 0.04, 0.012), MAT.std(emblem, 0.4, 0.7), [0, 0.5, 0.1]);
+    return g;
+  }
+  function chains() {
+    const g = new THREE.Group(), iron = MAT.std('#3a3632', 0.45, 0.85);
+    P(g, G.box(0.5, 0.08, 0.06), iron, [0, 0.55, 0.03]);
+    [-0.18, 0.18].forEach((x, j) => {
+      const n = 6 + j * 2;
+      for (let k = 0; k < n; k++) P(g, G.tor(0.04, 0.011, 5, 10), iron, [x, 0.5 - k * 0.07, 0.06], [0, k % 2 ? Math.PI / 2 : 0, 0]);
+      P(g, G.tor(0.08, 0.016, 6, 16), iron, [x, 0.5 - n * 0.07 - 0.05, 0.07]);
+    });
+    return g;
+  }
+  function skullShelf(rnd) {
+    const g = new THREE.Group(), stone = MAT.std('#5e5a52', 0.85), bone = MAT.std('#d8cdb0', 0.7);
+    P(g, G.box(0.9, 0.07, 0.3), stone, [0, 0, 0.15]);
+    P(g, G.box(0.08, 0.14, 0.24), stone, [-0.36, -0.1, 0.12]); P(g, G.box(0.08, 0.14, 0.24), stone, [0.36, -0.1, 0.12]);
+    for (let k = 0; k < 3; k++) {
+      const x = -0.26 + k * 0.26 + (rnd() - 0.5) * 0.05, sk = grp(g, [x, 0.1, 0.17], [0, (rnd() - 0.5) * 0.8, 0]);
+      P(sk, G.sph(0.075, 10, 8), bone, [0, 0.02, 0], [0, 0, 0], [1, 1.05, 1.1]);
+      P(sk, G.box(0.08, 0.035, 0.07), bone, [0, -0.045, 0.02]);
+      P(sk, G.sph(0.02, 6, 4), MAT.std('#0a0908', 1), [-0.028, 0.02, 0.07]); P(sk, G.sph(0.02, 6, 4), MAT.std('#0a0908', 1), [0.028, 0.02, 0.07]);
+    }
+    return g;
+  }
+  function weaponRack() {
+    const g = new THREE.Group(), wood = MAT.std('#4a3020', 0.85), iron = MAT.std('#7c8088', 0.35, 0.85), red = MAT.std('#7a2a1e', 0.8);
+    P(g, G.cyl(0.32, 0.32, 0.05, 24), wood, [0, 0.2, 0.04], [Math.PI / 2, 0, 0]);
+    P(g, G.cyl(0.33, 0.33, 0.03, 24), iron, [0, 0.2, 0.02], [Math.PI / 2, 0, 0]);
+    P(g, G.cyl(0.1, 0.1, 0.03, 16), red, [0, 0.2, 0.075], [Math.PI / 2, 0, 0]);
+    [-1, 1].forEach((sx) => { const a = axe(grp(g, [sx * 0.05, -0.25, 0.1], [0, 0, sx * -0.65]), wood, iron, 0.9); void a; });
+    return g;
+  }
+  function pipes() {
+    const g = new THREE.Group(), cu = MAT.std('#a8602a', 0.4, 0.8), iron = MAT.std('#3a3632', 0.5, 0.8);
+    [-0.2, 0.05].forEach((x, j) => { P(g, G.cyl(0.06 - j * 0.015, 0.06 - j * 0.015, 2.1, 10), cu, [x, 0.0, 0.08]); for (let k = 0; k < 3; k++) P(g, G.cyl(0.075 - j * 0.015, 0.075 - j * 0.015, 0.05, 10), iron, [x, -0.7 + k * 0.7, 0.08]); });
+    P(g, G.cyl(0.04, 0.04, 0.25, 8), cu, [-0.08, 0.3, 0.08], [0, 0, Math.PI / 2]);
+    P(g, G.tor(0.08, 0.014, 6, 16), MAT.std('#7a1d1d', 0.6, 0.4), [0.05, -0.2, 0.17]);
+    return g;
+  }
+  function wallCrystals(color) {
+    const g = new THREE.Group(), m = MAT.std(color, 0.12, 0.2, { emissive: color, emissiveIntensity: 0.7, transparent: true, opacity: 0.88 });
+    P(g, G.dode(0.16), MAT.std('#221d2b', 0.9), [0, 0, 0.05]);
+    for (let k = 0; k < 5; k++) P(g, G.oct(0.09 + (k % 3) * 0.03), m, [Math.cos(k * 1.3) * 0.12, Math.sin(k * 1.3) * 0.12, 0.12], [k * 0.4 + 0.6, k, 0.3 * k], [0.55, 2.2 + (k % 2) * 0.6, 0.55]);
+    return g;
+  }
+  function runePanel(color) {
+    const g = new THREE.Group();
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: TEX.runeRing(5), color: new THREE.Color(color).multiplyScalar(1.4), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.7 }));
+    m.position.set(0, 0, 0.03); g.add(m); g.userData.spin = m;
+    return g;
+  }
+  /* Rayo de luz que cae de una grieta del techo (con su charco de luz en el suelo) */
+  function lightShaft(color) {
+    const g = new THREE.Group();
+    const geo = G.k('shaft', [], () => { const c = new THREE.CylinderGeometry(0.55, 1.05, 6.5, 20, 1, true); c.translate(0, 3.25, 0); return c; });
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uCol: { value: new THREE.Color(color) }, uA: { value: 0 }, uT: { value: 0 } },
+      vertexShader: 'varying float vY; varying vec3 vN; varying vec3 vV; void main(){ vY = position.y / 6.5; vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }',
+      fragmentShader: 'uniform vec3 uCol; uniform float uA; uniform float uT; varying float vY; varying vec3 vN; varying vec3 vV; void main(){ float edge = pow(abs(dot(vN, vV)), 1.6); float h = smoothstep(0.0, 0.25, vY) * (1.0 - smoothstep(0.55, 1.0, vY)); float fl = 0.85 + 0.15 * sin(uT * 1.3 + vY * 6.0); gl_FragColor = vec4(uCol * edge * h * fl * uA * 0.42, 1.0); }',
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+    });
+    const beam = new THREE.Mesh(geo, mat); beam.renderOrder = 6; g.add(beam);
+    const pool = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), new THREE.MeshBasicMaterial({ map: TEX.dot(), color: new THREE.Color(color).multiplyScalar(0.8), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+    pool.rotation.x = -Math.PI / 2; pool.position.y = 0.02; pool.renderOrder = 2; g.add(pool);
+    g.userData = { noRise: true, shaft: mat, pool };
+    return g;
+  }
   function sarcophagus() {
     const g = new THREE.Group(), st = MAT.std('#6b665c', 0.8), dark = MAT.std('#3a3732', 0.85);
     P(g, G.box(1.1, 0.7, 1.7), st, [0, 0.35, 0]);
@@ -782,5 +930,5 @@ const MODELS = (() => {
     if (kind !== 'reflection') mergeStatic(m);
     return m;
   }
-  return { build, base, door, chest, pillar, sconce, sarcophagus, anvil, brazier, crystals, mirror, bones, rubble, crate, altar, lectern, stairs, candles, campfire, bedroll, mirrorOf };
+  return { build, base, door, chest, pillar, sconce, merged, banner, chains, skullShelf, weaponRack, pipes, wallCrystals, runePanel, lightShaft, sarcophagus, anvil, brazier, crystals, mirror, bones, rubble, crate, altar, lectern, stairs, candles, campfire, bedroll, mirrorOf };
 })();

@@ -786,6 +786,47 @@ body.txt-enorme .hc-name small { display: none; }
   .pp-new { top: 6px; right: 40px; }
 }
 
+/* ------------------------------------------------ cooperativo en el mismo aparato */
+.pc0 { --pc: #e9b864; } .pc1 { --pc: #74cdaa; } .pc2 { --pc: #c0a8ff; }
+.card.players { width: min(760px, 100%); }
+.pl-n { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.pl-nb { font-family: var(--f-sc); letter-spacing: 0.05em; padding: 7px 14px; min-width: 44px; min-height: 40px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--bronze-dim); color: var(--bone); cursor: pointer; }
+.pl-nb.sel { border-color: var(--candle); color: var(--candle-hi); box-shadow: inset 0 0 14px rgba(233, 184, 100, 0.2); }
+.pl-names { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.pl-name { display: flex; flex-direction: column; gap: 4px; font-family: var(--f-sc); font-size: var(--t-xs); letter-spacing: 0.08em; color: var(--pc); }
+.pl-name input { font: inherit; font-family: var(--f-body); font-size: 17px; letter-spacing: 0; color: var(--bone); background: rgba(0, 0, 0, 0.4); border: 1px solid color-mix(in srgb, var(--pc) 55%, transparent); padding: 8px 10px; border-radius: 2px; min-height: 40px; }
+.pl-name input:focus { outline: 2px solid var(--pc); outline-offset: 1px; }
+.pl-heroes { display: flex; flex-direction: column; gap: 6px; }
+.pl-hero { display: grid; grid-template-columns: 40px minmax(70px, auto) minmax(0, 1fr); align-items: center; gap: 10px; padding: 6px 8px; background: rgba(0, 0, 0, 0.28); border: 1px solid var(--bronze-dim); }
+.pl-hero img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--hc); }
+.pl-hero b { font-family: var(--f-display); font-weight: 500; font-size: 21px; }
+.pl-who { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.pl-to { font-family: var(--f-sc); font-size: var(--t-xs); letter-spacing: 0.04em; padding: 6px 10px; min-height: 36px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: transparent; color: var(--ash); border: 1px solid var(--bronze-dim); cursor: pointer; }
+.pl-to.on { color: #15110d; background: var(--pc); border-color: var(--pc); }
+.pl-msg { flex: 1; align-self: center; font-size: var(--t-s); color: #ff9a86; }
+.pl-solo { color: var(--ash); margin: 0; display: flex; gap: 6px; align-items: center; }
+.df-players { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border: 1px solid var(--bronze-dim); background: rgba(0, 0, 0, 0.22); font-family: var(--f-sc); letter-spacing: 0.05em; font-size: var(--t-s); color: var(--ash); }
+.df-players > span:first-child { display: inline-flex; gap: 6px; align-items: center; }
+.df-players .ico { width: 15px; height: 15px; color: var(--candle); }
+.hc-owner { display: inline-block; font-style: normal; font-family: var(--f-sc); font-size: 10.5px; letter-spacing: 0.05em; color: #15110d; background: var(--pc); padding: 0 6px; margin-left: 6px; border-radius: 2px; max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: 1px; }
+.tal-col header .hc-owner { margin-left: auto; }
+.hc-owner .ow-ini { display: none; }
+.card.handoff { width: min(520px, 100%); text-align: center; align-items: center; border-color: var(--pc); box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.45), 0 0 40px color-mix(in srgb, var(--pc) 30%, transparent); }
+.card.handoff h2 { color: var(--pc); font-size: clamp(34px, 7vw, 52px); }
+.ho-heroes { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.ho-heroes span { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; font-family: var(--f-sc); letter-spacing: 0.04em; }
+.ho-heroes img { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--hc); }
+.ho-heroes span.done { opacity: 0.45; }
+.ho-heroes small { font-size: 10.5px; color: var(--ash); }
+.handoff-screen { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+@media (max-width: 820px) {
+  .pl-hero { grid-template-columns: 36px minmax(0, 1fr); }
+  .pl-who { grid-column: 1 / -1; justify-content: flex-start; }
+  .hero-card .hc-owner { max-width: none; width: 17px; height: 17px; padding: 0; border-radius: 50%; text-align: center; line-height: 17px; font-size: 11px; margin-left: 4px; }
+  .hero-card .hc-owner .ow-full { display: none; }
+  .hero-card .hc-owner .ow-ini { display: inline; }
+}
+
 </style>
 </head>
 <body>
@@ -3035,6 +3076,44 @@ const MAT = {
   }
 };
 
+/* Miniatura pintada: huecos más oscuros, pincel seco en lo alto, contraluz que
+   recorta la silueta y un destello al recibir un golpe o una curación. Cada figura
+   lleva sus propios valores (contraluz, destello); el programa es el mismo para todas. */
+const MINI = {
+  shared: { uUpView: { value: new THREE.Vector3(0, 1, 0) } },
+  cache: new WeakMap(),
+  uniforms(rimHex, rim) { return { uFlash: { value: 0 }, uFlashCol: { value: new THREE.Color('#fff1dc') }, uRimCol: { value: new THREE.Color(rimHex) }, uRim: { value: rim }, base: rim }; },
+  patch(mat, mu) {
+    const m = mat.clone();
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.uUpView = MINI.shared.uUpView; sh.uniforms.uFlash = mu.uFlash; sh.uniforms.uFlashCol = mu.uFlashCol; sh.uniforms.uRimCol = mu.uRimCol; sh.uniforms.uRim = mu.uRim;
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform vec3 uUpView; uniform float uFlash; uniform vec3 uFlashCol; uniform vec3 uRimCol; uniform float uRim;')
+        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+          {
+            float upd = dot(normal, uUpView);
+            float fres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
+            fres *= 1.0 - smoothstep(0.35, 0.9, abs(upd));
+            diffuseColor.rgb *= mix(0.68, 1.0, smoothstep(-0.55, 0.3, upd));
+            totalEmissiveRadiance += diffuseColor.rgb * smoothstep(0.6, 1.0, upd) * 0.1;
+            totalEmissiveRadiance += uRimCol * fres * uRim;
+            totalEmissiveRadiance += uFlashCol * uFlash * (0.3 + fres * 1.2);
+          }`);
+    };
+    m.customProgramCacheKey = () => 'umbral-mini';
+    return m;
+  },
+  apply(root, mu) {
+    root.traverse((o) => {
+      if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
+      const mt = o.material;
+      if (!mt.isMeshStandardMaterial || mt.transparent) return;
+      o.material = MINI.patch(mt, mu);
+    });
+  },
+  update(camera) { MINI.shared.uUpView.value.set(0, 1, 0).transformDirection(camera.matrixWorldInverse); }
+};
+
 const MODELS = (() => {
   const P = (parent, geo, mat, p = [0, 0, 0], r = [0, 0, 0], s = [1, 1, 1], shadow = true) => {
     const m = new THREE.Mesh(geo, mat);
@@ -3617,6 +3696,116 @@ const MODELS = (() => {
     P(g, G.cyl(0.045, 0.035, 0.42, 8), MAT.std('#3b2618', 0.9), [0, 0.12, 0.35], [0.12, 0, 0]);
     return g;
   }
+  /* Une las piezas fijas de un adorno en una malla por material: muchas menos llamadas de dibujo */
+  function merged(g) {
+    g.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), groups = new Map();
+    g.traverse((o) => {
+      if (!o.isMesh || Array.isArray(o.material)) return;
+      const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+      if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
+      if (!groups.has(o.material)) groups.set(o.material, []);
+      groups.get(o.material).push(geo);
+    });
+    const out = new THREE.Group();
+    groups.forEach((geos, mat) => {
+      const n = geos.reduce((a, q) => a + q.attributes.position.count, 0);
+      const P = new Float32Array(n * 3), N = new Float32Array(n * 3), UV = new Float32Array(n * 2);
+      let off = 0;
+      geos.forEach((q) => { P.set(q.attributes.position.array, off * 3); N.set(q.attributes.normal.array, off * 3); UV.set(q.attributes.uv.array, off * 2); off += q.attributes.position.count; q.dispose(); });
+      const bg = new THREE.BufferGeometry();
+      bg.setAttribute('position', new THREE.BufferAttribute(P, 3)); bg.setAttribute('normal', new THREE.BufferAttribute(N, 3)); bg.setAttribute('uv', new THREE.BufferAttribute(UV, 2));
+      const m = new THREE.Mesh(bg, mat); m.userData.own = true; out.add(m);
+    });
+    out.userData = Object.assign({}, g.userData);
+    return out;
+  }
+  /* ----------------------- adornos de pared (la cara frontal mira a +z) ----------------------- */
+  function banner(color, emblem) {
+    const g = new THREE.Group(), iron = MAT.std('#2e2a26', 0.5, 0.8);
+    P(g, G.cyl(0.02, 0.02, 0.86, 6), iron, [0, 0.62, 0.08], [0, 0, Math.PI / 2]);
+    [-1, 1].forEach((sx) => P(g, G.sph(0.035, 8, 6), iron, [sx * 0.44, 0.62, 0.08]));
+    const geo = G.k('banner', [], () => {
+      const w = 0.66, h = 1.25, gg = new THREE.PlaneGeometry(w, h, 6, 10), pos = gg.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), y = pos.getY(i), t = (h / 2 - y) / h;
+        let yy = y; if (t > 0.92) yy = y + Math.abs(x) * 0.5 * (t - 0.92) * 10 - 0.08 * Math.abs(Math.sin(x * 20)); // cola en V raída
+        pos.setY(i, yy); pos.setZ(i, Math.sin(x * 6 + t * 2) * 0.025 + t * 0.04);
+      }
+      gg.translate(0, -h / 2, 0); gg.computeVertexNormals(); return gg;
+    });
+    P(g, geo, MAT.std(color, 0.9, 0, { side: THREE.DoubleSide }), [0, 0.62, 0.09]);
+    P(g, G.cyl(0.13, 0.13, 0.012, 20), MAT.std(emblem, 0.4, 0.7), [0, 0.12, 0.13], [Math.PI / 2, 0, 0]);
+    P(g, G.oct(0.07), MAT.std(emblem, 0.4, 0.7), [0, 0.12, 0.145], [0, 0, 0], [1, 1.4, 0.3]);
+    P(g, G.box(0.66, 0.04, 0.012), MAT.std(emblem, 0.4, 0.7), [0, 0.5, 0.1]);
+    return g;
+  }
+  function chains() {
+    const g = new THREE.Group(), iron = MAT.std('#3a3632', 0.45, 0.85);
+    P(g, G.box(0.5, 0.08, 0.06), iron, [0, 0.55, 0.03]);
+    [-0.18, 0.18].forEach((x, j) => {
+      const n = 6 + j * 2;
+      for (let k = 0; k < n; k++) P(g, G.tor(0.04, 0.011, 5, 10), iron, [x, 0.5 - k * 0.07, 0.06], [0, k % 2 ? Math.PI / 2 : 0, 0]);
+      P(g, G.tor(0.08, 0.016, 6, 16), iron, [x, 0.5 - n * 0.07 - 0.05, 0.07]);
+    });
+    return g;
+  }
+  function skullShelf(rnd) {
+    const g = new THREE.Group(), stone = MAT.std('#5e5a52', 0.85), bone = MAT.std('#d8cdb0', 0.7);
+    P(g, G.box(0.9, 0.07, 0.3), stone, [0, 0, 0.15]);
+    P(g, G.box(0.08, 0.14, 0.24), stone, [-0.36, -0.1, 0.12]); P(g, G.box(0.08, 0.14, 0.24), stone, [0.36, -0.1, 0.12]);
+    for (let k = 0; k < 3; k++) {
+      const x = -0.26 + k * 0.26 + (rnd() - 0.5) * 0.05, sk = grp(g, [x, 0.1, 0.17], [0, (rnd() - 0.5) * 0.8, 0]);
+      P(sk, G.sph(0.075, 10, 8), bone, [0, 0.02, 0], [0, 0, 0], [1, 1.05, 1.1]);
+      P(sk, G.box(0.08, 0.035, 0.07), bone, [0, -0.045, 0.02]);
+      P(sk, G.sph(0.02, 6, 4), MAT.std('#0a0908', 1), [-0.028, 0.02, 0.07]); P(sk, G.sph(0.02, 6, 4), MAT.std('#0a0908', 1), [0.028, 0.02, 0.07]);
+    }
+    return g;
+  }
+  function weaponRack() {
+    const g = new THREE.Group(), wood = MAT.std('#4a3020', 0.85), iron = MAT.std('#7c8088', 0.35, 0.85), red = MAT.std('#7a2a1e', 0.8);
+    P(g, G.cyl(0.32, 0.32, 0.05, 24), wood, [0, 0.2, 0.04], [Math.PI / 2, 0, 0]);
+    P(g, G.cyl(0.33, 0.33, 0.03, 24), iron, [0, 0.2, 0.02], [Math.PI / 2, 0, 0]);
+    P(g, G.cyl(0.1, 0.1, 0.03, 16), red, [0, 0.2, 0.075], [Math.PI / 2, 0, 0]);
+    [-1, 1].forEach((sx) => { const a = axe(grp(g, [sx * 0.05, -0.25, 0.1], [0, 0, sx * -0.65]), wood, iron, 0.9); void a; });
+    return g;
+  }
+  function pipes() {
+    const g = new THREE.Group(), cu = MAT.std('#a8602a', 0.4, 0.8), iron = MAT.std('#3a3632', 0.5, 0.8);
+    [-0.2, 0.05].forEach((x, j) => { P(g, G.cyl(0.06 - j * 0.015, 0.06 - j * 0.015, 2.1, 10), cu, [x, 0.0, 0.08]); for (let k = 0; k < 3; k++) P(g, G.cyl(0.075 - j * 0.015, 0.075 - j * 0.015, 0.05, 10), iron, [x, -0.7 + k * 0.7, 0.08]); });
+    P(g, G.cyl(0.04, 0.04, 0.25, 8), cu, [-0.08, 0.3, 0.08], [0, 0, Math.PI / 2]);
+    P(g, G.tor(0.08, 0.014, 6, 16), MAT.std('#7a1d1d', 0.6, 0.4), [0.05, -0.2, 0.17]);
+    return g;
+  }
+  function wallCrystals(color) {
+    const g = new THREE.Group(), m = MAT.std(color, 0.12, 0.2, { emissive: color, emissiveIntensity: 0.7, transparent: true, opacity: 0.88 });
+    P(g, G.dode(0.16), MAT.std('#221d2b', 0.9), [0, 0, 0.05]);
+    for (let k = 0; k < 5; k++) P(g, G.oct(0.09 + (k % 3) * 0.03), m, [Math.cos(k * 1.3) * 0.12, Math.sin(k * 1.3) * 0.12, 0.12], [k * 0.4 + 0.6, k, 0.3 * k], [0.55, 2.2 + (k % 2) * 0.6, 0.55]);
+    return g;
+  }
+  function runePanel(color) {
+    const g = new THREE.Group();
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: TEX.runeRing(5), color: new THREE.Color(color).multiplyScalar(1.4), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.7 }));
+    m.position.set(0, 0, 0.03); g.add(m); g.userData.spin = m;
+    return g;
+  }
+  /* Rayo de luz que cae de una grieta del techo (con su charco de luz en el suelo) */
+  function lightShaft(color) {
+    const g = new THREE.Group();
+    const geo = G.k('shaft', [], () => { const c = new THREE.CylinderGeometry(0.55, 1.05, 6.5, 20, 1, true); c.translate(0, 3.25, 0); return c; });
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uCol: { value: new THREE.Color(color) }, uA: { value: 0 }, uT: { value: 0 } },
+      vertexShader: 'varying float vY; varying vec3 vN; varying vec3 vV; void main(){ vY = position.y / 6.5; vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }',
+      fragmentShader: 'uniform vec3 uCol; uniform float uA; uniform float uT; varying float vY; varying vec3 vN; varying vec3 vV; void main(){ float edge = pow(abs(dot(vN, vV)), 1.6); float h = smoothstep(0.0, 0.25, vY) * (1.0 - smoothstep(0.55, 1.0, vY)); float fl = 0.85 + 0.15 * sin(uT * 1.3 + vY * 6.0); gl_FragColor = vec4(uCol * edge * h * fl * uA * 0.42, 1.0); }',
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+    });
+    const beam = new THREE.Mesh(geo, mat); beam.renderOrder = 6; g.add(beam);
+    const pool = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), new THREE.MeshBasicMaterial({ map: TEX.dot(), color: new THREE.Color(color).multiplyScalar(0.8), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+    pool.rotation.x = -Math.PI / 2; pool.position.y = 0.02; pool.renderOrder = 2; g.add(pool);
+    g.userData = { noRise: true, shaft: mat, pool };
+    return g;
+  }
   function sarcophagus() {
     const g = new THREE.Group(), st = MAT.std('#6b665c', 0.8), dark = MAT.std('#3a3732', 0.85);
     P(g, G.box(1.1, 0.7, 1.7), st, [0, 0.35, 0]);
@@ -3779,7 +3968,7 @@ const MODELS = (() => {
     if (kind !== 'reflection') mergeStatic(m);
     return m;
   }
-  return { build, base, door, chest, pillar, sconce, sarcophagus, anvil, brazier, crystals, mirror, bones, rubble, crate, altar, lectern, stairs, candles, campfire, bedroll, mirrorOf };
+  return { build, base, door, chest, pillar, sconce, merged, banner, chains, skullShelf, weaponRack, pipes, wallCrystals, runePanel, lightShaft, sarcophagus, anvil, brazier, crystals, mirror, bones, rubble, crate, altar, lectern, stairs, candles, campfire, bedroll, mirrorOf };
 })();
 
 /* ==========================================================================
@@ -4152,7 +4341,7 @@ const WORLD = {
       ENGINE.scene.remove(this.group);
       this.group.traverse((o) => { if (o.isInstancedMesh) o.dispose(); if (o.geometry && o.userData.own) o.geometry.dispose(); });
     }
-    this.group = null; this.L = null; this.anims = []; this.dyn = []; this.flames = []; this.liquids = []; this.mists = []; this.exitGlow = null;
+    this.group = null; this.L = null; this.anims = []; this.dyn = []; this.flames = []; this.liquids = []; this.mists = []; this.exitGlow = null; this.shafts = []; this.runePanels = [];
     ENGINE.clearLights();
   },
 
@@ -4309,8 +4498,11 @@ const WORLD = {
       }
     });
 
-    // --- antorchas automáticas en los muros ---
+    // --- antorchas automáticas en los muros, adornos y rayos de luz ---
     L.rooms.forEach((room) => this.placeTorches(room, theme, rnd));
+    this.runePanels = [];
+    L.rooms.forEach((room) => this.placeDecor(room, theme, rnd));
+    this.placeShafts(theme, rnd);
 
     // --- telarañas en esquinas (cripta) ---
     if (theme.id === 'crypt') this.addWebs(rnd);
@@ -4412,6 +4604,7 @@ const WORLD = {
       if (chosen.some((q) => U.cheb(q.t.x, q.t.y, c.t.x, c.t.y) < 3)) continue;
       chosen.push(c);
     }
+    room.wallUsed = chosen.slice();
     chosen.forEach((c) => {
       const fx = c.t.x * TILE + c.dx * (TILE / 2), fz = c.t.y * TILE + c.dy * (TILE / 2);
       const s = MODELS.sconce();
@@ -4421,6 +4614,61 @@ const WORLD = {
       const flame = this.addFlame(fx - c.dx * 0.4, 1.92, fz - c.dy * 0.4, 0.42, 0.62, theme.flameA, theme.flameB, null);
       const src = ENGINE.addLightSource({ pos: new THREE.Vector3(fx - c.dx * 0.75, 2.05, fz - c.dy * 0.75), color: new THREE.Color(theme.torch), intensity: 3.2, distance: 12, flicker: true, on: false, flame });
       room.torches.push(src);
+    });
+  },
+  /* Adornos de pared según el lugar: estandartes, cadenas, osarios, armas, tuberías, cristales y runas */
+  placeDecor(room, theme, rnd) {
+    const T = this.L.T, cands = [], used = room.wallUsed || [];
+    room.tiles.forEach((t) => {
+      if (t.ch !== '.' && t.ch !== ',' && !/[0-9]/.test(t.ch)) return;
+      [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([dx, dy]) => {
+        const n = T[t.y + dy] && T[t.y + dy][t.x + dx];
+        if (!n || !n.wall) return;
+        // no al lado de una puerta (la hoja barre la pared)
+        const side = [[dy, dx], [-dy, -dx]].some(([sx, sy]) => { const q = T[t.y + sy] && T[t.y + sy][t.x + sx]; const w = T[t.y + sy + dy] && T[t.y + sy + dy][t.x + sx + dx]; return (q && q.door) || (w && w.door); });
+        if (!side) cands.push({ t, dx, dy });
+      });
+    });
+    const want = Math.min(ENGINE.q && ENGINE.q.lights <= 3 ? 2 : 3, Math.max(1, Math.round(room.tiles.length / 12)));
+    const kinds = theme.id === 'crypt' ? ['banner', 'skulls', 'chains', 'skulls', 'banner'] : theme.id === 'forge' ? ['rack', 'pipes', 'banner', 'chains', 'pipes'] : ['crystals', 'runes', 'crystals', 'banner'];
+    const chosen = [];
+    for (let i = 0; i < cands.length * 2 && chosen.length < want; i++) {
+      const c = cands[Math.floor(rnd() * cands.length)];
+      if (used.concat(chosen).some((q) => U.cheb(q.t.x, q.t.y, c.t.x, c.t.y) < 2)) continue;
+      chosen.push(c);
+    }
+    const bannerCol = theme.id === 'crypt' ? ['#5a1a22', '#c9a24a'] : theme.id === 'forge' ? ['#2a2a30', '#c26a2e'] : ['#2a1d4a', '#b9a2ff'];
+    chosen.forEach((c) => {
+      const kind = kinds[Math.floor(rnd() * kinds.length)];
+      let m, y = 1.1;
+      if (kind === 'banner') { m = MODELS.banner(bannerCol[0], bannerCol[1]); y = 1.35; }
+      else if (kind === 'skulls') { m = MODELS.skullShelf(rnd); y = 1.05; }
+      else if (kind === 'chains') { m = MODELS.chains(); y = 1.45; }
+      else if (kind === 'rack') { m = MODELS.weaponRack(); y = 1.2; }
+      else if (kind === 'pipes') { m = MODELS.pipes(); y = 1.05; }
+      else if (kind === 'crystals') { m = MODELS.wallCrystals(rnd() < 0.5 ? '#b98cff' : '#7fc8ff'); y = 0.9 + rnd() * 0.8; }
+      else { m = MODELS.runePanel('#b98cff'); y = 1.3; this.runePanels = (this.runePanels || []).concat(m); }
+      if (kind !== 'runes') m = MODELS.merged(m);
+      m.position.set(c.t.x * TILE + c.dx * (TILE / 2 - 0.06), y, c.t.y * TILE + c.dy * (TILE / 2 - 0.06));
+      m.rotation.y = Math.atan2(-c.dx, -c.dy);
+      m.traverse((o) => { if (o.isMesh && !(o.material && o.material.transparent)) { o.castShadow = true; o.receiveShadow = true; } });
+      m.visible = false; this.group.add(m); room.props.push(m);
+    });
+  },
+  /* Rayos de luz: en algunas salas grandes, solo con calidad media o alta */
+  placeShafts(theme, rnd) {
+    this.shafts = [];
+    if (!ENGINE.q || !ENGINE.q.mist) return;
+    const col = theme.id === 'crypt' ? '#cfe0ff' : theme.id === 'forge' ? '#ffb070' : '#c8b0ff';
+    this.L.rooms.forEach((room) => {
+      if (room.tiles.length < 16 || rnd() > 0.4) return;
+      const inner = room.tiles.filter((t) => t.ch === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].every(([dx, dy]) => { const n = this.L.T[t.y + dy] && this.L.T[t.y + dy][t.x + dx]; return n && n.floor; }));
+      if (!inner.length) return;
+      const t = inner[Math.floor(rnd() * inner.length)];
+      const m = MODELS.lightShaft(col);
+      m.position.set(t.x * TILE, 0, t.y * TILE); m.rotation.z = (rnd() - 0.5) * 0.18; m.rotation.x = (rnd() - 0.5) * 0.18;
+      m.visible = false; this.group.add(m); room.props.push(m);
+      this.shafts.push(m);
     });
   },
   addWebs(rnd) {
@@ -4589,8 +4837,10 @@ const WORLD = {
     sil.position.y = h / 2 + 0.1; sil.renderOrder = 3; root.add(sil);
     model.traverse((o) => { if (o.isMesh) o.renderOrder = o.material && o.material.transparent ? 10 : 4; });
     base.traverse((o) => { if (o.isMesh) { o.renderOrder = 4; o.castShadow = true; o.receiveShadow = true; } });
-    model.userData.fig.userData.baseY = model.userData.fig.position.y;
-    root.userData = { model, base, fig: model.userData.fig, height: h, phase: Math.random() * 10, sil, float: model.userData.float || 0, rim };
+    model.userData.fig.userData.baseY = model.userData.fig.position.y; model.userData.fig.userData.baseS = model.userData.fig.scale.y;
+    const mini = MINI.uniforms(isHero ? '#ffd9a8' : u.side === 'npc' ? '#9fe0ff' : u.boss ? '#ff7a5a' : '#a8bcff', isHero ? 0.3 : 0.24);
+    MINI.apply(model, mini);
+    root.userData = { model, base, fig: model.userData.fig, height: h, phase: Math.random() * 10, sil, float: model.userData.float || 0, rim, mini };
     root.position.set(u.x * TILE, 0, u.y * TILE);
     root.rotation.y = opts.face != null ? opts.face : 0;
     this.units.add(root);
@@ -4660,6 +4910,7 @@ const WORLD = {
   /* ----------------- bucle ----------------- */
   update(dt) {
     if (!this.group) return;
+    MINI.update(ENGINE.camera);
     const now = ENGINE.time, m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), yAxis = new THREE.Vector3(0, 1, 0);
     // animaciones de revelado de instancias
     if (this.anims.length) {
@@ -4694,6 +4945,8 @@ const WORLD = {
       this.tgtRing.rotation.z = -now * 0.8; const sc = 1 + Math.sin(now * 6) * 0.05; this.tgtRing.scale.set(sc, sc, sc);
     }
     if (this.hl) this.hl.material.opacity = 0.75 + Math.sin(now * 3) * 0.2;
+    (this.shafts || []).forEach((sh) => { if (!sh.visible) return; const u = sh.userData.shaft.uniforms; u.uT.value = now; if (u.uA.value < 1) u.uA.value = Math.min(1, u.uA.value + dt * 0.5); sh.userData.pool.material.opacity = 0.55 * u.uA.value; });
+    (this.runePanels || []).forEach((rp) => { if (rp.visible) { rp.userData.spin.rotation.z = now * 0.25; rp.userData.spin.material.opacity = 0.5 + Math.sin(now * 1.5) * 0.2; } });
     if (this.exitGlow && this.exitGlow.visible) { this.exitGlow.rotation.z = now * 0.5; this.exitGlow.material.opacity = 0.32 + Math.sin(now * 2.2) * 0.18; }
     if (this.dangerI && this.dangerI.count) { this.dangerI.material.opacity = 0.6 + Math.sin(now * 8) * 0.4; }
     // puertas: luz que se filtra
@@ -4717,6 +4970,13 @@ const WORLD = {
         const by = fig.userData.baseY || 0;
         fig.position.y = by + (fl ? Math.sin(now * 1.6 + ph) * 0.08 : Math.abs(Math.sin(now * 1.1 + ph)) * 0.012);
         fig.rotation.z = Math.sin(now * 0.9 + ph) * 0.015;
+        fig.scale.y = (fig.userData.baseS || 1) * (1 + Math.sin(now * 1.7 + ph) * 0.012); // respiración
+      }
+      const mi = ud.mini;
+      if (mi) {
+        if (mi.uFlash.value > 0) mi.uFlash.value = Math.max(0, mi.uFlash.value - dt * 4.5);
+        const act = typeof GAME !== 'undefined' && GAME.active && GAME.active.mesh === r && GAME.phase === 'hero';
+        mi.uRim.value = act ? mi.base * 1.9 + Math.sin(now * 3) * 0.08 : mi.base;
       }
       if (md.cape) md.cape.rotation.x = 0.12 + Math.sin(now * 1.7 + ph) * 0.07;
       if (md.orbs) md.orbs.rotation.y = now * 1.2;
@@ -4840,8 +5100,21 @@ const FX = {
     if (GAME && GAME.enemies) GAME.enemies.forEach((e) => { if (e.alive && e.mesh && e.mesh.visible && e.kind === 'ignis') this.emit({ pos: { x: e.mesh.position.x, y: 1.6, z: e.mesh.position.z }, count: 2, spread: 0.6, vel: { x: 0, y: 1.2, z: 0 }, velSpread: 0.4, life: 1.4, size: 0.1, color: '#ffcf6b', color2: '#ff3a10', drag: 0.3 }); });
   },
 
+  /* Onda en el suelo para golpes de área, escudos y conjuros */
+  ringGeo: null,
+  ring(pos, color, radius = 2, dur = 520) {
+    if (U.instant || (ENGINE.q && ENGINE.q.particles < 0.3)) return;
+    if (!this.ringGeo) this.ringGeo = new THREE.RingGeometry(0.82, 1, 48);
+    const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.9, side: THREE.DoubleSide });
+    const m = new THREE.Mesh(this.ringGeo, mat); m.rotation.x = -Math.PI / 2; m.position.set(pos.x, 0.06, pos.z); m.renderOrder = 19; ENGINE.scene.add(m);
+    U.tween(dur, (k) => { const r = 0.25 + (radius - 0.25) * U.easeOut(k); m.scale.set(r, r, r); mat.opacity = 0.9 * (1 - k); }).then(() => { ENGINE.scene.remove(m); mat.dispose(); });
+  },
   burst(kind, pos, o = {}) {
     const P = { x: pos.x, y: pos.y != null ? pos.y : 1, z: pos.z };
+    if (kind === 'explode') this.ring(P, '#ffb060', 3.2);
+    else if (kind === 'shield') this.ring(P, '#ffe0a0', 1.5, 600);
+    else if (kind === 'summon') this.ring(P, o.color || '#9dffcf', 1.6, 700);
+    else if (kind === 'heal') this.ring(P, '#9dffc8', 1.1, 600);
     switch (kind) {
       case 'hit': this.emit({ pos: P, count: 22, spread: 0.15, radial: 3.2, up: 2.4, gravity: 6, life: 0.6, size: 0.11, color: '#ffb36b', color2: '#ff3d1e', drag: 2 }); break;
       case 'blood': this.emit({ pos: P, count: 14, spread: 0.15, radial: 2.4, up: 2, gravity: 8, life: 0.7, size: 0.1, color: '#b0101a', color2: '#5a0008', drag: 1.5 }); break;
@@ -4861,6 +5134,34 @@ const FX = {
       case 'glass': this.emit({ pos: P, count: 40, spread: 0.5, radial: 3, up: 2, gravity: 6, life: 1.0, size: 0.12, color: '#e8e0ff', color2: '#7a5aff', drag: 1 }); break;
       case 'reveal': this.emit({ pos: { x: P.x, y: 0.1, z: P.z }, count: 30, spread: 1.6, spreadY: 0.1, vel: { x: 0, y: 1.2, z: 0 }, velSpread: 0.4, life: 1.6, size: 0.12, color: o.color || '#ffd27a', color2: '#ff7a2a', drag: 0.7 }); break;
     }
+  },
+
+  /* Tajo: un arco de luz que barre delante del atacante en los golpes cuerpo a cuerpo */
+  slashGeo: null,
+  slash(pos, dir, color = '#fff2d0', dur = 240) {
+    if (U.instant) return;
+    if (!this.slashGeo) {
+      const N = 20, r1 = 0.5, r2 = 1.05, arc = 2.3, P = [], T = [], R = [], I = [];
+      for (let i = 0; i <= N; i++) {
+        const a = -arc / 2 + (arc * i) / N, t = i / N;
+        P.push(Math.sin(a) * r1, 0, Math.cos(a) * r1, Math.sin(a) * r2, 0, Math.cos(a) * r2); T.push(t, t); R.push(0, 1);
+        if (i < N) { const k = i * 2; I.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aT', new THREE.Float32BufferAttribute(T, 1)); g.setAttribute('aR', new THREE.Float32BufferAttribute(R, 1)); g.setIndex(I);
+      this.slashGeo = g;
+    }
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uCol: { value: new THREE.Color(color).lerp(new THREE.Color('#ffffff'), 0.45) }, uK: { value: 0 } },
+      vertexShader: 'attribute float aT; attribute float aR; varying float vT; varying float vR; void main(){ vT = aT; vR = aR; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform vec3 uCol; uniform float uK; varying float vT; varying float vR; void main(){ float head = mix(0.25, 1.15, uK); float a = smoothstep(head - 0.75, head, vT) * (1.0 - smoothstep(head, head + 0.04, vT)); a *= smoothstep(0.0, 0.55, vR) * (1.0 - smoothstep(0.75, 1.0, vR)); a *= 1.0 - smoothstep(0.6, 1.0, uK); gl_FragColor = vec4(uCol * a * 1.6, 1.0); }',
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+    });
+    const holder = new THREE.Group(), mesh = new THREE.Mesh(this.slashGeo, mat);
+    holder.position.set(pos.x, 1.05, pos.z); holder.rotation.y = Math.atan2(dir.x, dir.z);
+    const tilt = (Math.random() < 0.5 ? -1 : 1) * (0.35 + Math.random() * 0.35);
+    mesh.rotation.z = tilt; mesh.renderOrder = 21; holder.add(mesh); ENGINE.scene.add(holder);
+    U.tween(dur, (k) => { mat.uniforms.uK.value = k; mesh.rotation.y = -0.5 + k * 0.9; }).then(() => { ENGINE.scene.remove(holder); mat.dispose(); });
   },
 
   /* proyectiles con estela y luz propia */
@@ -6016,7 +6317,7 @@ const GAME = {
   /* ------------------------------------------------------------ partida */
   setDifficulty(d) { this.difficulty = DIFFICULTY[d] ? d : 'heroe'; this.D = DIFFICULTY[this.difficulty]; window.GAME_DIFF = this.difficulty; },
   newGame(difficulty, build, party) {
-    this.setDifficulty(difficulty); this.descent = null;
+    this.setDifficulty(difficulty); this.descent = null; this.players = [{ name: 'Jugador 1' }]; this.owner = {}; this.curPlayer = -1;
     this.party = party && party.length === 3 ? party.slice() : HERO_IDS.slice();
     this.gold = 60; this.items = { potion: this.D.potions, elixir: 0, bomb: 1 }; this.flags = {};
     this.gear = {}; this.stash = []; this.talents = {};
@@ -6025,7 +6326,7 @@ const GAME = {
     this.stats = this.newStats();
   },
   snapshot(stage) {
-    return { v: 2, stage, chIdx: this.chIdx, gold: this.gold, items: Object.assign({}, this.items), party: this.party.slice(), gear: JSON.parse(JSON.stringify(this.gear || {})), stash: (this.stash || []).slice(), flags: JSON.parse(JSON.stringify(this.flags)), difficulty: this.difficulty, stats: Object.assign({}, this.stats), talents: JSON.parse(JSON.stringify(this.talents)), build: this.build ? JSON.parse(JSON.stringify(this.build)) : null, descent: this.descent ? JSON.parse(JSON.stringify(this.descent)) : null };
+    return { v: 2, stage, chIdx: this.chIdx, gold: this.gold, items: Object.assign({}, this.items), party: this.party.slice(), gear: JSON.parse(JSON.stringify(this.gear || {})), stash: (this.stash || []).slice(), flags: JSON.parse(JSON.stringify(this.flags)), difficulty: this.difficulty, stats: Object.assign({}, this.stats), talents: JSON.parse(JSON.stringify(this.talents)), build: this.build ? JSON.parse(JSON.stringify(this.build)) : null, descent: this.descent ? JSON.parse(JSON.stringify(this.descent)) : null, players: (this.players || []).map((p) => ({ name: p.name })), owner: Object.assign({}, this.owner || {}) };
   },
   restore(s) {
     this.chIdx = s.chIdx; this.gold = s.gold; this.items = Object.assign({}, s.items);
@@ -6035,6 +6336,7 @@ const GAME = {
     this.party.forEach((id) => { this.talents[id] = ((s.talents || {})[id] || []).slice(); this.gear[id] = ((s.gear || {})[id] || []).slice(); });
     this.stash = (s.stash || []).slice(); this.build = s.build ? JSON.parse(JSON.stringify(s.build)) : null;
     this.descent = s.descent ? JSON.parse(JSON.stringify(s.descent)) : null;
+    this.setPlayers(s.players, s.owner);
     // partidas guardadas antes del equipo con requisitos: las reliquias pasan a su héroe y las ganzúas a Sera
     if (!s.gear) {
       GEAR.forEach((it) => { if (s.upgrades && s.upgrades[it.id] && it.hero && this.gear[it.hero]) this.gear[it.hero].push(it.id); });
@@ -6459,7 +6761,7 @@ const GAME = {
     if (!resumed && (!this.boss || !this.boss.alive)) audio.setMusic(anyHostile ? 'combat' : 'explore');
     UI.banner(resumed ? `Ronda ${this.round}` : this.round === 1 ? 'Vuestro turno' : `Ronda ${this.round}`, resumed ? 'Seguís donde lo dejasteis' : anyHostile ? 'La Sombra os observa' : 'Explorad con cautela', 'hero');
     audio.sfx('turnHero');
-    const first = this.heroes.find((h) => !h.ended && !h.ko);
+    const first = this.isMulti() ? this.firstHeroForRound() : this.heroes.find((h) => !h.ended && !h.ko);
     if (!first) { await this.shadowPhase(); return; }
     this.selectHero(first, true);
     UI.refresh();
@@ -6468,6 +6770,8 @@ const GAME = {
   selectHero(h, auto) {
     if (!h || h.ko || h.ended || this.state !== 'play') return;
     if (this.active !== h) this.undo = null;
+    // mismo aparato: si el héroe es de otro jugador, se pide pasar el aparato
+    if (this.isMulti() && !this.tutorial && this.heroOwner(h.id) !== this.curPlayer) { this.curPlayer = this.heroOwner(h.id); UI.handoff(this.curPlayer, h); }
     this.active = h; this.mode = null; this.pending = null;
     WORLD.setSelection(h);
     if (SETTINGS.follow || !auto) ENGINE.focusTile(h.x, h.y);
@@ -6484,7 +6788,7 @@ const GAME = {
   async endTurn(h = this.active) {
     if (!h || this.busy || this.phase !== 'hero') return;
     h.ended = true; this.mode = null; this.undo = null;
-    const nxt = this.heroes.find((x) => !x.ended && !x.ko);
+    const nxt = (this.isMulti() && this.heroFor(this.curPlayer)) || this.heroes.find((x) => !x.ended && !x.ko);
     if (nxt) { this.selectHero(nxt); return; }
     await this.shadowPhase();
   },
@@ -7130,6 +7434,7 @@ const GAME = {
       audio.sfx('swing', { pan });
       const md = m.userData.model;
       await U.tween(170, (k) => { m.position.x = from.x + dir.x * 0.55 * U.easeIn(k); m.position.z = from.z + dir.z * 0.55 * U.easeIn(k); md.rotation.x = 0.2 * k; });
+      FX.slash(m.position, dir, att.side === 'hero' ? (att.color || '#fff2d0') : att.boss ? '#ff6a4a' : '#ffb0a0');
     }
     await diceP;
     // Determinación del atacante (héroe): repetir los dados fallados
@@ -7192,6 +7497,7 @@ const GAME = {
   },
   hitReact(u, dir) {
     const m = u.mesh; if (!m) return;
+    const mi = m.userData.mini; if (mi) { mi.uFlashCol.value.set('#fff1dc'); mi.uFlash.value = 1; }
     const md = m.userData.model;
     U.tween(260, (k) => { const s = Math.sin(k * Math.PI); md.position.x = dir.x * 0.18 * s; md.position.z = dir.z * 0.18 * s; md.rotation.z = -0.25 * s * (dir.x || 1); });
     const ring = m.userData.base.userData.ring;
@@ -7215,6 +7521,7 @@ const GAME = {
     if (u.ko) { u.ko = false; u.hp = 0; this.standUp(u); }
     const got = Math.min(n, u.maxHp - u.hp); u.hp += got;
     FX.burst('heal', u.mesh.position); audio.sfx('heal');
+    const mi = u.mesh && u.mesh.userData.mini; if (mi) { mi.uFlashCol.value.set('#8dffc0'); mi.uFlash.value = 0.8; }
     FX.text(new THREE.Vector3(u.mesh.position.x, 1.8, u.mesh.position.z), `+${got}`, 'heal');
     UI.refresh(); audio.heartbeat(this.heroes.some((h) => !h.ko && h.hp <= 2));
   },
@@ -7362,6 +7669,7 @@ const GAME = {
       UI.log(`${h.name} aprieta los dientes: el próximo golpe le hará ${si.absorb} de daño menos.`, 'good');
     } else if (s.id === 'hymn') {
       audio.sfx('levelUp', { vol: 0.7 }); ENGINE.flashLight(new THREE.Vector3(h.x * TILE, 1.6, h.y * TILE), '#ffd0e0', 3.5, 0.8);
+      FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#ffd0e0', si.radius * TILE + 1, 800);
       const allies = this.heroes.filter((a) => !a.ko && U.cheb(a.x, a.y, h.x, h.y) <= si.radius);
       for (const a of allies) { a.status.inspirado = 2; delete a.status.aterrado; FX.burst('heal', a.mesh.position); if (a.hp < a.maxHp) await this.heal(a, si.heal); FX.text(this.headPos(a), 'Inspirado', 'heal'); }
       UI.log(`${h.name} canta el Himno de batalla: ${allies.length} héroe${allies.length === 1 ? '' : 's'} inspirado${allies.length === 1 ? '' : 's'}.`, 'good');
@@ -8084,8 +8392,9 @@ Object.assign(GAME, {
     return true;
   },
 
-  async startDescent(difficulty, party, build) {
+  async startDescent(difficulty, party, build, mp) {
     this.newGame(difficulty, build, party);
+    if (mp) this.setPlayers(mp.players, mp.owner);
     this.descent = { seed: (Math.random() * 4294967296) >>> 0, depth: 1, lives: DESCENT.LIVES[this.difficulty] != null ? DESCENT.LIVES[this.difficulty] : 3, camps: 0, campDepth: 0, boonAt: 0, carry: null, record: false };
     this.gold = 80;
     U.store.del('umbral.descent.v1');
@@ -8211,6 +8520,29 @@ Object.assign(GAME, {
 });
 
 /* ==========================================================================
+   Cooperativo en el mismo aparato: cada jugador lleva sus héroes y el
+   aparato pasa de mano en mano cuando le toca a un héroe de otro jugador
+   ========================================================================== */
+Object.assign(GAME, {
+  players: [{ name: 'Jugador 1' }], owner: {}, curPlayer: -1,
+  isMulti() { return !!(this.players && this.players.length > 1); },
+  heroOwner(id) { const o = (this.owner || {})[id] || 0; return o < this.players.length ? o : 0; },
+  playerName(i) { return (this.players[i] && this.players[i].name) || `Jugador ${i + 1}`; },
+  setPlayers(players, owner) {
+    this.players = players && players.length ? players.slice(0, 3).map((p, i) => ({ name: String((p && p.name) || '').trim().slice(0, 16) || `Jugador ${i + 1}` })) : [{ name: 'Jugador 1' }];
+    this.owner = Object.assign({}, owner || {});
+    this.curPlayer = -1;
+  },
+  heroFor(p) { return this.heroes.find((h) => !h.ended && !h.ko && this.heroOwner(h.id) === p) || null; },
+  /* Cada ronda empieza un jugador distinto, para que nadie abra siempre */
+  firstHeroForRound() {
+    const n = this.players.length, start = Math.max(0, this.round - 1) % n;
+    for (let i = 0; i < n; i++) { const h = this.heroFor((start + i) % n); if (h) return h; }
+    return this.heroes.find((h) => !h.ended && !h.ko) || null;
+  }
+});
+
+/* ==========================================================================
    Interfaz: HUD, diálogo, dados, tarjetas, tienda y menús
    ========================================================================== */
 const UI = {
@@ -8249,7 +8581,7 @@ const UI = {
       const c = U.el('button', 'hero-card', `
         <span class="hc-port"><img alt="" data-port="${id}"><i class="hc-ring" style="--hc:${d.color}"></i><i class="hc-b det" title="Determinación"></i>${id === 'elian' ? '<i class="hc-b eter" title="Éter"></i>' : ''}</span>
         <span class="hc-body">
-          <span class="hc-name">${d.name}<small>${d.role}</small></span>
+          <span class="hc-name">${d.name}${GAME.isMulti() ? `<em class="hc-owner pc${GAME.heroOwner(id)}" title="${U.esc(GAME.playerName(GAME.heroOwner(id)))}"><span class="ow-full">${U.esc(GAME.playerName(GAME.heroOwner(id)))}</span><span class="ow-ini">${U.esc(GAME.playerName(GAME.heroOwner(id)).charAt(0).toUpperCase())}</span></em>` : `<small>${d.role}</small>`}</span>
           <span class="hc-hp"><span class="hc-hpbar"><i></i></span><b class="hc-hpn"></b></span>
           <span class="hc-st"><span class="st-mv" title="Movimiento restante">${icon('boot')}<b></b></span><span class="st-act" title="Acción">${icon('hand')}</span><span class="st-det" title="Determinación"></span>${id === 'elian' ? '<span class="st-eter" title="Éter"></span>' : ''}</span>
           <span class="hc-fx"></span>
@@ -8505,6 +8837,7 @@ const UI = {
   /* ---------------- pantallas ---------------- */
   screen(html, cls) {
     const s = this.$('screen');
+    if (this.handoffOpen && !(cls || '').includes('handoff-screen')) this.handoffOpen = false; // otra pantalla la sustituye (salir, cambiar de capítulo)
     if (!html) { s.hidden = true; s.innerHTML = ''; s.className = 'screen'; return null; }
     s.className = 'screen ' + (cls || ''); s.innerHTML = html; s.hidden = false;
     // los rótulos flotantes (lugar, ronda) no deben transparentarse detrás de una pantalla
@@ -8715,23 +9048,29 @@ const UI = {
   },
   difficulty(mode) {
     const tutDone = !!U.store.get('umbral.tutorial', 0), desc = mode === 'descent';
+    let np = U.clamp(+U.store.get('umbral.players.n', 1) || 1, 1, 3);
     const opts = ['relato', 'heroe', 'pesadilla'].map((id) => DIFFICULTY[id]);
     const s = this.screen(`<div class="card diff"><div class="eyebrow">${desc ? 'Modo Descenso' : 'Nueva partida'}</div><h2>¿Cuánta oscuridad soportáis?</h2>
       <div class="diff-opts">${opts.map((d) => `<button class="diff-opt ${d.id === 'heroe' ? 'sel' : ''}" data-d="${d.id}"><b>${d.name}</b><small>${d.blurb}</small>
         <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: cada ${d.doom} rondas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}${desc ? `<li>Velas: ${DESCENT.LIVES[d.id]} ${DESCENT.LIVES[d.id] === 1 ? 'intento de más' : 'intentos de más'}</li>` : ''}</ul></button>`).join('')}</div>
+      <div class="df-players"><span>${icon('crown')} Jugadores en este aparato</span><span class="pl-n">${[1, 2, 3].map((k) => `<button class="pl-nb ${k === np ? 'sel' : ''}" data-np="${k}">${k}</button>`).join('')}</span></div>
       ${tutDone ? '' : `<p class="df-tut">${icon('target')} <span>¿Primera vez? El <b>tutorial guiado</b> te enseña lo esencial en unos diez minutos, sin tocar tu partida.</span> <button class="btn small" id="df-tut">Hacer el tutorial</button></p>`}
       <div class="row"><button class="btn" id="df-back">Volver</button><button class="btn primary" id="df-go">${icon('crown')} ${desc ? 'Elegir el grupo' : 'Forjar el grupo'}</button></div></div>`, 'dim title-screen');
     const dt = s.querySelector('#df-tut'); if (dt) dt.onclick = () => this.startTutorial();
     let pick = 'heroe';
     U.$$('.diff-opt', s).forEach((b) => (b.onclick = () => { pick = b.dataset.d; U.$$('.diff-opt', s).forEach((q) => q.classList.toggle('sel', q === b)); audio.sfx('ui'); }));
+    U.$$('[data-np]', s).forEach((b) => (b.onclick = () => { np = +b.dataset.np; U.store.set('umbral.players.n', np); U.$$('[data-np]', s).forEach((q) => q.classList.toggle('sel', q === b)); audio.sfx('ui'); }));
     s.querySelector('#df-back').onclick = () => { audio.sfx('uiBack'); this.title(); };
     s.querySelector('#df-go').onclick = async () => {
       audio.sfx('ui');
-      if (desc) { this.partyPick(pick); return; }
+      if (desc) { this.partyPick(pick, np); return; }
       GAME.newGame(pick);
       const build = await this.forge();
       if (!build) { this.difficulty(); return; }
+      let mp = null;
+      if (np > 1) { mp = await this.playersSetup(GAME.party, { n: np }); if (!mp) { this.difficulty(); return; } }
       GAME.newGame(pick, build.custom ? build.virt : null); U.store.del('umbral.save.v2');
+      if (mp) GAME.setPlayers(mp.players, mp.owner);
       this.screen(null); await this.fadeOut(); MAIN.stopTitle();
       await this.prologue();
       GAME.startChapter(0);
@@ -8752,7 +9091,7 @@ const UI = {
       return;
     }
     const s = this.screen(`<div class="card pause"><div class="eyebrow">Pausa</div><h2>${GAME.ch ? GAME.ch.title : 'Umbral'}</h2>
-      <div class="col"><button class="btn primary" id="p-back">${icon('play')} Seguir jugando</button><button class="btn" id="p-help">${icon('scroll')} Cómo se juega</button><button class="btn" id="p-set">${icon('gear')} Ajustes</button><button class="btn" id="p-full">${icon('fullscreen')} Pantalla completa</button>${GAME.state === 'play' && !GAME.descent ? `<button class="btn" id="p-retry">${icon('rotate')} Reiniciar capítulo</button>` : ''}<button class="btn danger" id="p-quit">Salir al inicio</button></div>
+      <div class="col"><button class="btn primary" id="p-back">${icon('play')} Seguir jugando</button><button class="btn" id="p-help">${icon('scroll')} Cómo se juega</button><button class="btn" id="p-set">${icon('gear')} Ajustes</button><button class="btn" id="p-full">${icon('fullscreen')} Pantalla completa</button><button class="btn" id="p-players">${icon('crown')} Jugadores en este aparato <small>${GAME.players.length}</small></button>${GAME.state === 'play' && !GAME.descent ? `<button class="btn" id="p-retry">${icon('rotate')} Reiniciar capítulo</button>` : ''}<button class="btn danger" id="p-quit">Salir al inicio</button></div>
       <p class="small">${GAME.descent ? `Descenso · nivel ${GAME.descent.depth} · ${GAME.descent.lives} ${GAME.descent.lives === 1 ? 'vela' : 'velas'}. Se guarda al comenzar cada ronda.` : 'La partida se guarda al comenzar cada ronda, cada capítulo y al llegar al campamento.'}</p></div>`, 'dim');
     s.querySelector('#p-back').onclick = () => { audio.sfx('uiBack'); this.screen(null); };
     s.querySelector('#p-help').onclick = () => this.help(() => this.pause());
@@ -8760,6 +9099,16 @@ const UI = {
     const rt = s.querySelector('#p-retry');
     if (rt) rt.onclick = () => { this.screen(null); if (GAME.checkpoint) { GAME.restore(GAME.checkpoint); GAME.startChapter(GAME.checkpoint.chIdx); } };
     s.querySelector('#p-full').onclick = () => { this.screen(null); MAIN.fullscreen(); };
+    s.querySelector('#p-players').onclick = async () => {
+      audio.sfx('ui');
+      const r = await this.playersSetup(GAME.party, { n: GAME.players.length, players: GAME.players, owner: GAME.owner, back: true });
+      if (r) {
+        GAME.setPlayers(r.players, r.owner);
+        if (GAME.active) GAME.curPlayer = GAME.heroOwner(GAME.active.id);
+        if (GAME.state === 'play') { this.buildParty(); GAME.saveRun(); }
+      }
+      this.screen(null); this.refresh();
+    };
     s.querySelector('#p-quit').onclick = () => { audio.heartbeat(false); this.title(); };
   },
   help(back) {
@@ -8778,6 +9127,7 @@ const UI = {
         <section><h3>${icon('door')} Cerraduras y sellos</h3><p>Algunas puertas se abren con Agilidad (ganzúa) o Fuerza (con estruendo); otras con Ingenio o Voluntad. Elige bien quién lo intenta.</p></section>
         <section><h3>${icon('armor')} Equipo</h3><p>Cada pieza ocupa un hueco (mano, cuerpo o extra) y pide una virtud mínima: la coraza de placas, Fuerza 5; el grimorio, Ingenio 5. Se compra y se reparte en el campamento; lo que nadie lleva queda en el arcón.</p></section>
         <section><h3>${icon('stairs')} Modo Descenso</h3><p>Elige 3 de 5 héroes y baja por mazmorras que se generan solas. Busca la <b>escalera que brilla</b> y tócala sin enemigos a la vista. Cada cuatro niveles espera un guardián y después se acampa. Al caer se apaga una <b>vela</b> y se repite el nivel.</p></section>
+        <section><h3>${icon('crown')} En el mismo aparato</h3><p>De 1 a 3 jugadores: cada uno lleva sus héroes. Cuando le toca a un héroe de otro, el juego pide pasar el móvil o la tableta. Se elige al empezar y se cambia desde la pausa.</p></section>
       </div>
       <div class="help-grid controls">
         <section><h3>Ordenador</h3><p>Clic: mover, atacar, abrir · Arrastrar: desplazar · Clic derecho y arrastrar: girar · Rueda: zoom · <kbd>1</kbd>–<kbd>5</kbd> acciones · <kbd>Z</kbd> deshacer movimiento · <kbd>G</kbd> ficha del grupo · <kbd>Espacio</kbd> fin de turno · <kbd>Tab</kbd> siguiente héroe · <kbd>Q</kbd>/<kbd>E</kbd> girar · <kbd>WASD</kbd> mover cámara · <kbd>Esc</kbd> cancelar</p></section>
@@ -8839,7 +9189,7 @@ Object.assign(UI, {
   descentSetup() { this.difficulty('descent'); },
 
   /* Elige 3 de los 5 héroes */
-  partyPick(diff) {
+  partyPick(diff, np = 1) {
     const ALL = ['aldric', 'sera', 'elian', 'brunna', 'nyra'];
     const last = U.store.get('umbral.descent.party', null);
     let sel = Array.isArray(last) && last.length === 3 && last.every((id) => ALL.includes(id)) ? last.slice() : ['aldric', 'brunna', 'nyra'];
@@ -8869,6 +9219,7 @@ Object.assign(UI, {
     };
     render();
     s.querySelector('#pp-back').onclick = () => { audio.sfx('uiBack'); this.difficulty('descent'); };
+    const self = this;
     s.querySelector('#pp-go').onclick = async () => {
       if (sel.length !== 3) return;
       audio.sfx('ui');
@@ -8876,9 +9227,11 @@ Object.assign(UI, {
       U.store.set('umbral.descent.party', party);
       GAME.newGame(diff, null, party);
       const build = await this.forge(party);
-      if (!build) { this.partyPick(diff); return; }
+      if (!build) { this.partyPick(diff, np); return; }
+      let mp = null;
+      if (np > 1) { mp = await self.playersSetup(party, { n: np }); if (!mp) { this.partyPick(diff, np); return; } }
       this.screen(null); await this.fadeOut(); MAIN.stopTitle();
-      GAME.startDescent(diff, party, build.custom ? build.virt : null);
+      GAME.startDescent(diff, party, build.custom ? build.virt : null, mp);
     };
   },
 
@@ -8888,7 +9241,7 @@ Object.assign(UI, {
       const picks = {};
       const s = this.screen(`<div class="card talents boons"><div class="eyebrow">Ascenso · Campamento ${GAME.descent ? GAME.descent.camps : ''}</div><h2>La Hondura os ha endurecido</h2>
         <p class="lead">Cada héroe sube una virtud un punto (hasta ${VMAX}). Con 4 o más llega su don; todo lo demás cambia con ella.</p>
-        <div class="tal-grid">${GAME.party.map((id) => { const v = GAME.virtOf(id); return `<section class="tal-col" style="--hc:${HERO_DEFS[id].color}"><header><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].full}</b></header>
+        <div class="tal-grid">${GAME.party.map((id) => { const v = GAME.virtOf(id); return `<section class="tal-col" style="--hc:${HERO_DEFS[id].color}"><header><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].full}</b>${GAME.isMulti() ? `<em class="hc-owner pc${GAME.heroOwner(id)}">${U.esc(GAME.playerName(GAME.heroOwner(id)))}</em>` : ''}</header>
           ${VKEYS.map((k) => `<button class="tal-opt boon" data-h="${id}" data-k="${k}" ${v[k] >= VMAX ? 'disabled' : ''}><b>${icon(VIRTUES[k].icon)} ${VIRTUES[k].name} <span class="bn-n">${v[k]} → ${Math.min(VMAX, v[k] + 1)}</span></b>${v[k] + 1 === PERK_AT ? `<em>Desbloquea: ${VIRTUES[k].perk.name}</em>` : ''}</button>`).join('')}</section>`; }).join('')}</div>
         <div class="row end"><button class="btn primary" id="tl-go" disabled>${icon('check')} Confirmar</button></div></div>`, 'dim');
       U.$$('.tal-opt', s).forEach((b) => (b.onclick = () => {
@@ -8915,6 +9268,73 @@ Object.assign(UI, {
       s.querySelector('#do-again').onclick = () => { audio.sfx('ui'); this.screen(null); resolve('again'); };
       s.querySelector('#do-menu').onclick = () => { audio.sfx('ui'); this.screen(null); resolve('menu'); };
     });
+  }
+});
+
+/* ==========================================================================
+   Interfaz del cooperativo en el mismo aparato: reparto de héroes entre
+   jugadores y la pantalla de «pásale el aparato»
+   ========================================================================== */
+Object.assign(UI, {
+  /* Elegir cuántos juegan, sus nombres y quién lleva a cada héroe */
+  playersSetup(party, o = {}) {
+    return new Promise((resolve) => {
+      let n = Math.max(1, Math.min(3, o.n || 2));
+      const names = [0, 1, 2].map((i) => (o.players && o.players[i] && o.players[i].name) || (U.store.get('umbral.players.names', [])[i]) || `Jugador ${i + 1}`);
+      const owner = {};
+      party.forEach((id, i) => (owner[id] = o.owner && o.owner[id] != null ? o.owner[id] : i % Math.max(1, n)));
+      const s = this.screen(`<div class="card players"><div class="eyebrow">En el mismo aparato</div><h2>¿Quién juega?</h2>
+        <p class="lead">Cada jugador lleva a sus héroes. Cuando le toque a un héroe de otro, el juego pedirá pasar el móvil o la tableta. Se puede cambiar en cualquier momento desde la pausa.</p>
+        <div class="pl-n" role="group" aria-label="Número de jugadores">${[1, 2, 3].map((k) => `<button class="pl-nb" data-n="${k}">${k} ${k === 1 ? 'jugador' : 'jugadores'}</button>`).join('')}</div>
+        <div class="pl-names"></div>
+        <div class="pl-heroes"></div>
+        <div class="row"><button class="btn" id="pl-back">${o.back ? 'Cancelar' : 'Volver'}</button><span class="pl-msg"></span><button class="btn primary" id="pl-go">${icon('check')} Listo</button></div></div>`, o.back ? 'dim players-screen' : 'dim title-screen players-screen');
+      const fix = () => party.forEach((id) => { if (owner[id] >= n) owner[id] = n - 1; });
+      const render = () => {
+        fix();
+        U.$$('.pl-nb', s).forEach((b) => b.classList.toggle('sel', +b.dataset.n === n));
+        s.querySelector('.pl-names').innerHTML = n > 1 ? Array.from({ length: n }, (_, i) => `<label class="pl-name pc${i}"><span>Jugador ${i + 1}</span><input maxlength="16" data-i="${i}" value="${U.esc(names[i])}" autocomplete="off"></label>`).join('') : '';
+        s.querySelector('.pl-heroes').innerHTML = n > 1 ? party.map((id) => `<div class="pl-hero" style="--hc:${HERO_DEFS[id].color}"><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].name}</b><span class="pl-who">${Array.from({ length: n }, (_, i) => `<button class="pl-to pc${i} ${owner[id] === i ? 'on' : ''}" data-h="${id}" data-i="${i}" aria-pressed="${owner[id] === i}">${U.esc(names[i])}</button>`).join('')}</span></div>`).join('') : `<p class="pl-solo">${icon('crown')} Un solo jugador lleva a los tres héroes.</p>`;
+        const empty = n > 1 ? Array.from({ length: n }, (_, i) => i).filter((i) => !party.some((id) => owner[id] === i)) : [];
+        s.querySelector('.pl-msg').textContent = empty.length ? `${empty.map((i) => names[i]).join(' y ')} no lleva a nadie.` : '';
+        s.querySelector('#pl-go').disabled = empty.length > 0;
+        U.$$('.pl-name input', s).forEach((inp) => (inp.oninput = () => { names[+inp.dataset.i] = inp.value; U.$$(`.pl-to[data-i="${inp.dataset.i}"]`, s).forEach((b) => (b.textContent = inp.value || `Jugador ${+inp.dataset.i + 1}`)); }));
+        U.$$('.pl-to', s).forEach((b) => (b.onclick = () => { owner[b.dataset.h] = +b.dataset.i; audio.sfx('ui'); render(); }));
+      };
+      U.$$('.pl-nb', s).forEach((b) => (b.onclick = () => { n = +b.dataset.n; if (n > 1 && party.every((id) => owner[id] === 0)) party.forEach((id, i) => (owner[id] = i % n)); audio.sfx('ui'); render(); }));
+      render();
+      s.querySelector('#pl-back').onclick = () => { audio.sfx('uiBack'); resolve(null); };
+      s.querySelector('#pl-go').onclick = () => {
+        audio.sfx('ui');
+        const players = Array.from({ length: n }, (_, i) => ({ name: (names[i] || '').trim() || `Jugador ${i + 1}` }));
+        U.store.set('umbral.players.names', names.slice(0, 3)); U.store.set('umbral.players.n', n);
+        resolve({ players, owner: n > 1 ? Object.assign({}, owner) : {} });
+      };
+    });
+  },
+
+  /* Pásale el aparato: tapa el tablero hasta que el siguiente jugador lo coge */
+  handoffOpen: false,
+  handoff(p, h) {
+    if (this.handoffOpen) { this.handoffDone(true); }
+    this.handoffOpen = true; GAME.busy++;
+    const name = U.esc(GAME.playerName(p));
+    const mine = GAME.heroes.filter((q) => GAME.heroOwner(q.id) === p);
+    const s = this.screen(`<div class="card handoff pc${p}"><div class="eyebrow">Ronda ${GAME.round} · en el mismo aparato</div>
+      <h2>Turno de ${name}</h2>
+      <div class="ho-heroes">${mine.map((q) => `<span class="${q.ended || q.ko ? 'done' : ''}" style="--hc:${HERO_DEFS[q.id].color}"><img src="${this.portraits[q.id] || ''}" alt="">${HERO_DEFS[q.id].name}${q.ko ? ' <small>caído</small>' : q.ended ? ' <small>ya actuó</small>' : ''}</span>`).join('')}</div>
+      <p class="lead">Pásale el aparato a ${name}. Empieza con ${U.esc(h.name)}.</p>
+      <button class="btn primary" id="ho-go">${icon('play')} Soy ${name}: a jugar</button></div>`, 'dim handoff-screen');
+    audio.sfx('turnHero');
+    s.querySelector('#ho-go').onclick = () => this.handoffDone();
+  },
+  handoffDone(silent) {
+    if (!this.handoffOpen) return;
+    this.handoffOpen = false;
+    GAME.busy = Math.max(0, GAME.busy - 1);
+    this.screen(null);
+    if (!silent) { audio.sfx('ui'); const h = GAME.active; if (h) ENGINE.focusTile(h.x, h.y); }
+    UI.refresh();
   }
 });
 
@@ -9108,7 +9528,7 @@ Object.assign(UI, {
       const picks = {};
       const s = this.screen(`<div class="card talents"><div class="eyebrow">Ascenso · Rango ${tier + 2}</div><h2>Lo que la Hondura os ha enseñado</h2>
         <p class="lead">Cada héroe elige un talento. Algunos suben una virtud; otros cambian cómo lucha.</p>
-        <div class="tal-grid">${GAME.party.map((id) => `<section class="tal-col" style="--hc:${HERO_DEFS[id].color}"><header><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].full}</b></header>
+        <div class="tal-grid">${GAME.party.map((id) => `<section class="tal-col" style="--hc:${HERO_DEFS[id].color}"><header><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].full}</b>${GAME.isMulti() ? `<em class="hc-owner pc${GAME.heroOwner(id)}">${U.esc(GAME.playerName(GAME.heroOwner(id)))}</em>` : ''}</header>
           ${TALENTS[id][tier].map((t) => `<button class="tal-opt" data-h="${id}" data-t="${t.id}"><b>${t.name}</b><small>${t.desc}</small>${t.virt ? `<em>${Object.entries(t.virt).map(([k, n]) => `+${n} ${VIRTUES[k].name}`).join(', ')}</em>` : ''}</button>`).join('')}</section>`).join('')}</div>
         <div class="row end"><button class="btn primary" id="tl-go" disabled>${icon('check')} Confirmar talentos</button></div></div>`, 'dim');
       U.$$('.tal-opt', s).forEach((b) => (b.onclick = () => {
@@ -9525,6 +9945,7 @@ const INPUT = {
     if (e.target && /input|select|textarea/i.test(e.target.tagName)) return;
     this.keys[k] = down;
     if (!down) return;
+    if (UI.handoffOpen) { if (k === ' ' || k === 'enter') { e.preventDefault(); UI.handoffDone(); } return; }
     if (!UI.$('dlg').hidden && (k === ' ' || k === 'enter')) { e.preventDefault(); UI.advance(); return; }
     // los escritos también se cierran con el teclado
     if (!UI.$('note').hidden && (k === ' ' || k === 'enter' || k === 'escape')) { e.preventDefault(); UI.$('note').dispatchEvent(new PointerEvent('pointerup')); return; }

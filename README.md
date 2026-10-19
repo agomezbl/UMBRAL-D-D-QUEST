@@ -18,9 +18,10 @@ Funciona en ordenador (ratón y teclado) y en móvil (pantalla táctil). No nece
 - Progresión: reparto inicial de virtudes, un talento por héroe en cada campamento y una velada con prueba antes de cada capítulo.
 - Criaturas con virtudes, rol y rasgos: las más listas eligen mejor a quién atacar, las de poca voluntad huyen cuando cae su líder, los no muertos temen la luz y los espectros resisten el acero.
 - Combate con dados, probabilidades visibles antes de atacar, zona de amenaza de cada enemigo, trampas, cofres y objetos.
+- **Cooperativo en el mismo aparato**: de 1 a 3 jugadores, cada uno con sus héroes; el juego pide pasar el móvil o la tableta cuando le toca a otro.
 - **Armería con requisitos**: armas, armaduras y objetos que piden una virtud mínima (Fuerza 5 para la coraza de placas, Ingenio 5 para el grimorio). Se elige quién lleva cada pieza; las reliquias cambian el aspecto de las miniaturas.
 - Cuatro jefes con mecánicas propias y conversaciones con PNJ que se resuelven según quién hable.
-- Gráficos generados por código: piedra con relieve, antorchas con luz dinámica, lava, miasma, vacío, partículas, brillo y efecto miniatura.
+- Gráficos generados por código: piedra con relieve, antorchas con luz dinámica, lava, miasma, vacío, partículas, brillo y efecto miniatura. Figuras con acabado de miniatura pintada, tajos y ondas en los golpes, paredes adornadas según el lugar y rayos de luz que caen del techo.
 - Música y efectos generados en tiempo real, ambiente propio en cada capítulo y narración por voz opcional.
 - La partida se guarda al empezar cada ronda: si se cierra el navegador, «Continuar» vuelve a esa misma ronda.
 - Ajustes de lectura (tamaño de letra y alto contraste) y calidad gráfica automática.

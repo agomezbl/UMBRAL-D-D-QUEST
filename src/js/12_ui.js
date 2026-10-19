@@ -37,7 +37,7 @@ const UI = {
       const c = U.el('button', 'hero-card', `
         <span class="hc-port"><img alt="" data-port="${id}"><i class="hc-ring" style="--hc:${d.color}"></i><i class="hc-b det" title="Determinación"></i>${id === 'elian' ? '<i class="hc-b eter" title="Éter"></i>' : ''}</span>
         <span class="hc-body">
-          <span class="hc-name">${d.name}<small>${d.role}</small></span>
+          <span class="hc-name">${d.name}${GAME.isMulti() ? `<em class="hc-owner pc${GAME.heroOwner(id)}" title="${U.esc(GAME.playerName(GAME.heroOwner(id)))}"><span class="ow-full">${U.esc(GAME.playerName(GAME.heroOwner(id)))}</span><span class="ow-ini">${U.esc(GAME.playerName(GAME.heroOwner(id)).charAt(0).toUpperCase())}</span></em>` : `<small>${d.role}</small>`}</span>
           <span class="hc-hp"><span class="hc-hpbar"><i></i></span><b class="hc-hpn"></b></span>
           <span class="hc-st"><span class="st-mv" title="Movimiento restante">${icon('boot')}<b></b></span><span class="st-act" title="Acción">${icon('hand')}</span><span class="st-det" title="Determinación"></span>${id === 'elian' ? '<span class="st-eter" title="Éter"></span>' : ''}</span>
           <span class="hc-fx"></span>
@@ -293,6 +293,7 @@ const UI = {
   /* ---------------- pantallas ---------------- */
   screen(html, cls) {
     const s = this.$('screen');
+    if (this.handoffOpen && !(cls || '').includes('handoff-screen')) this.handoffOpen = false; // otra pantalla la sustituye (salir, cambiar de capítulo)
     if (!html) { s.hidden = true; s.innerHTML = ''; s.className = 'screen'; return null; }
     s.className = 'screen ' + (cls || ''); s.innerHTML = html; s.hidden = false;
     // los rótulos flotantes (lugar, ronda) no deben transparentarse detrás de una pantalla
@@ -503,23 +504,29 @@ const UI = {
   },
   difficulty(mode) {
     const tutDone = !!U.store.get('umbral.tutorial', 0), desc = mode === 'descent';
+    let np = U.clamp(+U.store.get('umbral.players.n', 1) || 1, 1, 3);
     const opts = ['relato', 'heroe', 'pesadilla'].map((id) => DIFFICULTY[id]);
     const s = this.screen(`<div class="card diff"><div class="eyebrow">${desc ? 'Modo Descenso' : 'Nueva partida'}</div><h2>¿Cuánta oscuridad soportáis?</h2>
       <div class="diff-opts">${opts.map((d) => `<button class="diff-opt ${d.id === 'heroe' ? 'sel' : ''}" data-d="${d.id}"><b>${d.name}</b><small>${d.blurb}</small>
         <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: cada ${d.doom} rondas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}${desc ? `<li>Velas: ${DESCENT.LIVES[d.id]} ${DESCENT.LIVES[d.id] === 1 ? 'intento de más' : 'intentos de más'}</li>` : ''}</ul></button>`).join('')}</div>
+      <div class="df-players"><span>${icon('crown')} Jugadores en este aparato</span><span class="pl-n">${[1, 2, 3].map((k) => `<button class="pl-nb ${k === np ? 'sel' : ''}" data-np="${k}">${k}</button>`).join('')}</span></div>
       ${tutDone ? '' : `<p class="df-tut">${icon('target')} <span>¿Primera vez? El <b>tutorial guiado</b> te enseña lo esencial en unos diez minutos, sin tocar tu partida.</span> <button class="btn small" id="df-tut">Hacer el tutorial</button></p>`}
       <div class="row"><button class="btn" id="df-back">Volver</button><button class="btn primary" id="df-go">${icon('crown')} ${desc ? 'Elegir el grupo' : 'Forjar el grupo'}</button></div></div>`, 'dim title-screen');
     const dt = s.querySelector('#df-tut'); if (dt) dt.onclick = () => this.startTutorial();
     let pick = 'heroe';
     U.$$('.diff-opt', s).forEach((b) => (b.onclick = () => { pick = b.dataset.d; U.$$('.diff-opt', s).forEach((q) => q.classList.toggle('sel', q === b)); audio.sfx('ui'); }));
+    U.$$('[data-np]', s).forEach((b) => (b.onclick = () => { np = +b.dataset.np; U.store.set('umbral.players.n', np); U.$$('[data-np]', s).forEach((q) => q.classList.toggle('sel', q === b)); audio.sfx('ui'); }));
     s.querySelector('#df-back').onclick = () => { audio.sfx('uiBack'); this.title(); };
     s.querySelector('#df-go').onclick = async () => {
       audio.sfx('ui');
-      if (desc) { this.partyPick(pick); return; }
+      if (desc) { this.partyPick(pick, np); return; }
       GAME.newGame(pick);
       const build = await this.forge();
       if (!build) { this.difficulty(); return; }
+      let mp = null;
+      if (np > 1) { mp = await this.playersSetup(GAME.party, { n: np }); if (!mp) { this.difficulty(); return; } }
       GAME.newGame(pick, build.custom ? build.virt : null); U.store.del('umbral.save.v2');
+      if (mp) GAME.setPlayers(mp.players, mp.owner);
       this.screen(null); await this.fadeOut(); MAIN.stopTitle();
       await this.prologue();
       GAME.startChapter(0);
@@ -540,7 +547,7 @@ const UI = {
       return;
     }
     const s = this.screen(`<div class="card pause"><div class="eyebrow">Pausa</div><h2>${GAME.ch ? GAME.ch.title : 'Umbral'}</h2>
-      <div class="col"><button class="btn primary" id="p-back">${icon('play')} Seguir jugando</button><button class="btn" id="p-help">${icon('scroll')} Cómo se juega</button><button class="btn" id="p-set">${icon('gear')} Ajustes</button><button class="btn" id="p-full">${icon('fullscreen')} Pantalla completa</button>${GAME.state === 'play' && !GAME.descent ? `<button class="btn" id="p-retry">${icon('rotate')} Reiniciar capítulo</button>` : ''}<button class="btn danger" id="p-quit">Salir al inicio</button></div>
+      <div class="col"><button class="btn primary" id="p-back">${icon('play')} Seguir jugando</button><button class="btn" id="p-help">${icon('scroll')} Cómo se juega</button><button class="btn" id="p-set">${icon('gear')} Ajustes</button><button class="btn" id="p-full">${icon('fullscreen')} Pantalla completa</button><button class="btn" id="p-players">${icon('crown')} Jugadores en este aparato <small>${GAME.players.length}</small></button>${GAME.state === 'play' && !GAME.descent ? `<button class="btn" id="p-retry">${icon('rotate')} Reiniciar capítulo</button>` : ''}<button class="btn danger" id="p-quit">Salir al inicio</button></div>
       <p class="small">${GAME.descent ? `Descenso · nivel ${GAME.descent.depth} · ${GAME.descent.lives} ${GAME.descent.lives === 1 ? 'vela' : 'velas'}. Se guarda al comenzar cada ronda.` : 'La partida se guarda al comenzar cada ronda, cada capítulo y al llegar al campamento.'}</p></div>`, 'dim');
     s.querySelector('#p-back').onclick = () => { audio.sfx('uiBack'); this.screen(null); };
     s.querySelector('#p-help').onclick = () => this.help(() => this.pause());
@@ -548,6 +555,16 @@ const UI = {
     const rt = s.querySelector('#p-retry');
     if (rt) rt.onclick = () => { this.screen(null); if (GAME.checkpoint) { GAME.restore(GAME.checkpoint); GAME.startChapter(GAME.checkpoint.chIdx); } };
     s.querySelector('#p-full').onclick = () => { this.screen(null); MAIN.fullscreen(); };
+    s.querySelector('#p-players').onclick = async () => {
+      audio.sfx('ui');
+      const r = await this.playersSetup(GAME.party, { n: GAME.players.length, players: GAME.players, owner: GAME.owner, back: true });
+      if (r) {
+        GAME.setPlayers(r.players, r.owner);
+        if (GAME.active) GAME.curPlayer = GAME.heroOwner(GAME.active.id);
+        if (GAME.state === 'play') { this.buildParty(); GAME.saveRun(); }
+      }
+      this.screen(null); this.refresh();
+    };
     s.querySelector('#p-quit').onclick = () => { audio.heartbeat(false); this.title(); };
   },
   help(back) {
@@ -566,6 +583,7 @@ const UI = {
         <section><h3>${icon('door')} Cerraduras y sellos</h3><p>Algunas puertas se abren con Agilidad (ganzúa) o Fuerza (con estruendo); otras con Ingenio o Voluntad. Elige bien quién lo intenta.</p></section>
         <section><h3>${icon('armor')} Equipo</h3><p>Cada pieza ocupa un hueco (mano, cuerpo o extra) y pide una virtud mínima: la coraza de placas, Fuerza 5; el grimorio, Ingenio 5. Se compra y se reparte en el campamento; lo que nadie lleva queda en el arcón.</p></section>
         <section><h3>${icon('stairs')} Modo Descenso</h3><p>Elige 3 de 5 héroes y baja por mazmorras que se generan solas. Busca la <b>escalera que brilla</b> y tócala sin enemigos a la vista. Cada cuatro niveles espera un guardián y después se acampa. Al caer se apaga una <b>vela</b> y se repite el nivel.</p></section>
+        <section><h3>${icon('crown')} En el mismo aparato</h3><p>De 1 a 3 jugadores: cada uno lleva sus héroes. Cuando le toca a un héroe de otro, el juego pide pasar el móvil o la tableta. Se elige al empezar y se cambia desde la pausa.</p></section>
       </div>
       <div class="help-grid controls">
         <section><h3>Ordenador</h3><p>Clic: mover, atacar, abrir · Arrastrar: desplazar · Clic derecho y arrastrar: girar · Rueda: zoom · <kbd>1</kbd>–<kbd>5</kbd> acciones · <kbd>Z</kbd> deshacer movimiento · <kbd>G</kbd> ficha del grupo · <kbd>Espacio</kbd> fin de turno · <kbd>Tab</kbd> siguiente héroe · <kbd>Q</kbd>/<kbd>E</kbd> girar · <kbd>WASD</kbd> mover cámara · <kbd>Esc</kbd> cancelar</p></section>

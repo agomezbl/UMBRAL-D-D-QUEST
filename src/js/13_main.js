@@ -88,6 +88,7 @@ const INPUT = {
     if (e.target && /input|select|textarea/i.test(e.target.tagName)) return;
     this.keys[k] = down;
     if (!down) return;
+    if (UI.handoffOpen) { if (k === ' ' || k === 'enter') { e.preventDefault(); UI.handoffDone(); } return; }
     if (!UI.$('dlg').hidden && (k === ' ' || k === 'enter')) { e.preventDefault(); UI.advance(); return; }
     // los escritos también se cierran con el teclado
     if (!UI.$('note').hidden && (k === ' ' || k === 'enter' || k === 'escape')) { e.preventDefault(); UI.$('note').dispatchEvent(new PointerEvent('pointerup')); return; }

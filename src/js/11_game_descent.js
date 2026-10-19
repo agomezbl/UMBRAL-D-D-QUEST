@@ -15,8 +15,9 @@ Object.assign(GAME, {
     return true;
   },
 
-  async startDescent(difficulty, party, build) {
+  async startDescent(difficulty, party, build, mp) {
     this.newGame(difficulty, build, party);
+    if (mp) this.setPlayers(mp.players, mp.owner);
     this.descent = { seed: (Math.random() * 4294967296) >>> 0, depth: 1, lives: DESCENT.LIVES[this.difficulty] != null ? DESCENT.LIVES[this.difficulty] : 3, camps: 0, campDepth: 0, boonAt: 0, carry: null, record: false };
     this.gold = 80;
     U.store.del('umbral.descent.v1');

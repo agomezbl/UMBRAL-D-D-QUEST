@@ -77,7 +77,7 @@ const WORLD = {
       ENGINE.scene.remove(this.group);
       this.group.traverse((o) => { if (o.isInstancedMesh) o.dispose(); if (o.geometry && o.userData.own) o.geometry.dispose(); });
     }
-    this.group = null; this.L = null; this.anims = []; this.dyn = []; this.flames = []; this.liquids = []; this.mists = []; this.exitGlow = null;
+    this.group = null; this.L = null; this.anims = []; this.dyn = []; this.flames = []; this.liquids = []; this.mists = []; this.exitGlow = null; this.shafts = []; this.runePanels = [];
     ENGINE.clearLights();
   },
 
@@ -234,8 +234,11 @@ const WORLD = {
       }
     });
 
-    // --- antorchas automáticas en los muros ---
+    // --- antorchas automáticas en los muros, adornos y rayos de luz ---
     L.rooms.forEach((room) => this.placeTorches(room, theme, rnd));
+    this.runePanels = [];
+    L.rooms.forEach((room) => this.placeDecor(room, theme, rnd));
+    this.placeShafts(theme, rnd);
 
     // --- telarañas en esquinas (cripta) ---
     if (theme.id === 'crypt') this.addWebs(rnd);
@@ -337,6 +340,7 @@ const WORLD = {
       if (chosen.some((q) => U.cheb(q.t.x, q.t.y, c.t.x, c.t.y) < 3)) continue;
       chosen.push(c);
     }
+    room.wallUsed = chosen.slice();
     chosen.forEach((c) => {
       const fx = c.t.x * TILE + c.dx * (TILE / 2), fz = c.t.y * TILE + c.dy * (TILE / 2);
       const s = MODELS.sconce();
@@ -346,6 +350,61 @@ const WORLD = {
       const flame = this.addFlame(fx - c.dx * 0.4, 1.92, fz - c.dy * 0.4, 0.42, 0.62, theme.flameA, theme.flameB, null);
       const src = ENGINE.addLightSource({ pos: new THREE.Vector3(fx - c.dx * 0.75, 2.05, fz - c.dy * 0.75), color: new THREE.Color(theme.torch), intensity: 3.2, distance: 12, flicker: true, on: false, flame });
       room.torches.push(src);
+    });
+  },
+  /* Adornos de pared según el lugar: estandartes, cadenas, osarios, armas, tuberías, cristales y runas */
+  placeDecor(room, theme, rnd) {
+    const T = this.L.T, cands = [], used = room.wallUsed || [];
+    room.tiles.forEach((t) => {
+      if (t.ch !== '.' && t.ch !== ',' && !/[0-9]/.test(t.ch)) return;
+      [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([dx, dy]) => {
+        const n = T[t.y + dy] && T[t.y + dy][t.x + dx];
+        if (!n || !n.wall) return;
+        // no al lado de una puerta (la hoja barre la pared)
+        const side = [[dy, dx], [-dy, -dx]].some(([sx, sy]) => { const q = T[t.y + sy] && T[t.y + sy][t.x + sx]; const w = T[t.y + sy + dy] && T[t.y + sy + dy][t.x + sx + dx]; return (q && q.door) || (w && w.door); });
+        if (!side) cands.push({ t, dx, dy });
+      });
+    });
+    const want = Math.min(ENGINE.q && ENGINE.q.lights <= 3 ? 2 : 3, Math.max(1, Math.round(room.tiles.length / 12)));
+    const kinds = theme.id === 'crypt' ? ['banner', 'skulls', 'chains', 'skulls', 'banner'] : theme.id === 'forge' ? ['rack', 'pipes', 'banner', 'chains', 'pipes'] : ['crystals', 'runes', 'crystals', 'banner'];
+    const chosen = [];
+    for (let i = 0; i < cands.length * 2 && chosen.length < want; i++) {
+      const c = cands[Math.floor(rnd() * cands.length)];
+      if (used.concat(chosen).some((q) => U.cheb(q.t.x, q.t.y, c.t.x, c.t.y) < 2)) continue;
+      chosen.push(c);
+    }
+    const bannerCol = theme.id === 'crypt' ? ['#5a1a22', '#c9a24a'] : theme.id === 'forge' ? ['#2a2a30', '#c26a2e'] : ['#2a1d4a', '#b9a2ff'];
+    chosen.forEach((c) => {
+      const kind = kinds[Math.floor(rnd() * kinds.length)];
+      let m, y = 1.1;
+      if (kind === 'banner') { m = MODELS.banner(bannerCol[0], bannerCol[1]); y = 1.35; }
+      else if (kind === 'skulls') { m = MODELS.skullShelf(rnd); y = 1.05; }
+      else if (kind === 'chains') { m = MODELS.chains(); y = 1.45; }
+      else if (kind === 'rack') { m = MODELS.weaponRack(); y = 1.2; }
+      else if (kind === 'pipes') { m = MODELS.pipes(); y = 1.05; }
+      else if (kind === 'crystals') { m = MODELS.wallCrystals(rnd() < 0.5 ? '#b98cff' : '#7fc8ff'); y = 0.9 + rnd() * 0.8; }
+      else { m = MODELS.runePanel('#b98cff'); y = 1.3; this.runePanels = (this.runePanels || []).concat(m); }
+      if (kind !== 'runes') m = MODELS.merged(m);
+      m.position.set(c.t.x * TILE + c.dx * (TILE / 2 - 0.06), y, c.t.y * TILE + c.dy * (TILE / 2 - 0.06));
+      m.rotation.y = Math.atan2(-c.dx, -c.dy);
+      m.traverse((o) => { if (o.isMesh && !(o.material && o.material.transparent)) { o.castShadow = true; o.receiveShadow = true; } });
+      m.visible = false; this.group.add(m); room.props.push(m);
+    });
+  },
+  /* Rayos de luz: en algunas salas grandes, solo con calidad media o alta */
+  placeShafts(theme, rnd) {
+    this.shafts = [];
+    if (!ENGINE.q || !ENGINE.q.mist) return;
+    const col = theme.id === 'crypt' ? '#cfe0ff' : theme.id === 'forge' ? '#ffb070' : '#c8b0ff';
+    this.L.rooms.forEach((room) => {
+      if (room.tiles.length < 16 || rnd() > 0.4) return;
+      const inner = room.tiles.filter((t) => t.ch === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].every(([dx, dy]) => { const n = this.L.T[t.y + dy] && this.L.T[t.y + dy][t.x + dx]; return n && n.floor; }));
+      if (!inner.length) return;
+      const t = inner[Math.floor(rnd() * inner.length)];
+      const m = MODELS.lightShaft(col);
+      m.position.set(t.x * TILE, 0, t.y * TILE); m.rotation.z = (rnd() - 0.5) * 0.18; m.rotation.x = (rnd() - 0.5) * 0.18;
+      m.visible = false; this.group.add(m); room.props.push(m);
+      this.shafts.push(m);
     });
   },
   addWebs(rnd) {
@@ -514,8 +573,10 @@ const WORLD = {
     sil.position.y = h / 2 + 0.1; sil.renderOrder = 3; root.add(sil);
     model.traverse((o) => { if (o.isMesh) o.renderOrder = o.material && o.material.transparent ? 10 : 4; });
     base.traverse((o) => { if (o.isMesh) { o.renderOrder = 4; o.castShadow = true; o.receiveShadow = true; } });
-    model.userData.fig.userData.baseY = model.userData.fig.position.y;
-    root.userData = { model, base, fig: model.userData.fig, height: h, phase: Math.random() * 10, sil, float: model.userData.float || 0, rim };
+    model.userData.fig.userData.baseY = model.userData.fig.position.y; model.userData.fig.userData.baseS = model.userData.fig.scale.y;
+    const mini = MINI.uniforms(isHero ? '#ffd9a8' : u.side === 'npc' ? '#9fe0ff' : u.boss ? '#ff7a5a' : '#a8bcff', isHero ? 0.3 : 0.24);
+    MINI.apply(model, mini);
+    root.userData = { model, base, fig: model.userData.fig, height: h, phase: Math.random() * 10, sil, float: model.userData.float || 0, rim, mini };
     root.position.set(u.x * TILE, 0, u.y * TILE);
     root.rotation.y = opts.face != null ? opts.face : 0;
     this.units.add(root);
@@ -585,6 +646,7 @@ const WORLD = {
   /* ----------------- bucle ----------------- */
   update(dt) {
     if (!this.group) return;
+    MINI.update(ENGINE.camera);
     const now = ENGINE.time, m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), yAxis = new THREE.Vector3(0, 1, 0);
     // animaciones de revelado de instancias
     if (this.anims.length) {
@@ -619,6 +681,8 @@ const WORLD = {
       this.tgtRing.rotation.z = -now * 0.8; const sc = 1 + Math.sin(now * 6) * 0.05; this.tgtRing.scale.set(sc, sc, sc);
     }
     if (this.hl) this.hl.material.opacity = 0.75 + Math.sin(now * 3) * 0.2;
+    (this.shafts || []).forEach((sh) => { if (!sh.visible) return; const u = sh.userData.shaft.uniforms; u.uT.value = now; if (u.uA.value < 1) u.uA.value = Math.min(1, u.uA.value + dt * 0.5); sh.userData.pool.material.opacity = 0.55 * u.uA.value; });
+    (this.runePanels || []).forEach((rp) => { if (rp.visible) { rp.userData.spin.rotation.z = now * 0.25; rp.userData.spin.material.opacity = 0.5 + Math.sin(now * 1.5) * 0.2; } });
     if (this.exitGlow && this.exitGlow.visible) { this.exitGlow.rotation.z = now * 0.5; this.exitGlow.material.opacity = 0.32 + Math.sin(now * 2.2) * 0.18; }
     if (this.dangerI && this.dangerI.count) { this.dangerI.material.opacity = 0.6 + Math.sin(now * 8) * 0.4; }
     // puertas: luz que se filtra
@@ -642,6 +706,13 @@ const WORLD = {
         const by = fig.userData.baseY || 0;
         fig.position.y = by + (fl ? Math.sin(now * 1.6 + ph) * 0.08 : Math.abs(Math.sin(now * 1.1 + ph)) * 0.012);
         fig.rotation.z = Math.sin(now * 0.9 + ph) * 0.015;
+        fig.scale.y = (fig.userData.baseS || 1) * (1 + Math.sin(now * 1.7 + ph) * 0.012); // respiración
+      }
+      const mi = ud.mini;
+      if (mi) {
+        if (mi.uFlash.value > 0) mi.uFlash.value = Math.max(0, mi.uFlash.value - dt * 4.5);
+        const act = typeof GAME !== 'undefined' && GAME.active && GAME.active.mesh === r && GAME.phase === 'hero';
+        mi.uRim.value = act ? mi.base * 1.9 + Math.sin(now * 3) * 0.08 : mi.base;
       }
       if (md.cape) md.cape.rotation.x = 0.12 + Math.sin(now * 1.7 + ph) * 0.07;
       if (md.orbs) md.orbs.rotation.y = now * 1.2;

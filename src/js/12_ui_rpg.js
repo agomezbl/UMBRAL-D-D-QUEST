@@ -188,7 +188,7 @@ Object.assign(UI, {
       const picks = {};
       const s = this.screen(`<div class="card talents"><div class="eyebrow">Ascenso · Rango ${tier + 2}</div><h2>Lo que la Hondura os ha enseñado</h2>
         <p class="lead">Cada héroe elige un talento. Algunos suben una virtud; otros cambian cómo lucha.</p>
-        <div class="tal-grid">${GAME.party.map((id) => `<section class="tal-col" style="--hc:${HERO_DEFS[id].color}"><header><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].full}</b></header>
+        <div class="tal-grid">${GAME.party.map((id) => `<section class="tal-col" style="--hc:${HERO_DEFS[id].color}"><header><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].full}</b>${GAME.isMulti() ? `<em class="hc-owner pc${GAME.heroOwner(id)}">${U.esc(GAME.playerName(GAME.heroOwner(id)))}</em>` : ''}</header>
           ${TALENTS[id][tier].map((t) => `<button class="tal-opt" data-h="${id}" data-t="${t.id}"><b>${t.name}</b><small>${t.desc}</small>${t.virt ? `<em>${Object.entries(t.virt).map(([k, n]) => `+${n} ${VIRTUES[k].name}`).join(', ')}</em>` : ''}</button>`).join('')}</section>`).join('')}</div>
         <div class="row end"><button class="btn primary" id="tl-go" disabled>${icon('check')} Confirmar talentos</button></div></div>`, 'dim');
       U.$$('.tal-opt', s).forEach((b) => (b.onclick = () => {

@@ -6,7 +6,7 @@ Object.assign(UI, {
   descentSetup() { this.difficulty('descent'); },
 
   /* Elige 3 de los 5 héroes */
-  partyPick(diff) {
+  partyPick(diff, np = 1) {
     const ALL = ['aldric', 'sera', 'elian', 'brunna', 'nyra'];
     const last = U.store.get('umbral.descent.party', null);
     let sel = Array.isArray(last) && last.length === 3 && last.every((id) => ALL.includes(id)) ? last.slice() : ['aldric', 'brunna', 'nyra'];
@@ -36,6 +36,7 @@ Object.assign(UI, {
     };
     render();
     s.querySelector('#pp-back').onclick = () => { audio.sfx('uiBack'); this.difficulty('descent'); };
+    const self = this;
     s.querySelector('#pp-go').onclick = async () => {
       if (sel.length !== 3) return;
       audio.sfx('ui');
@@ -43,9 +44,11 @@ Object.assign(UI, {
       U.store.set('umbral.descent.party', party);
       GAME.newGame(diff, null, party);
       const build = await this.forge(party);
-      if (!build) { this.partyPick(diff); return; }
+      if (!build) { this.partyPick(diff, np); return; }
+      let mp = null;
+      if (np > 1) { mp = await self.playersSetup(party, { n: np }); if (!mp) { this.partyPick(diff, np); return; } }
       this.screen(null); await this.fadeOut(); MAIN.stopTitle();
-      GAME.startDescent(diff, party, build.custom ? build.virt : null);
+      GAME.startDescent(diff, party, build.custom ? build.virt : null, mp);
     };
   },
 
@@ -55,7 +58,7 @@ Object.assign(UI, {
       const picks = {};
       const s = this.screen(`<div class="card talents boons"><div class="eyebrow">Ascenso · Campamento ${GAME.descent ? GAME.descent.camps : ''}</div><h2>La Hondura os ha endurecido</h2>
         <p class="lead">Cada héroe sube una virtud un punto (hasta ${VMAX}). Con 4 o más llega su don; todo lo demás cambia con ella.</p>
-        <div class="tal-grid">${GAME.party.map((id) => { const v = GAME.virtOf(id); return `<section class="tal-col" style="--hc:${HERO_DEFS[id].color}"><header><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].full}</b></header>
+        <div class="tal-grid">${GAME.party.map((id) => { const v = GAME.virtOf(id); return `<section class="tal-col" style="--hc:${HERO_DEFS[id].color}"><header><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].full}</b>${GAME.isMulti() ? `<em class="hc-owner pc${GAME.heroOwner(id)}">${U.esc(GAME.playerName(GAME.heroOwner(id)))}</em>` : ''}</header>
           ${VKEYS.map((k) => `<button class="tal-opt boon" data-h="${id}" data-k="${k}" ${v[k] >= VMAX ? 'disabled' : ''}><b>${icon(VIRTUES[k].icon)} ${VIRTUES[k].name} <span class="bn-n">${v[k]} → ${Math.min(VMAX, v[k] + 1)}</span></b>${v[k] + 1 === PERK_AT ? `<em>Desbloquea: ${VIRTUES[k].perk.name}</em>` : ''}</button>`).join('')}</section>`; }).join('')}</div>
         <div class="row end"><button class="btn primary" id="tl-go" disabled>${icon('check')} Confirmar</button></div></div>`, 'dim');
       U.$$('.tal-opt', s).forEach((b) => (b.onclick = () => {

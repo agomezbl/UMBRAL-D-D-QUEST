@@ -106,8 +106,21 @@ const FX = {
     if (GAME && GAME.enemies) GAME.enemies.forEach((e) => { if (e.alive && e.mesh && e.mesh.visible && e.kind === 'ignis') this.emit({ pos: { x: e.mesh.position.x, y: 1.6, z: e.mesh.position.z }, count: 2, spread: 0.6, vel: { x: 0, y: 1.2, z: 0 }, velSpread: 0.4, life: 1.4, size: 0.1, color: '#ffcf6b', color2: '#ff3a10', drag: 0.3 }); });
   },
 
+  /* Onda en el suelo para golpes de área, escudos y conjuros */
+  ringGeo: null,
+  ring(pos, color, radius = 2, dur = 520) {
+    if (U.instant || (ENGINE.q && ENGINE.q.particles < 0.3)) return;
+    if (!this.ringGeo) this.ringGeo = new THREE.RingGeometry(0.82, 1, 48);
+    const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.9, side: THREE.DoubleSide });
+    const m = new THREE.Mesh(this.ringGeo, mat); m.rotation.x = -Math.PI / 2; m.position.set(pos.x, 0.06, pos.z); m.renderOrder = 19; ENGINE.scene.add(m);
+    U.tween(dur, (k) => { const r = 0.25 + (radius - 0.25) * U.easeOut(k); m.scale.set(r, r, r); mat.opacity = 0.9 * (1 - k); }).then(() => { ENGINE.scene.remove(m); mat.dispose(); });
+  },
   burst(kind, pos, o = {}) {
     const P = { x: pos.x, y: pos.y != null ? pos.y : 1, z: pos.z };
+    if (kind === 'explode') this.ring(P, '#ffb060', 3.2);
+    else if (kind === 'shield') this.ring(P, '#ffe0a0', 1.5, 600);
+    else if (kind === 'summon') this.ring(P, o.color || '#9dffcf', 1.6, 700);
+    else if (kind === 'heal') this.ring(P, '#9dffc8', 1.1, 600);
     switch (kind) {
       case 'hit': this.emit({ pos: P, count: 22, spread: 0.15, radial: 3.2, up: 2.4, gravity: 6, life: 0.6, size: 0.11, color: '#ffb36b', color2: '#ff3d1e', drag: 2 }); break;
       case 'blood': this.emit({ pos: P, count: 14, spread: 0.15, radial: 2.4, up: 2, gravity: 8, life: 0.7, size: 0.1, color: '#b0101a', color2: '#5a0008', drag: 1.5 }); break;
@@ -127,6 +140,34 @@ const FX = {
       case 'glass': this.emit({ pos: P, count: 40, spread: 0.5, radial: 3, up: 2, gravity: 6, life: 1.0, size: 0.12, color: '#e8e0ff', color2: '#7a5aff', drag: 1 }); break;
       case 'reveal': this.emit({ pos: { x: P.x, y: 0.1, z: P.z }, count: 30, spread: 1.6, spreadY: 0.1, vel: { x: 0, y: 1.2, z: 0 }, velSpread: 0.4, life: 1.6, size: 0.12, color: o.color || '#ffd27a', color2: '#ff7a2a', drag: 0.7 }); break;
     }
+  },
+
+  /* Tajo: un arco de luz que barre delante del atacante en los golpes cuerpo a cuerpo */
+  slashGeo: null,
+  slash(pos, dir, color = '#fff2d0', dur = 240) {
+    if (U.instant) return;
+    if (!this.slashGeo) {
+      const N = 20, r1 = 0.5, r2 = 1.05, arc = 2.3, P = [], T = [], R = [], I = [];
+      for (let i = 0; i <= N; i++) {
+        const a = -arc / 2 + (arc * i) / N, t = i / N;
+        P.push(Math.sin(a) * r1, 0, Math.cos(a) * r1, Math.sin(a) * r2, 0, Math.cos(a) * r2); T.push(t, t); R.push(0, 1);
+        if (i < N) { const k = i * 2; I.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aT', new THREE.Float32BufferAttribute(T, 1)); g.setAttribute('aR', new THREE.Float32BufferAttribute(R, 1)); g.setIndex(I);
+      this.slashGeo = g;
+    }
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uCol: { value: new THREE.Color(color).lerp(new THREE.Color('#ffffff'), 0.45) }, uK: { value: 0 } },
+      vertexShader: 'attribute float aT; attribute float aR; varying float vT; varying float vR; void main(){ vT = aT; vR = aR; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform vec3 uCol; uniform float uK; varying float vT; varying float vR; void main(){ float head = mix(0.25, 1.15, uK); float a = smoothstep(head - 0.75, head, vT) * (1.0 - smoothstep(head, head + 0.04, vT)); a *= smoothstep(0.0, 0.55, vR) * (1.0 - smoothstep(0.75, 1.0, vR)); a *= 1.0 - smoothstep(0.6, 1.0, uK); gl_FragColor = vec4(uCol * a * 1.6, 1.0); }',
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+    });
+    const holder = new THREE.Group(), mesh = new THREE.Mesh(this.slashGeo, mat);
+    holder.position.set(pos.x, 1.05, pos.z); holder.rotation.y = Math.atan2(dir.x, dir.z);
+    const tilt = (Math.random() < 0.5 ? -1 : 1) * (0.35 + Math.random() * 0.35);
+    mesh.rotation.z = tilt; mesh.renderOrder = 21; holder.add(mesh); ENGINE.scene.add(holder);
+    U.tween(dur, (k) => { mat.uniforms.uK.value = k; mesh.rotation.y = -0.5 + k * 0.9; }).then(() => { ENGINE.scene.remove(holder); mat.dispose(); });
   },
 
   /* proyectiles con estela y luz propia */
