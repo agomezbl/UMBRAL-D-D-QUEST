@@ -174,6 +174,7 @@ const UI = {
     clearTimeout(this._tt); this._tt = setTimeout(() => el.classList.remove('show'), 2600);
   },
   hintOnce(id) {
+    if (GAME.tutorial) return; // el tutorial ya lo explica paso a paso
     const seen = U.store.get('umbral.hints', {});
     if (seen[id] || !HINTS[id]) return;
     if (id === 'touch' && !U.isTouch()) return;
@@ -294,6 +295,8 @@ const UI = {
     const s = this.$('screen');
     if (!html) { s.hidden = true; s.innerHTML = ''; s.className = 'screen'; return null; }
     s.className = 'screen ' + (cls || ''); s.innerHTML = html; s.hidden = false;
+    // los rótulos flotantes (lugar, ronda) no deben transparentarse detrás de una pantalla
+    this.$('banner').classList.remove('show');
     return s;
   },
   fadeOut() { this.$('fade').classList.add('on'); return U.sleep(700); },
@@ -302,7 +305,7 @@ const UI = {
     this.showHUD(false);
     this.$('fade').classList.add('on');
     await U.sleep(400);
-    const s = this.screen(`<div class="chap"><div class="chap-num">Capítulo ${ch.num}</div><h1 class="chap-title">${ch.title}</h1><div class="chap-sub">${ch.subtitle}</div><div class="chap-rule"></div></div>`, 'chapter-card');
+    const s = this.screen(`<div class="chap"><div class="chap-num">${ch.eyebrow || `Capítulo ${ch.num}`}</div><h1 class="chap-title">${ch.title}</h1><div class="chap-sub">${ch.subtitle}</div><div class="chap-rule"></div></div>`, 'chapter-card');
     audio.stinger('chapter');
     s.querySelector('.chap').classList.add('in');
     await new Promise((r) => { const t = setTimeout(r, 3400); s.onclick = () => { clearTimeout(t); r(); }; });
@@ -422,9 +425,14 @@ const UI = {
 
   /* ---------------- título y menús ---------------- */
   title() {
-    GAME.state = 'title';
-    this.showHUD(false); this.hideAll();
+    GAME.state = 'title'; GAME.tutorial = false; GAME.gen = (GAME.gen || 0) + 1; GAME.busy = 0; GAME.mode = null;
+    TUTOR.stop();
+    // limpiar lo que pudiera quedar a medias (diálogo, latido, velo de la Sombra)
+    clearInterval(this._ti); clearTimeout(this._auto); this._typing = false; this._resolve = null;
+    document.body.classList.remove('cinema'); audio.stopSpeech(); audio.heartbeat(false);
+    this.showHUD(false); this.hideAll(); this.bossBar(null); this.shadowMode(false);
     const save = U.store.get('umbral.save.v2', null);
+    const tutDone = !!U.store.get('umbral.tutorial', 0);
     const s = this.screen(`<div class="title">
       <div class="tt-top"><div class="tt-eyebrow">Crónicas de la Última Llama</div>
       <h1 class="tt-name" aria-label="Umbral">UMBRAL</h1>
@@ -432,6 +440,7 @@ const UI = {
       <nav class="tt-menu">
         ${save ? `<button class="btn primary" id="t-cont">${icon('play')} Continuar <small>Capítulo ${CHAPTERS[save.chIdx] ? CHAPTERS[save.chIdx].num : ''}${save.stage === 'camp' ? ' · campamento' : ''}</small></button>` : ''}
         <button class="btn ${save ? '' : 'primary'}" id="t-new">${icon('flame')} Nueva partida</button>
+        <button class="btn ${tutDone ? '' : 'recommend'}" id="t-tut">${icon('target')} Tutorial guiado <small>${tutDone ? 'unos 10 min' : 'Recomendado · 10 min'}</small></button>
         <button class="btn" id="t-help">${icon('scroll')} Cómo se juega</button>
         <button class="btn" id="t-set">${icon('gear')} Ajustes</button>
       </nav>
@@ -440,17 +449,26 @@ const UI = {
     s.addEventListener('pointerdown', start, { once: true });
     if (save) s.querySelector('#t-cont').onclick = () => { audio.init(); audio.sfx('ui'); GAME.restore(save); this.screen(null); if (save.stage === 'camp') GAME.camp(save.chIdx); else GAME.startChapter(save.chIdx); };
     s.querySelector('#t-new').onclick = () => { audio.init(); audio.sfx('ui'); this.difficulty(); };
+    s.querySelector('#t-tut').onclick = () => this.startTutorial();
     s.querySelector('#t-help').onclick = () => { audio.init(); audio.sfx('ui'); this.help(() => this.title()); };
     s.querySelector('#t-set').onclick = () => { audio.init(); audio.sfx('ui'); this.settings(() => this.title()); };
     audio.setMusic('menu', 'crypt');
     MAIN.titleScene();
   },
+  async startTutorial() {
+    audio.init(); audio.sfx('ui');
+    this.screen(null); await this.fadeOut(); MAIN.stopTitle();
+    GAME.startTutorial();
+  },
   difficulty() {
+    const tutDone = !!U.store.get('umbral.tutorial', 0);
     const opts = ['relato', 'heroe', 'pesadilla'].map((id) => DIFFICULTY[id]);
     const s = this.screen(`<div class="card diff"><div class="eyebrow">Nueva partida</div><h2>¿Cuánta oscuridad soportáis?</h2>
       <div class="diff-opts">${opts.map((d) => `<button class="diff-opt ${d.id === 'heroe' ? 'sel' : ''}" data-d="${d.id}"><b>${d.name}</b><small>${d.blurb}</small>
         <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: cada ${d.doom} rondas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}</ul></button>`).join('')}</div>
+      ${tutDone ? '' : `<p class="df-tut">${icon('target')} <span>¿Primera vez? El <b>tutorial guiado</b> te enseña lo esencial en unos diez minutos, sin tocar tu partida.</span> <button class="btn small" id="df-tut">Hacer el tutorial</button></p>`}
       <div class="row"><button class="btn" id="df-back">Volver</button><button class="btn primary" id="df-go">${icon('crown')} Forjar el grupo</button></div></div>`, 'dim title-screen');
+    const dt = s.querySelector('#df-tut'); if (dt) dt.onclick = () => this.startTutorial();
     let pick = 'heroe';
     U.$$('.diff-opt', s).forEach((b) => (b.onclick = () => { pick = b.dataset.d; U.$$('.diff-opt', s).forEach((q) => q.classList.toggle('sel', q === b)); audio.sfx('ui'); }));
     s.querySelector('#df-back').onclick = () => { audio.sfx('uiBack'); this.title(); };
@@ -468,6 +486,17 @@ const UI = {
   pause() {
     if (GAME.state !== 'play' && GAME.state !== 'camp') return;
     audio.sfx('ui');
+    if (GAME.tutorial) {
+      const t = this.screen(`<div class="card pause"><div class="eyebrow">Tutorial en pausa</div><h2>${GAME.ch ? GAME.ch.title : 'Tutorial'}</h2>
+        <div class="col"><button class="btn primary" id="p-back">${icon('play')} Seguir</button><button class="btn" id="p-help">${icon('scroll')} Cómo se juega</button><button class="btn" id="p-set">${icon('gear')} Ajustes</button><button class="btn" id="p-retry">${icon('rotate')} Empezar el tutorial de nuevo</button><button class="btn danger" id="p-quit">Salir del tutorial</button></div>
+        <p class="small">El tutorial no toca tu partida guardada.</p></div>`, 'dim');
+      t.querySelector('#p-back').onclick = () => { audio.sfx('uiBack'); this.screen(null); };
+      t.querySelector('#p-help').onclick = () => this.help(() => this.pause());
+      t.querySelector('#p-set').onclick = () => this.settings(() => this.pause());
+      t.querySelector('#p-retry').onclick = () => { this.screen(null); TUTOR.stop(); GAME.startTutorial(); };
+      t.querySelector('#p-quit').onclick = () => { audio.heartbeat(false); this.title(); };
+      return;
+    }
     const s = this.screen(`<div class="card pause"><div class="eyebrow">Pausa</div><h2>${GAME.ch ? GAME.ch.title : 'Umbral'}</h2>
       <div class="col"><button class="btn primary" id="p-back">${icon('play')} Seguir jugando</button><button class="btn" id="p-help">${icon('scroll')} Cómo se juega</button><button class="btn" id="p-set">${icon('gear')} Ajustes</button><button class="btn" id="p-full">${icon('fullscreen')} Pantalla completa</button>${GAME.state === 'play' ? `<button class="btn" id="p-retry">${icon('rotate')} Reiniciar capítulo</button>` : ''}<button class="btn danger" id="p-quit">Salir al inicio</button></div>
       <p class="small">La partida se guarda al comenzar cada capítulo y al llegar al campamento.</p></div>`, 'dim');
@@ -498,7 +527,8 @@ const UI = {
         <section><h3>Ordenador</h3><p>Clic: mover, atacar, abrir · Arrastrar: desplazar · Clic derecho y arrastrar: girar · Rueda: zoom · <kbd>1</kbd>–<kbd>5</kbd> acciones · <kbd>Z</kbd> deshacer movimiento · <kbd>G</kbd> ficha del grupo · <kbd>Espacio</kbd> fin de turno · <kbd>Tab</kbd> siguiente héroe · <kbd>Q</kbd>/<kbd>E</kbd> girar · <kbd>WASD</kbd> mover cámara · <kbd>Esc</kbd> cancelar</p></section>
         <section><h3>Móvil</h3><p>Toca para ver qué pasará y toca otra vez para confirmar · Arrastra con un dedo para mover la cámara · Pellizca para acercar · Gira con dos dedos.</p></section>
       </div>
-      <div class="row end"><button class="btn primary" id="h-back">Entendido</button></div></div>`, 'dim');
+      <div class="row end">${GAME.state === 'title' ? `<button class="btn" id="h-tut">${icon('target')} Jugar el tutorial</button>` : ''}<button class="btn primary" id="h-back">Entendido</button></div></div>`, 'dim');
+    const ht = s.querySelector('#h-tut'); if (ht) ht.onclick = () => this.startTutorial();
     s.querySelector('#h-back').onclick = () => { audio.sfx('uiBack'); back ? back() : this.screen(null); };
   },
   settings(back) {

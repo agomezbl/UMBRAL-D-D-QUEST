@@ -20,7 +20,8 @@ const INPUT = {
     c.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('keydown', (e) => this.key(e, true));
     window.addEventListener('keyup', (e) => this.key(e, false));
-    c.addEventListener('pointerleave', () => { if (!this.pts.size) { UI.preview(null); WORLD.setHover(null); GAME.showPreview(null); this.hoverK = null; } });
+    // en táctil el navegador lanza «pointerleave» justo después de cada toque: solo cuenta el ratón
+    c.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !this.pts.size) { UI.preview(null); WORLD.setHover(null); GAME.showPreview(null); this.hoverK = null; } });
   },
   ground(cx, cy) {
     const r = ENGINE.raycaster; r.setFromCamera(ENGINE.ndc(cx, cy), ENGINE.camera);
@@ -88,6 +89,9 @@ const INPUT = {
     this.keys[k] = down;
     if (!down) return;
     if (!UI.$('dlg').hidden && (k === ' ' || k === 'enter')) { e.preventDefault(); UI.advance(); return; }
+    // los escritos también se cierran con el teclado
+    if (!UI.$('note').hidden && (k === ' ' || k === 'enter' || k === 'escape')) { e.preventDefault(); UI.$('note').dispatchEvent(new PointerEvent('pointerup')); return; }
+    if (k === 'enter' && TUTOR.active && TUTOR.el && !TUTOR.el.panel.hidden && !TUTOR.el.next.hidden) { e.preventDefault(); TUTOR.el.next.click(); return; }
     if (k === 'g' && (GAME.state === 'play' || GAME.state === 'camp')) { UI.sheet(); return; }
     if (k === 'escape' && !UI.$('sheet').hidden) { UI.$('sheet').hidden = true; return; }
     if (GAME.state !== 'play') { if (k === 'escape' && GAME.state === 'camp') UI.pause(); return; }
@@ -208,5 +212,5 @@ const MAIN = {
   }
 };
 
-window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, VIRTUES, TALENTS, VIGILS, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, STATUS };
+window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, VIRTUES, TALENTS, VIGILS, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, STATUS, TUTOR, TUTORIAL };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => MAIN.boot()); else MAIN.boot();

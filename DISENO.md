@@ -104,7 +104,7 @@ Se tiran tantos dados como la virtud; hay éxito si salen al menos tantas calave
 ### 3.4 Recursos
 
 - **Determinación** (tanta como la Voluntad): tras una tirada propia se puede gastar un punto para repetir los dados fallados. Si un golpe va a derribar a un héroe, se gasta sola para repetir sus dados de defensa («Último aliento»). Se recupera al empezar cada capítulo.
-- **Éter** (Elian): sus hechizos cuestan Éter en lugar de esperar turnos. Fuego Astral cuesta 3 y Luz de la Aurora 2; recupera 1 por ronda. Con la *Égida*, si le atacan gasta 1 de Éter para tirar un dado de defensa más: estar en primera línea le cuesta magia.
+- **Éter** (Elian): sus hechizos cuestan Éter en lugar de esperar turnos. Fuego Astral cuesta 3 y Luz de la Aurora 2; recupera 1 por ronda. Con el *Escudo de éter*, si le atacan gasta 1 de Éter para tirar un dado de defensa más: estar en primera línea le cuesta magia.
 
 ### 3.5 Posición
 
@@ -206,7 +206,7 @@ Las cinco virtudes se usan en las pruebas: en las tres campañas de Héroe hubo 
 
 | Lo que se vio | Ajuste |
 | --- | --- |
-| Elian caía demasiado (19 veces en una campaña de Héroe) | *Égida*: gasta Éter para defenderse. Después, entre 0 y 6 caídas por campaña |
+| Elian caía demasiado (19 veces en una campaña de Héroe) | *Escudo de éter*: gasta Éter para defenderse. Después, entre 0 y 6 caídas por campaña |
 | Pesadilla se atascaba en el capítulo II (4 derrotas seguidas) | 2 pociones en lugar de 1 y un campeón de cada 5 criaturas en lugar de 1 de cada 4 |
 | La moral casi nunca entraba en juego (0 o 1 prueba por campaña) | La prueba pasa a dificultad media y cuenta desde grupos de dos |
 | En Pesadilla el combate final se perdía casi siempre (3 victorias en 17 intentos) | Los jefes de Pesadilla conservan +3 PV pero ya no tiran un dado más. Después, Isolde cae en 3 de 4 campañas |
@@ -217,3 +217,42 @@ Las cinco virtudes se usan en las pruebas: en las tres campañas de Héroe hubo 
 ### 5.4 Límites de la verificación
 
 Las partidas automáticas y las capturas se hicieron con un navegador sin tarjeta gráfica y sin sonido. Falta probar con calma en un móvil real: el rendimiento con gráficos altos, el audio y la sensación de juego de una persona.
+
+## 6. Tutorial guiado
+
+Con las cinco virtudes, la Determinación, el Éter y los ataques de oportunidad, el juego tiene ahora muchas más reglas. Para alguien que nunca ha jugado a rol, un texto de ayuda no basta.
+
+### 6.1 Opciones valoradas
+
+| Opción | Ventaja | Pega | Decisión |
+| --- | --- | --- | --- |
+| Manual de reglas («Cómo se juega») | Ya existía | Nadie lee antes de jugar | Se conserva como consulta |
+| Consejos sueltos la primera vez que pasa algo | Ya existían | Llegan tarde y sin orden | Se conservan para la campaña |
+| Primer capítulo «con ruedines» | No hay que salir de la historia | Mezcla aprender y jugar en serio | Descartada |
+| **Sala de prácticas con pasos que esperan a que los hagas** | Se aprende haciendo, a tu ritmo y sin riesgo | Más trabajo de construcción | **Adoptada** |
+
+### 6.2 Cómo funciona
+
+- Se ofrece desde el título («Tutorial guiado · Recomendado») y desde la elección de dificultad hasta que se completa una vez.
+- Es una sala propia, «La Sala de Armas», bajo la catedral: dos esqueletos y un arquero de prácticas, una puerta con cerradura, un cofre y un atril. Se juega con las reglas de Relato y no toca la partida guardada.
+- Un panel enseña 21 pasos: el grupo, moverse, deshacer, mover la cámara, cambiar de héroe, abrir puertas, conocer al enemigo, atacar, los dados, habilidades y Éter, fin del turno y turno de la Sombra, Determinación, flanqueo y huida, limpiar la sala, la ficha de virtudes, cerraduras y pruebas, botín, acciones y objetos, y el Presagio.
+- Cada paso espera a que lo hagas, con una flecha sobre el tablero o un anillo sobre el botón. Los pasos que son solo explicación tienen «Entendido» (o Intro en el ordenador).
+- Las reglas que aparecen por sorpresa (un ataque de oportunidad, una oferta de Determinación, un héroe que cae, una cerradura que se resiste) se explican en el momento con una nota en el panel.
+- Si un paso necesita una acción y ya no le queda a nadie, el panel lo dice y señala «Fin de turno». Siempre se puede «Saltar paso» o «Salir del tutorial», y desde la pausa, empezarlo de nuevo.
+- En el móvil el panel va encima de la barra de acciones y se encoge cuando se abre la ficha de un enemigo.
+
+### 6.3 Fallos corregidos de paso
+
+| Fallo | Arreglo |
+| --- | --- |
+| En el móvil, la ficha del objetivo y la ruta marcada desaparecían nada más tocar: el navegador avisa de que el dedo «sale» del tablero tras cada toque | Ese aviso solo cuenta ya para el ratón. La ficha y la ruta se quedan hasta el siguiente toque |
+| La ficha del grupo no cuadraba las cuentas: por ejemplo, «Vida 12» con un desglose que sumaba 10 | El desglose incluye la dificultad, las reliquias, los talentos y las veladas |
+| La defensa de Elian se llamaba «Égida», igual que la Égida de plata de Aldric | Pasa a llamarse «Escudo de éter» |
+| Al salir al inicio en mitad de un diálogo podía quedarse el modo cine, el latido de poca vida o el juego ocupado | El título lo limpia todo |
+| El rótulo del lugar se transparentaba detrás de la pantalla de talentos al acampar | Los rótulos se ocultan al abrir cualquier pantalla |
+| Los escritos solo se cerraban con el ratón o el dedo | También con Intro, Espacio o Esc |
+
+### 6.4 Verificación
+
+El tutorial se recorrió entero de forma automática con toques y clics reales, en ordenador (1280×720) y en móvil (390×844), sin errores. También se probaron salir a mitad, reiniciarlo desde la pausa, y comprobar que la partida guardada sigue intacta y que en la campaña vuelven los consejos normales. Después se repitieron cuatro campañas completas automáticas (Relato, Héroe ×2 y Pesadilla), todas terminadas sin errores, y pruebas de toques al azar en ordenador y móvil.
+

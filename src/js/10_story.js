@@ -44,7 +44,7 @@ const HERO_DEFS = {
     melee: { name: 'Báculo', attr: 'FUE', base: 1 },
     armor: { name: 'Túnica tejida', base: 2 },
     blurb: 'El más listo y voluntarioso. Ataca a distancia, cura y quema grupos con su Éter. No aguanta un cuerpo a cuerpo.',
-    trait: { name: 'Tejedor del Éter', desc: 'Sus habilidades gastan Éter (máximo igual a su Ingenio, +1 cada ronda) en lugar de esperar. Égida: si le atacan, gasta 1 de Éter y tira un dado de defensa más.' },
+    trait: { name: 'Tejedor del Éter', desc: 'Sus habilidades gastan Éter (máximo igual a su Ingenio, +1 cada ronda) en lugar de esperar. Escudo de éter: si le atacan, gasta 1 de Éter y tira un dado de defensa más.' },
     basic: { name: 'Saeta Arcana', icon: 'bolt' },
     skills: [
       { id: 'starfire', name: 'Fuego Astral', icon: 'starfire', eter: 3, target: 'enemy', range: 5, los: true, dtype: 'fire' },
@@ -66,6 +66,9 @@ const ENEMY_TYPES = {
   golem: { name: 'Gólem de cristal', model: 'golem', role: 'coloso', virt: { FUE: 5, AGI: 1, ING: 1, VOL: 5, PRE: 1 }, hp: 6, atk: 4, def: 4, mv: 3, gold: 18, resist: ['pierce', 'arcane'], immune: ['aterrado', 'envenenado', 'ardiendo'], onHit: { st: 'aturdido', dur: 1, resist: 'FUE', dif: 2, minDmg: 2 }, traits: ['cristal', 'aturdidor', 'sinMiedo'], deathCol: ['#e0ccff', '#5a2aaa'], sfx: 'glass' },
   reflection: { name: 'Reflejo', model: 'reflection', role: 'copia', virt: { FUE: 3, AGI: 3, ING: 3, VOL: 5, PRE: 1 }, hp: 3, atk: 3, def: 2, mv: 5, gold: 5, weak: ['radiant'], immune: ['aterrado', 'envenenado'], traits: ['sinMiedo'], deathCol: ['#d8d0ff', '#1a1430'], sfx: 'glass' },
   risen: { name: 'Huesos alzados', model: 'skeleton', role: 'bruto', virt: { FUE: 2, AGI: 2, ING: 1, VOL: 5, PRE: 1 }, hp: 1, atk: 2, def: 1, mv: 4, gold: 0, undead: true, weak: ['radiant'], immune: ['aterrado', 'envenenado'], traits: ['noMuerto', 'sinMiedo'], sfx: 'bone', deathCol: ['#f0e6cc', '#6a6050'] },
+  // prácticas (tutorial)
+  dummy: { name: 'Esqueleto de prácticas', model: 'skeleton', role: 'bruto', virt: { FUE: 2, AGI: 2, ING: 1, VOL: 5, PRE: 1 }, hp: 3, atk: 2, def: 1, mv: 3, gold: 2, undead: true, weak: ['radiant'], immune: ['aterrado', 'envenenado'], traits: ['noMuerto', 'sinMiedo'], sfx: 'bone', deathCol: ['#f0e6cc', '#6a6050'] },
+  dummyArcher: { name: 'Arquero de prácticas', model: 'archer', role: 'tirador', virt: { FUE: 2, AGI: 2, ING: 2, VOL: 5, PRE: 1 }, hp: 2, atk: 2, def: 1, mv: 2, range: 4, ranged: true, proj: 'arrow', gold: 2, undead: true, weak: ['radiant'], immune: ['aterrado', 'envenenado'], traits: ['noMuerto', 'sinMiedo'], sfx: 'bone', deathCol: ['#f0e6cc', '#6a6050'] },
   // jefes
   malakor: { name: 'Malakor el Nigromante', model: 'malakor', role: 'jefe', virt: { FUE: 2, AGI: 2, ING: 5, VOL: 5, PRE: 5 }, boss: true, hp: 9, atk: 3, def: 3, mv: 3, range: 5, ranged: true, proj: 'necro', gold: 60, undead: true, weak: ['radiant'], immune: ['aterrado', 'envenenado'], onHit: { st: 'aterrado', dur: 1, resist: 'VOL', dif: 2 }, traits: ['noMuerto', 'aterrador', 'lider'], deathCol: ['#b9ffd8', '#0a3a20'] },
   ignis: { name: 'Ignis, Señor del Magma', model: 'ignis', role: 'jefe', virt: { FUE: 5, AGI: 2, ING: 3, VOL: 5, PRE: 4 }, boss: true, hp: 12, atk: 5, def: 3, mv: 3, gold: 80, resist: ['fire'], immune: ['aterrado', 'ardiendo', 'aturdido'], onHit: { st: 'ardiendo', dur: 2 }, traits: ['fuegoVivo', 'incendiario', 'lider'], deathCol: ['#ffd08a', '#ff3a10'] },
@@ -545,3 +548,40 @@ const EPILOGUES = {
     ]
   }
 };
+
+/* ============================ TUTORIAL ============================
+   Sala de prácticas bajo la catedral: se juega con reglas de Relato y no toca la partida guardada */
+const TUTORIAL = {
+  id: 'tut', num: '0', eyebrow: 'Tutorial guiado', title: 'La Sala de Armas', subtitle: 'Antes de descender', theme: 'crypt', ambient: 'crypt', tutorial: true,
+  legend: { a: 'dummy', b: 'dummyArcher' }, lantern: '#ffb45a',
+  locks: { '14,3': 'cerradura' },
+  map: [
+    '#####################',
+    '#.....#......b#.....#',
+    '#.1...#..a....#..C..#',
+    '#..2..+.......+.....#',
+    '#.3...#....a..#..?..#',
+    '#X....#4......#....5#',
+    '#####################'
+  ],
+  intro: [
+    ['n', 'Bajo la catedral de Aldmere, la Orden guarda una sala de armas. Huele a cera, a aceite y a huesos viejos.'],
+    ['aldric', 'Antes de bajar a la Hondura quiero veros luchar juntos. Tras esa puerta esperan tres esqueletos de prácticas.'],
+    ['sera', '¿Esqueletos de prácticas? Qué cosas guardáis en las catedrales.'],
+    ['elian', 'Huesos y alambre con un hechizo menor. Pegan flojo… creo.'],
+    ['objective', 'Tutorial: aprende a moverte, luchar y abrir puertas.']
+  ],
+  rooms: {
+    '1': { name: 'Sala de armas' },
+    '4': { name: 'Patio de prácticas', reveal: [['aldric', 'Ahí los tenéis. Pegan flojo, pero pegan. Juntos, como os enseñé.'], ['objective', 'Derrota a los esqueletos de prácticas.']] },
+    '5': { name: 'Armería', reveal: [['sera', 'Un cofre. Ahora sí hablamos el mismo idioma.'], ['objective', 'Abre el cofre de la armería.']] }
+  },
+  notes: [
+    [['sfx', 'page'], ['note', 'Reglamento de la Orden · Artículo III', 'Un paladín no deja atrás a un hermano caído. Un explorador mira dónde pisa. Un tejedor no gasta su éter en vano. Y ninguno de los tres baja solo.'],
+      ['aldric', 'Leer no gasta la acción. Aprendedlo: abajo, los escritos cuentan lo que nadie os dirá.']]
+  ],
+  chests: {
+    0: [['n', 'Monedas viejas y provisiones: la Orden no deja bajar a nadie con las manos vacías.'], ['objective', 'Últimos consejos antes de bajar.']]
+  }
+};
+

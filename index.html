@@ -604,6 +604,57 @@ body.cinema #party { transform: translateX(-20px); }
   #sheet { padding: 10px; }
 }
 
+/* ------------------------------------------------ tutorial guiado */
+#tutor { position: fixed; z-index: 30; top: calc(var(--gt) + 64px); right: var(--gr); width: min(360px, calc(100vw - 32px)); max-height: calc(100vh - 200px); overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 7px; }
+#tutor.tu-in { animation: tuPop 0.35s ease-out; }
+@keyframes tuPop { from { opacity: 0; transform: translateY(-8px); } }
+#tutor.done { border-color: var(--verd); box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.45), inset 0 0 0 4px rgba(116, 205, 170, 0.3), 0 0 26px rgba(116, 205, 170, 0.35); }
+#tutor.done .tu-title::after { content: ' ✓'; color: var(--verd); }
+.tu-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tu-top .eyebrow b { color: var(--bone); font-weight: 700; letter-spacing: 0.08em; }
+.tu-exit { background: none; border: 0; color: var(--ash); font-family: var(--f-sc); font-size: var(--t-xs); letter-spacing: 0.06em; cursor: pointer; padding: 4px 0; text-decoration: underline; text-decoration-color: var(--bronze-dim); text-underline-offset: 3px; }
+.tu-exit:hover { color: var(--candle); }
+.tu-bar { height: 3px; background: rgba(176, 140, 88, 0.18); }
+.tu-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--candle), var(--candle-hi)); transition: width 0.45s; }
+.tu-title { margin: 2px 0 0; font-family: var(--f-display); font-weight: 500; font-size: 25px; line-height: 1.05; color: var(--candle-hi); }
+.tu-text { margin: 0; font-size: var(--t-m); line-height: 1.45; color: var(--bone); text-wrap: pretty; }
+.tu-aside { margin: 0; font-size: var(--t-s); line-height: 1.4; color: #ffdcaa; background: rgba(233, 184, 100, 0.1); border-left: 2px solid var(--candle); padding: 6px 9px; animation: tuPop 0.3s ease-out; }
+.tu-foot { display: flex; align-items: center; gap: 12px; justify-content: flex-end; min-height: 34px; }
+.tu-wait { margin-right: auto; display: inline-flex; gap: 6px; align-items: center; font-family: var(--f-sc); font-size: var(--t-xs); letter-spacing: 0.08em; color: var(--candle); animation: tuBlink 1.6s ease-in-out infinite; }
+.tu-wait .ico { width: 16px; height: 16px; }
+@keyframes tuBlink { 50% { opacity: 0.45; } }
+.tu-pass { background: none; border: 0; color: var(--ash); font-size: var(--t-xs); cursor: pointer; padding: 6px 0; text-decoration: underline; text-decoration-color: var(--bronze-dim); text-underline-offset: 3px; }
+.tu-pass:hover { color: var(--bone); }
+#tu-ring { position: fixed; left: 0; top: 0; z-index: 46; pointer-events: none; border: 2px solid var(--candle-hi); border-radius: 6px; box-shadow: 0 0 0 4px rgba(233, 184, 100, 0.22), 0 0 26px rgba(233, 184, 100, 0.55); animation: tuRing 1.2s ease-in-out infinite; }
+@keyframes tuRing { 50% { box-shadow: 0 0 0 9px rgba(233, 184, 100, 0.06), 0 0 36px rgba(233, 184, 100, 0.75); } }
+#tu-arrow { position: fixed; left: 0; top: 0; z-index: 16; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+#tu-arrow span { font-family: var(--f-sc); font-size: var(--t-xs); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #1a1208; background: var(--candle-hi); padding: 2px 8px; border-radius: 2px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6); white-space: nowrap; }
+#tu-arrow i { width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 18px solid var(--candle-hi); filter: drop-shadow(0 0 8px rgba(233, 184, 100, 0.85)); animation: tuBob 0.9s ease-in-out infinite; }
+@keyframes tuBob { 50% { transform: translateY(7px); } }
+#tu-arrow.edge i { animation: none; }
+.btn.recommend { border-color: var(--verd); box-shadow: 0 0 18px rgba(116, 205, 170, 0.16); }
+.btn.recommend .ico, .btn.recommend small { color: var(--verd); }
+.df-tut { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; padding: 10px 12px; border: 1px solid rgba(116, 205, 170, 0.35); background: rgba(116, 205, 170, 0.06); font-size: var(--t-s); line-height: 1.4; color: var(--bone); }
+.df-tut > .ico { color: var(--verd); width: 20px; height: 20px; }
+.df-tut span { flex: 1; min-width: 200px; }
+.tu-recap { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.tu-recap li { display: flex; gap: 10px; align-items: center; font-size: var(--t-m); color: var(--bone); }
+.tu-recap .ico { color: var(--candle); width: 20px; height: 20px; }
+#tutor.compact .tu-text, #tutor.compact .tu-aside, #tutor.compact .tu-bar, #tutor.compact .tu-wait { display: none; }
+#tutor.compact .tu-foot { min-height: 0; }
+@media (max-width: 820px) {
+  #tutor { top: auto; bottom: calc(var(--gb) + 80px); left: var(--gl); right: var(--gr); width: auto; max-height: 42vh; padding: 9px 11px 8px; gap: 5px; }
+  .tu-title { font-size: 20px; }
+  .tu-text { font-size: var(--t-s); line-height: 1.4; }
+  .tu-aside { font-size: var(--t-xs); padding: 5px 8px; }
+  .tu-foot { min-height: 30px; }
+}
+@media (max-height: 520px) and (min-width: 560px) {
+  #tutor { top: auto; bottom: calc(var(--gb) + 64px); right: var(--gr); left: auto; width: min(340px, 46vw); max-height: 60vh; }
+  .tu-title { font-size: 19px; }
+  .tu-text { font-size: var(--t-s); }
+}
+
 </style>
 </head>
 <body>
@@ -3776,7 +3827,7 @@ const HERO_DEFS = {
     melee: { name: 'Báculo', attr: 'FUE', base: 1 },
     armor: { name: 'Túnica tejida', base: 2 },
     blurb: 'El más listo y voluntarioso. Ataca a distancia, cura y quema grupos con su Éter. No aguanta un cuerpo a cuerpo.',
-    trait: { name: 'Tejedor del Éter', desc: 'Sus habilidades gastan Éter (máximo igual a su Ingenio, +1 cada ronda) en lugar de esperar. Égida: si le atacan, gasta 1 de Éter y tira un dado de defensa más.' },
+    trait: { name: 'Tejedor del Éter', desc: 'Sus habilidades gastan Éter (máximo igual a su Ingenio, +1 cada ronda) en lugar de esperar. Escudo de éter: si le atacan, gasta 1 de Éter y tira un dado de defensa más.' },
     basic: { name: 'Saeta Arcana', icon: 'bolt' },
     skills: [
       { id: 'starfire', name: 'Fuego Astral', icon: 'starfire', eter: 3, target: 'enemy', range: 5, los: true, dtype: 'fire' },
@@ -3798,6 +3849,9 @@ const ENEMY_TYPES = {
   golem: { name: 'Gólem de cristal', model: 'golem', role: 'coloso', virt: { FUE: 5, AGI: 1, ING: 1, VOL: 5, PRE: 1 }, hp: 6, atk: 4, def: 4, mv: 3, gold: 18, resist: ['pierce', 'arcane'], immune: ['aterrado', 'envenenado', 'ardiendo'], onHit: { st: 'aturdido', dur: 1, resist: 'FUE', dif: 2, minDmg: 2 }, traits: ['cristal', 'aturdidor', 'sinMiedo'], deathCol: ['#e0ccff', '#5a2aaa'], sfx: 'glass' },
   reflection: { name: 'Reflejo', model: 'reflection', role: 'copia', virt: { FUE: 3, AGI: 3, ING: 3, VOL: 5, PRE: 1 }, hp: 3, atk: 3, def: 2, mv: 5, gold: 5, weak: ['radiant'], immune: ['aterrado', 'envenenado'], traits: ['sinMiedo'], deathCol: ['#d8d0ff', '#1a1430'], sfx: 'glass' },
   risen: { name: 'Huesos alzados', model: 'skeleton', role: 'bruto', virt: { FUE: 2, AGI: 2, ING: 1, VOL: 5, PRE: 1 }, hp: 1, atk: 2, def: 1, mv: 4, gold: 0, undead: true, weak: ['radiant'], immune: ['aterrado', 'envenenado'], traits: ['noMuerto', 'sinMiedo'], sfx: 'bone', deathCol: ['#f0e6cc', '#6a6050'] },
+  // prácticas (tutorial)
+  dummy: { name: 'Esqueleto de prácticas', model: 'skeleton', role: 'bruto', virt: { FUE: 2, AGI: 2, ING: 1, VOL: 5, PRE: 1 }, hp: 3, atk: 2, def: 1, mv: 3, gold: 2, undead: true, weak: ['radiant'], immune: ['aterrado', 'envenenado'], traits: ['noMuerto', 'sinMiedo'], sfx: 'bone', deathCol: ['#f0e6cc', '#6a6050'] },
+  dummyArcher: { name: 'Arquero de prácticas', model: 'archer', role: 'tirador', virt: { FUE: 2, AGI: 2, ING: 2, VOL: 5, PRE: 1 }, hp: 2, atk: 2, def: 1, mv: 2, range: 4, ranged: true, proj: 'arrow', gold: 2, undead: true, weak: ['radiant'], immune: ['aterrado', 'envenenado'], traits: ['noMuerto', 'sinMiedo'], sfx: 'bone', deathCol: ['#f0e6cc', '#6a6050'] },
   // jefes
   malakor: { name: 'Malakor el Nigromante', model: 'malakor', role: 'jefe', virt: { FUE: 2, AGI: 2, ING: 5, VOL: 5, PRE: 5 }, boss: true, hp: 9, atk: 3, def: 3, mv: 3, range: 5, ranged: true, proj: 'necro', gold: 60, undead: true, weak: ['radiant'], immune: ['aterrado', 'envenenado'], onHit: { st: 'aterrado', dur: 1, resist: 'VOL', dif: 2 }, traits: ['noMuerto', 'aterrador', 'lider'], deathCol: ['#b9ffd8', '#0a3a20'] },
   ignis: { name: 'Ignis, Señor del Magma', model: 'ignis', role: 'jefe', virt: { FUE: 5, AGI: 2, ING: 3, VOL: 5, PRE: 4 }, boss: true, hp: 12, atk: 5, def: 3, mv: 3, gold: 80, resist: ['fire'], immune: ['aterrado', 'ardiendo', 'aturdido'], onHit: { st: 'ardiendo', dur: 2 }, traits: ['fuegoVivo', 'incendiario', 'lider'], deathCol: ['#ffd08a', '#ff3a10'] },
@@ -4278,6 +4332,43 @@ const EPILOGUES = {
   }
 };
 
+/* ============================ TUTORIAL ============================
+   Sala de prácticas bajo la catedral: se juega con reglas de Relato y no toca la partida guardada */
+const TUTORIAL = {
+  id: 'tut', num: '0', eyebrow: 'Tutorial guiado', title: 'La Sala de Armas', subtitle: 'Antes de descender', theme: 'crypt', ambient: 'crypt', tutorial: true,
+  legend: { a: 'dummy', b: 'dummyArcher' }, lantern: '#ffb45a',
+  locks: { '14,3': 'cerradura' },
+  map: [
+    '#####################',
+    '#.....#......b#.....#',
+    '#.1...#..a....#..C..#',
+    '#..2..+.......+.....#',
+    '#.3...#....a..#..?..#',
+    '#X....#4......#....5#',
+    '#####################'
+  ],
+  intro: [
+    ['n', 'Bajo la catedral de Aldmere, la Orden guarda una sala de armas. Huele a cera, a aceite y a huesos viejos.'],
+    ['aldric', 'Antes de bajar a la Hondura quiero veros luchar juntos. Tras esa puerta esperan tres esqueletos de prácticas.'],
+    ['sera', '¿Esqueletos de prácticas? Qué cosas guardáis en las catedrales.'],
+    ['elian', 'Huesos y alambre con un hechizo menor. Pegan flojo… creo.'],
+    ['objective', 'Tutorial: aprende a moverte, luchar y abrir puertas.']
+  ],
+  rooms: {
+    '1': { name: 'Sala de armas' },
+    '4': { name: 'Patio de prácticas', reveal: [['aldric', 'Ahí los tenéis. Pegan flojo, pero pegan. Juntos, como os enseñé.'], ['objective', 'Derrota a los esqueletos de prácticas.']] },
+    '5': { name: 'Armería', reveal: [['sera', 'Un cofre. Ahora sí hablamos el mismo idioma.'], ['objective', 'Abre el cofre de la armería.']] }
+  },
+  notes: [
+    [['sfx', 'page'], ['note', 'Reglamento de la Orden · Artículo III', 'Un paladín no deja atrás a un hermano caído. Un explorador mira dónde pisa. Un tejedor no gasta su éter en vano. Y ninguno de los tres baja solo.'],
+      ['aldric', 'Leer no gasta la acción. Aprendedlo: abajo, los escritos cuentan lo que nadie os dirá.']]
+  ],
+  chests: {
+    0: [['n', 'Monedas viejas y provisiones: la Orden no deja bajar a nadie con las manos vacías.'], ['objective', 'Últimos consejos antes de bajar.']]
+  }
+};
+
+
 /* ==========================================================================
    Reglas, turnos, IA de la Sombra, eventos de historia y jefes
    ========================================================================== */
@@ -4496,10 +4587,11 @@ const GAME = {
   async startChapter(idx, opts = {}) {
     this.gen = (this.gen || 0) + 1;
     this.busy = 0;
-    this.state = 'play'; this.chIdx = idx; this.ch = CHAPTERS[idx];
+    this.tutorial = !!opts.tutorial;
+    this.state = 'play'; this.chIdx = idx; this.ch = opts.def || CHAPTERS[idx];
     if (!this.stats) this.stats = this.newStats();
-    this.save('chapter');
-    UI.hideAll();
+    if (!this.tutorial) this.save('chapter');
+    UI.hideAll(); UI.bossBar(null); UI.shadowMode(false);
     this.busy++;
     try {
       const ch = this.ch;
@@ -4543,6 +4635,13 @@ const GAME = {
     } catch (e) { console.error(e); }
     this.busy = 0;
     await this.startRound();
+  },
+  /* Tutorial guiado: sala de prácticas con reglas de Relato; no toca la partida guardada */
+  async startTutorial() {
+    this.newGame('relato');
+    TUTOR.prepare();
+    await this.startChapter(-1, { def: TUTORIAL, tutorial: true });
+    if (this.tutorial && this.state === 'play') TUTOR.begin();
   },
   updateLantern() {
     const el = this.heroes.find((h) => h.id === 'elian');
@@ -5189,6 +5288,7 @@ const GAME = {
     if (this.boss && this.boss.alive && this.boss.active) return;
     this.doom += n;
     UI.hintOnce('doom');
+    if (this.tutorial) this.doom = Math.min(this.doom, this.D.doom - 1);
     if (this.doom >= this.D.doom) { this.doom = 0; this.pendingWanderer = true; }
     UI.refresh();
   },
@@ -5223,8 +5323,8 @@ const GAME = {
     const ad = this.atkDice(att, tgt, o), atkN = ad.n;
     if (att.status && att.status.inspirado && !o.reaction) delete att.status.inspirado;
     let defN = this.defDice(tgt);
-    // Égida de Elian: gasta 1 de Éter para defenderse con un dado más
-    if (tgt.side === 'hero' && tgt.eterMax && tgt.eter >= 1 && !o.noAegis) { tgt.eter--; defN++; FX.text(this.headPos(tgt), 'Égida', 'heal'); }
+    // Escudo de éter de Elian: gasta 1 de Éter para defenderse con un dado más
+    if (tgt.side === 'hero' && tgt.eterMax && tgt.eter >= 1 && !o.noAegis) { tgt.eter--; defN++; FX.text(this.headPos(tgt), 'Escudo de éter', 'heal'); }
     const ranged = o.ranged != null ? o.ranged : (att.ranged && U.cheb(att.x, att.y, tgt.x, tgt.y) > 1);
     this.faceTo(att, tgt.x, tgt.y);
     const m = att.mesh, from = m.position.clone(), dir = new THREE.Vector3(tgt.x * TILE - from.x, 0, tgt.y * TILE - from.z).normalize();
@@ -5967,6 +6067,7 @@ const GAME = {
     const choice = await UI.defeatCard(this.deathOf);
     this.deathOf = null;
     ENGINE.fx.desatT = 0;
+    if (this.tutorial) { TUTOR.stop(); if (choice === 'retry') this.startTutorial(); else UI.title(); return; }
     if (choice === 'retry' && this.checkpoint) { this.restore(this.checkpoint); this.startChapter(this.checkpoint.chIdx); }
     else UI.title();
   },
@@ -6316,6 +6417,7 @@ const UI = {
     clearTimeout(this._tt); this._tt = setTimeout(() => el.classList.remove('show'), 2600);
   },
   hintOnce(id) {
+    if (GAME.tutorial) return; // el tutorial ya lo explica paso a paso
     const seen = U.store.get('umbral.hints', {});
     if (seen[id] || !HINTS[id]) return;
     if (id === 'touch' && !U.isTouch()) return;
@@ -6436,6 +6538,8 @@ const UI = {
     const s = this.$('screen');
     if (!html) { s.hidden = true; s.innerHTML = ''; s.className = 'screen'; return null; }
     s.className = 'screen ' + (cls || ''); s.innerHTML = html; s.hidden = false;
+    // los rótulos flotantes (lugar, ronda) no deben transparentarse detrás de una pantalla
+    this.$('banner').classList.remove('show');
     return s;
   },
   fadeOut() { this.$('fade').classList.add('on'); return U.sleep(700); },
@@ -6444,7 +6548,7 @@ const UI = {
     this.showHUD(false);
     this.$('fade').classList.add('on');
     await U.sleep(400);
-    const s = this.screen(`<div class="chap"><div class="chap-num">Capítulo ${ch.num}</div><h1 class="chap-title">${ch.title}</h1><div class="chap-sub">${ch.subtitle}</div><div class="chap-rule"></div></div>`, 'chapter-card');
+    const s = this.screen(`<div class="chap"><div class="chap-num">${ch.eyebrow || `Capítulo ${ch.num}`}</div><h1 class="chap-title">${ch.title}</h1><div class="chap-sub">${ch.subtitle}</div><div class="chap-rule"></div></div>`, 'chapter-card');
     audio.stinger('chapter');
     s.querySelector('.chap').classList.add('in');
     await new Promise((r) => { const t = setTimeout(r, 3400); s.onclick = () => { clearTimeout(t); r(); }; });
@@ -6564,9 +6668,14 @@ const UI = {
 
   /* ---------------- título y menús ---------------- */
   title() {
-    GAME.state = 'title';
-    this.showHUD(false); this.hideAll();
+    GAME.state = 'title'; GAME.tutorial = false; GAME.gen = (GAME.gen || 0) + 1; GAME.busy = 0; GAME.mode = null;
+    TUTOR.stop();
+    // limpiar lo que pudiera quedar a medias (diálogo, latido, velo de la Sombra)
+    clearInterval(this._ti); clearTimeout(this._auto); this._typing = false; this._resolve = null;
+    document.body.classList.remove('cinema'); audio.stopSpeech(); audio.heartbeat(false);
+    this.showHUD(false); this.hideAll(); this.bossBar(null); this.shadowMode(false);
     const save = U.store.get('umbral.save.v2', null);
+    const tutDone = !!U.store.get('umbral.tutorial', 0);
     const s = this.screen(`<div class="title">
       <div class="tt-top"><div class="tt-eyebrow">Crónicas de la Última Llama</div>
       <h1 class="tt-name" aria-label="Umbral">UMBRAL</h1>
@@ -6574,6 +6683,7 @@ const UI = {
       <nav class="tt-menu">
         ${save ? `<button class="btn primary" id="t-cont">${icon('play')} Continuar <small>Capítulo ${CHAPTERS[save.chIdx] ? CHAPTERS[save.chIdx].num : ''}${save.stage === 'camp' ? ' · campamento' : ''}</small></button>` : ''}
         <button class="btn ${save ? '' : 'primary'}" id="t-new">${icon('flame')} Nueva partida</button>
+        <button class="btn ${tutDone ? '' : 'recommend'}" id="t-tut">${icon('target')} Tutorial guiado <small>${tutDone ? 'unos 10 min' : 'Recomendado · 10 min'}</small></button>
         <button class="btn" id="t-help">${icon('scroll')} Cómo se juega</button>
         <button class="btn" id="t-set">${icon('gear')} Ajustes</button>
       </nav>
@@ -6582,17 +6692,26 @@ const UI = {
     s.addEventListener('pointerdown', start, { once: true });
     if (save) s.querySelector('#t-cont').onclick = () => { audio.init(); audio.sfx('ui'); GAME.restore(save); this.screen(null); if (save.stage === 'camp') GAME.camp(save.chIdx); else GAME.startChapter(save.chIdx); };
     s.querySelector('#t-new').onclick = () => { audio.init(); audio.sfx('ui'); this.difficulty(); };
+    s.querySelector('#t-tut').onclick = () => this.startTutorial();
     s.querySelector('#t-help').onclick = () => { audio.init(); audio.sfx('ui'); this.help(() => this.title()); };
     s.querySelector('#t-set').onclick = () => { audio.init(); audio.sfx('ui'); this.settings(() => this.title()); };
     audio.setMusic('menu', 'crypt');
     MAIN.titleScene();
   },
+  async startTutorial() {
+    audio.init(); audio.sfx('ui');
+    this.screen(null); await this.fadeOut(); MAIN.stopTitle();
+    GAME.startTutorial();
+  },
   difficulty() {
+    const tutDone = !!U.store.get('umbral.tutorial', 0);
     const opts = ['relato', 'heroe', 'pesadilla'].map((id) => DIFFICULTY[id]);
     const s = this.screen(`<div class="card diff"><div class="eyebrow">Nueva partida</div><h2>¿Cuánta oscuridad soportáis?</h2>
       <div class="diff-opts">${opts.map((d) => `<button class="diff-opt ${d.id === 'heroe' ? 'sel' : ''}" data-d="${d.id}"><b>${d.name}</b><small>${d.blurb}</small>
         <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: cada ${d.doom} rondas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}</ul></button>`).join('')}</div>
+      ${tutDone ? '' : `<p class="df-tut">${icon('target')} <span>¿Primera vez? El <b>tutorial guiado</b> te enseña lo esencial en unos diez minutos, sin tocar tu partida.</span> <button class="btn small" id="df-tut">Hacer el tutorial</button></p>`}
       <div class="row"><button class="btn" id="df-back">Volver</button><button class="btn primary" id="df-go">${icon('crown')} Forjar el grupo</button></div></div>`, 'dim title-screen');
+    const dt = s.querySelector('#df-tut'); if (dt) dt.onclick = () => this.startTutorial();
     let pick = 'heroe';
     U.$$('.diff-opt', s).forEach((b) => (b.onclick = () => { pick = b.dataset.d; U.$$('.diff-opt', s).forEach((q) => q.classList.toggle('sel', q === b)); audio.sfx('ui'); }));
     s.querySelector('#df-back').onclick = () => { audio.sfx('uiBack'); this.title(); };
@@ -6610,6 +6729,17 @@ const UI = {
   pause() {
     if (GAME.state !== 'play' && GAME.state !== 'camp') return;
     audio.sfx('ui');
+    if (GAME.tutorial) {
+      const t = this.screen(`<div class="card pause"><div class="eyebrow">Tutorial en pausa</div><h2>${GAME.ch ? GAME.ch.title : 'Tutorial'}</h2>
+        <div class="col"><button class="btn primary" id="p-back">${icon('play')} Seguir</button><button class="btn" id="p-help">${icon('scroll')} Cómo se juega</button><button class="btn" id="p-set">${icon('gear')} Ajustes</button><button class="btn" id="p-retry">${icon('rotate')} Empezar el tutorial de nuevo</button><button class="btn danger" id="p-quit">Salir del tutorial</button></div>
+        <p class="small">El tutorial no toca tu partida guardada.</p></div>`, 'dim');
+      t.querySelector('#p-back').onclick = () => { audio.sfx('uiBack'); this.screen(null); };
+      t.querySelector('#p-help').onclick = () => this.help(() => this.pause());
+      t.querySelector('#p-set').onclick = () => this.settings(() => this.pause());
+      t.querySelector('#p-retry').onclick = () => { this.screen(null); TUTOR.stop(); GAME.startTutorial(); };
+      t.querySelector('#p-quit').onclick = () => { audio.heartbeat(false); this.title(); };
+      return;
+    }
     const s = this.screen(`<div class="card pause"><div class="eyebrow">Pausa</div><h2>${GAME.ch ? GAME.ch.title : 'Umbral'}</h2>
       <div class="col"><button class="btn primary" id="p-back">${icon('play')} Seguir jugando</button><button class="btn" id="p-help">${icon('scroll')} Cómo se juega</button><button class="btn" id="p-set">${icon('gear')} Ajustes</button><button class="btn" id="p-full">${icon('fullscreen')} Pantalla completa</button>${GAME.state === 'play' ? `<button class="btn" id="p-retry">${icon('rotate')} Reiniciar capítulo</button>` : ''}<button class="btn danger" id="p-quit">Salir al inicio</button></div>
       <p class="small">La partida se guarda al comenzar cada capítulo y al llegar al campamento.</p></div>`, 'dim');
@@ -6640,7 +6770,8 @@ const UI = {
         <section><h3>Ordenador</h3><p>Clic: mover, atacar, abrir · Arrastrar: desplazar · Clic derecho y arrastrar: girar · Rueda: zoom · <kbd>1</kbd>–<kbd>5</kbd> acciones · <kbd>Z</kbd> deshacer movimiento · <kbd>G</kbd> ficha del grupo · <kbd>Espacio</kbd> fin de turno · <kbd>Tab</kbd> siguiente héroe · <kbd>Q</kbd>/<kbd>E</kbd> girar · <kbd>WASD</kbd> mover cámara · <kbd>Esc</kbd> cancelar</p></section>
         <section><h3>Móvil</h3><p>Toca para ver qué pasará y toca otra vez para confirmar · Arrastra con un dedo para mover la cámara · Pellizca para acercar · Gira con dos dedos.</p></section>
       </div>
-      <div class="row end"><button class="btn primary" id="h-back">Entendido</button></div></div>`, 'dim');
+      <div class="row end">${GAME.state === 'title' ? `<button class="btn" id="h-tut">${icon('target')} Jugar el tutorial</button>` : ''}<button class="btn primary" id="h-back">Entendido</button></div></div>`, 'dim');
+    const ht = s.querySelector('#h-tut'); if (ht) ht.onclick = () => this.startTutorial();
     s.querySelector('#h-back').onclick = () => { audio.sfx('uiBack'); back ? back() : this.screen(null); };
   },
   settings(back) {
@@ -6770,14 +6901,19 @@ Object.assign(UI, {
   /* ---------------- ficha del grupo ---------------- */
   derivedRows(id, v, h) {
     const d = HERO_DEFS[id], s = GAME.derive(id, v), b = (k) => VBONUS(v[k]);
+    const up = GAME.upgrades, f = GAME.flags, D = GAME.D, tal = GAME.talents[id] || [];
+    const item = (k) => (SHOP.find((q) => q.id === k) || {}).name || k;
+    const plus = (list) => list.filter(Boolean).map((t) => ` + ${t}`).join('');
+    const relic = (id === 'aldric' && up.blade && 'blade') || (id === 'sera' && up.fangs && 'fangs') || (id === 'elian' && up.dawnstaff && 'dawnstaff');
+    const armorUp = (id === 'aldric' && up.aegis && 'aegis') || (id === 'elian' && up.mantle && 'mantle');
     const rows = [
-      ['Vida', `${h ? `${h.hp}/` : ''}${h ? h.maxHp : s.hp}`, `3 + Fuerza ${v.FUE} + vigor ${d.vigor}${h && h.wounds ? ` − herida ${h.wounds}` : ''}`],
+      ['Vida', `${h ? `${h.hp}/` : ''}${h ? h.maxHp : s.hp}`, `3 + Fuerza ${v.FUE} + vigor ${d.vigor}${plus([D.heroHp && `${D.heroHp} (${D.name})`, armorUp && `2 (${item(armorUp)})`])}${h && h.wounds ? ` − herida ${h.wounds}` : ''}`],
       ['Movimiento', s.mv, `3 + Agilidad ${v.AGI}`],
-      ['Ataque', `${h ? h.atk : s.atk} dados`, `${d.weapon.name} ${d.weapon.base} + ${VIRTUES[d.weapon.attr].name} (+${b(d.weapon.attr)})${s.range > 1 ? ` · alcance ${s.range}` : ''}`],
-      ['Defensa', `${h ? h.def : s.def} dados`, `${d.armor.name} ${d.armor.base} + Agilidad (+${b('AGI')})`],
-      ['Determinación', h ? `${h.det}/${h.detMax}` : s.det, `Voluntad ${v.VOL}`]
+      ['Ataque', `${h ? h.atk : s.atk} dados`, `${d.weapon.name} ${d.weapon.base} + ${VIRTUES[d.weapon.attr].name} (+${b(d.weapon.attr)})${plus([relic && `1 (${item(relic)})`, id === 'sera' && f.tomasDagger && '1 (daga de Tomás)'])}${s.range > 1 ? ` · alcance ${s.range}` : ''}`],
+      ['Defensa', `${h ? h.def : s.def} dados`, `${d.armor.name} ${d.armor.base} + Agilidad (+${b('AGI')})${plus([armorUp && `1 (${item(armorUp)})`])}`],
+      ['Determinación', h ? `${h.det}/${h.detMax}` : s.det, `Voluntad ${v.VOL}${plus([D.det && `${D.det} (${D.name})`, f.detAllCh === GAME.chIdx && '1 (velada)'])}`]
     ];
-    if (s.eter) rows.push(['Éter', h ? `${h.eter}/${h.eterMax}` : s.eter, `Ingenio ${v.ING}, +1 por ronda`]);
+    if (s.eter) rows.push(['Éter', h ? `${h.eter}/${h.eterMax}` : s.eter, `Ingenio ${v.ING}${plus([f.eterBonus && `${f.eterBonus} (velada)`, tal.includes('fuente') && '2 (Fuente de éter)'])}, +1 por ronda`]);
     return rows;
   },
   heroSheetHTML(id, opts = {}) {
@@ -6881,6 +7017,320 @@ Object.assign(UI, {
 });
 
 /* ==========================================================================
+   Tutorial guiado: un panel que enseña paso a paso sobre el propio tablero.
+   Espera a que el jugador haga cada cosa, señala dónde tocar y explica las
+   reglas justo cuando aparecen (dados, Determinación, ataques de oportunidad…)
+   ========================================================================== */
+const TUTOR = {
+  active: false, installed: false, i: -1, steps: [], flags: {}, said: {},
+
+  /* ---------------- enganches: el juego avisa al tutorial de lo que pasa ---------------- */
+  install() {
+    if (this.installed) return;
+    this.installed = true;
+    const T = this;
+    const after = (obj, name, fn) => {
+      const f = obj[name];
+      obj[name] = function (...a) {
+        const r = f.apply(this, a);
+        if (r && typeof r.then === 'function') return r.then((v) => { T.safe(() => fn.call(this, v, ...a)); return v; });
+        T.safe(() => fn.call(this, r, ...a)); return r;
+      };
+    };
+    const before = (obj, name, fn) => { const f = obj[name]; obj[name] = function (...a) { T.safe(() => fn.call(this, ...a)); return f.apply(this, a); }; };
+    after(GAME, 'moveHero', (ok, h) => T.emit('moved', { h }));
+    after(GAME, 'heroAttack', (r, h, e) => T.emit('attack', { h, e }));
+    after(GAME, 'useSkill', (r, h, s) => T.emit('skill', { h, s }));
+    before(GAME, 'shadowPhase', () => T.emit('shadow'));
+    after(GAME, 'startRound', () => T.emit('round'));
+    after(GAME, 'openDoor', (r, door) => T.emit('door', { door }));
+    // una cerradura solo «falla» si se gastó la acción (cancelar la elección no cuenta)
+    before(GAME, 'tryLock', (h) => { T._lockAct = h ? h.actions : 0; });
+    after(GAME, 'tryLock', (r, h, door) => { if (h && door && h.actions < T._lockAct) T.emit('lock', { h, door, ok: !door.lock }); });
+    after(GAME, 'openChest', () => T.emit('chest'));
+    before(GAME, 'kill', (u) => { if (u && u.side === 'hero' && !u.ko) T.emit('down', { u }); });
+    before(GAME, 'reactions', function (m, ax, ay, bx, by) { if (m && m.side === 'hero' && this.reactorsFor(m).some((r) => this.provokes(m, r, ax, ay, bx, by))) T.emit('oa', { m }); });
+    before(UI, 'offerDet', () => T.emit('detOffer'));
+    after(UI, 'preview', (r, d) => { if (d && d.unit && d.unit.side === 'enemy') T.emit('peek'); });
+    // cámara movida por el jugador (arrastrar, rueda, teclas)
+    ['panWorld', 'pan', 'rotate', 'zoom', 'tilt'].forEach((k) => before(ENGINE, k, () => T.emit('cam')));
+    // piezas de la interfaz
+    const panel = U.el('div', 'plate', `
+      <div class="tu-top"><span class="eyebrow">Tutorial · <b class="tu-n"></b></span><button class="tu-exit" type="button">Salir del tutorial</button></div>
+      <div class="tu-bar"><i></i></div>
+      <h4 class="tu-title"></h4>
+      <p class="tu-text"></p>
+      <p class="tu-aside" hidden></p>
+      <div class="tu-foot"><span class="tu-wait">${icon('hand')} Hazlo para seguir</span><button class="tu-pass" type="button">Saltar paso</button><button class="btn small primary tu-next" type="button">${icon('check')} Entendido</button></div>`);
+    panel.id = 'tutor'; panel.hidden = true; panel.setAttribute('aria-live', 'polite');
+    const ring = U.el('div', '', ''); ring.id = 'tu-ring'; ring.hidden = true;
+    const arrow = U.el('div', '', '<span></span><i></i>'); arrow.id = 'tu-arrow'; arrow.hidden = true;
+    document.body.append(panel, ring, arrow);
+    this.el = { panel, ring, arrow, n: panel.querySelector('.tu-n'), bar: panel.querySelector('.tu-bar i'), title: panel.querySelector('.tu-title'), text: panel.querySelector('.tu-text'), aside: panel.querySelector('.tu-aside'), wait: panel.querySelector('.tu-wait'), pass: panel.querySelector('.tu-pass'), next: panel.querySelector('.tu-next'), exit: panel.querySelector('.tu-exit') };
+    // el panel no debe dejar pasar el toque al tablero
+    panel.addEventListener('pointerdown', (e) => e.stopPropagation());
+    this.el.next.onclick = (e) => { e.stopPropagation(); audio.sfx('ui'); this.complete(true); };
+    this.el.pass.onclick = (e) => { e.stopPropagation(); audio.sfx('uiBack'); this.complete(true); };
+    this.el.exit.onclick = (e) => { e.stopPropagation(); audio.sfx('uiBack'); UI.title(); };
+  },
+  safe(fn) { try { fn(); } catch (e) { console.error('tutor', e); } },
+
+  /* ---------------- ciclo de vida ---------------- */
+  prepare() { this.install(); this.stop(); },
+  begin() {
+    this.install();
+    this.flags = {}; this.said = {};
+    this.steps = this.makeSteps();
+    this.active = true;
+    this.go(0);
+    clearInterval(this._iv); this._iv = setInterval(() => this.poll(), 250);
+    cancelAnimationFrame(this._raf); const loop = () => { if (!this.active) return; this.tick(); this._raf = requestAnimationFrame(loop); }; loop();
+  },
+  stop() {
+    this.active = false; this.i = -1;
+    clearInterval(this._iv); cancelAnimationFrame(this._raf); clearTimeout(this._doneT); clearTimeout(this._asideT);
+    if (this.el) { this.el.panel.hidden = true; this.el.ring.hidden = true; this.el.arrow.hidden = true; this.el.panel.style.bottom = ''; }
+  },
+
+  /* ---------------- pasos ---------------- */
+  makeSteps() {
+    const T = U.isTouch(), tap = T ? 'Toca' : 'Haz clic en', L = GAME.L;
+    const door1 = L.doors.find((d) => d.x === 6 && d.y === 3), door2 = L.doors.find((d) => d.x === 14 && d.y === 3), chest = L.chests[0];
+    const H = (id) => GAME.heroes.find((h) => h.id === id);
+    const foes = () => GAME.enemies.filter((e) => e.alive && (e.kind === 'dummy' || e.kind === 'dummyArcher'));
+    const nearest = () => { const a = GAME.active || GAME.heroesUp()[0]; const f = foes().filter((e) => e.active); if (!a || !f.length) return null; return f.sort((p, q) => U.cheb(a.x, a.y, p.x, p.y) - U.cheb(a.x, a.y, q.x, q.y))[0]; };
+    const sheetOpen = () => !UI.$('sheet').hidden;
+    const cam = ENGINE.cam.t;
+    this.refs = { door1, door2, chest, foes };
+    return [
+      { id: 'party', title: 'Tu grupo', ring: '#party', next: true,
+        text: 'Estos son tus tres héroes. Cada uno juega su turno por separado: el del borde iluminado es el que mueves ahora, Aldric. La barra roja es su vida.' },
+      { id: 'move', title: 'Moverse', arrow: () => ({ x: 4, y: 3 }), label: 'Aquí', skipIf: () => this.flags.moved,
+        text: T ? 'Las casillas iluminadas son las que alcanza Aldric este turno. Toca una para ver la ruta y vuelve a tocarla para confirmar.' : 'Las casillas iluminadas son las que alcanza Aldric este turno. Pasa el ratón para ver la ruta y haz clic para moverle.',
+        on: { moved: true } },
+      { id: 'undo', title: 'Deshacer', ring: '#undo-move', next: true, skipIf: () => !GAME.undo,
+        text: '¿Te has equivocado? Mientras no descubras nada nuevo, «Deshacer movimiento» devuelve al héroe a donde estaba. Muy útil con el dedo.' },
+      { id: 'camera', title: 'Mira a tu alrededor', next: true,
+        start: () => { this._cam0 = { yaw: cam.yaw, dist: cam.dist }; this.flags.cam = false; },
+        until: () => this.flags.cam || Math.abs(cam.yaw - this._cam0.yaw) > 0.3 || Math.abs(cam.dist - this._cam0.dist) > 2.5,
+        text: T ? 'Arrastra el tablero con un dedo para mover la cámara, pellizca para acercarte y gira con dos dedos. Pruébalo.' : 'Arrastra el tablero para mover la cámara, usa la rueda para acercarte y gira con el botón derecho (o con Q y E). Pruébalo.' },
+      { id: 'switch', title: 'Cambiar de héroe', ring: '.hero-card[data-hero="sera"]', skipIf: () => door1.open || H('sera').ended,
+        text: `No hace falta que Aldric termine. ${tap} el retrato de Sera para manejarla a ella${T ? '' : ' (o pulsa Tab)'}.`,
+        until: () => GAME.active && GAME.active.id === 'sera' },
+      { id: 'door', title: 'Abrir puertas', arrow: () => door1, label: 'Puerta', focus: true, skipIf: () => door1.open,
+        text: `Las salas están ocultas hasta que abres su puerta. ${tap} la puerta: el héroe se acerca y la abre. Abrir puertas no gasta la acción.`,
+        until: () => door1.open },
+      { id: 'peek', title: 'Conoce al enemigo', arrow: nearest, label: 'Esqueleto', skipIf: () => !foes().length, next: true,
+        text: T ? 'Toca un esqueleto una sola vez: verás su ficha (vida, dados, virtudes y cómo piensa) sin atacar todavía.' : 'Pasa el ratón por encima de un esqueleto: verás su ficha (vida, dados, virtudes y cómo piensa) y, en rojo, hasta dónde puede golpear.',
+        on: { peek: true } },
+      { id: 'attack', title: 'Atacar', arrow: nearest, needsAction: true, skipIf: () => !foes().length || this.flags.attacked,
+        text: T ? 'Para atacar, toca al esqueleto y vuelve a tocarlo para confirmar. Antes verás cuántos dados tiras y tu probabilidad de herir. Si está lejos pero llegas, el héroe se acerca solo.' : 'Haz clic en un esqueleto para atacarlo. Antes de hacerlo verás cuántos dados tiras y tu probabilidad de herir. Si está lejos pero llegas, el héroe se acerca solo.',
+        on: { attack: true, skill: (d) => d && d.s && d.s.target === 'enemy' } },
+      { id: 'dice', title: 'Los dados', next: true,
+        text: 'Cada calavera es un golpe. Los monstruos paran con escudos negros (1 cara de 6) y los héroes con escudos blancos (2 de 6). Daño = calaveras − escudos.' },
+      { id: 'skill', title: 'Habilidades y Éter', needsAction: 'elian',
+        ring: () => (GAME.active && GAME.active.id === 'elian' ? '#actions [data-act="s0"]' : '.hero-card[data-hero="elian"]'),
+        arrow: () => (GAME.mode && GAME.mode.type === 'skill' ? nearest() : null),
+        skipIf: () => !foes().length || this.flags.elianSkill,
+        text: `Cada héroe tiene dos habilidades. Elian lanza hechizos con Éter (${T ? 'la insignia morada de su retrato' : 'los rombos morados'}). Selecciona a Elian, pulsa «Fuego Astral» y elige un esqueleto: también quema a los que estén a su lado. Si no llega, acércale primero.`,
+        on: { skill: (d) => d && d.h && d.h.id === 'elian' } },
+      { id: 'end', ring: () => (GAME.phase === 'hero' ? '#actions [data-act="end"]' : null), skipIf: () => this.flags.roundSeen || !foes().length,
+        title: () => (GAME.phase === 'shadow' ? 'Turno de la Sombra' : 'Fin del turno'),
+        text: () => (GAME.phase === 'shadow' ? 'Ahora actúan los enemigos. Cada criatura piensa según su Ingenio: las torpes van a por el más cercano y las listas, a por el más débil.' : `Cuando hayas hecho lo que quieras con los tres, ${T ? 'toca' : 'pulsa'} «Fin de turno»${T ? '' : ' (o la barra espaciadora)'}. Si a un héroe no le queda movimiento ni acción, su turno acaba solo.`),
+        on: { round: true } },
+      { id: 'det', title: 'Determinación', ring: '#party', next: true,
+        text: `${T ? 'La insignia dorada de cada retrato' : 'Los círculos dorados'} son la Determinación, tanta como la Voluntad del héroe. Tras una tirada tuya puedes gastar un punto para repetir los dados fallados. Si un golpe va a tumbarte, se gasta sola.` },
+      { id: 'position', title: 'Flanqueo y huida', next: true, skipIf: () => !foes().length,
+        text: 'Si otro héroe está junto a tu objetivo, atacas con un dado más (Sera, con dos). Pero alejarte de un enemigo cuerpo a cuerpo le da un golpe gratis: un ataque de oportunidad. Sera, tan ágil, se escurre sin provocarlo.' },
+      { id: 'clear', title: 'Limpiad la sala', skipIf: () => !foes().length,
+        text: 'Acabad con los esqueletos. Combina a los tres: Aldric aguanta en primera fila, Sera flanquea y Elian ataca desde lejos.',
+        until: () => !foes().length },
+      { id: 'sheet', title: 'La ficha del grupo', ring: '#btn-party',
+        text: `La corona de arriba abre la ficha del grupo con las cinco virtudes de cada héroe: Fuerza, Agilidad, Ingenio, Voluntad y Presencia. De ellas sale todo: vida, movimiento, dados… y quién es mejor en cada prueba. ${tap} la corona${T ? '' : ' (o pulsa G)'}.`,
+        until: sheetOpen },
+      { id: 'sheetClose', title: 'Cierra la ficha', ring: '#sheet [data-close]', skipIf: () => !sheetOpen(),
+        text: 'Mira las pestañas de los tres y cierra la ficha cuando quieras.', until: () => !sheetOpen() },
+      { id: 'lock', title: 'Puertas cerradas', arrow: () => door2, label: 'Cerradura', focus: true, needsAction: true, skipIf: () => door2.open,
+        text: `Esta puerta tiene cerradura. ${tap} ella con un héroe que tenga su acción: verás cómo puede abrirla cada uno y con qué probabilidad. Sera es la mejor con las ganzúas.`,
+        until: () => door2.open },
+      { id: 'checks', title: 'Las pruebas', next: true,
+        text: 'Así funcionan todas las pruebas: tiras tantos dados como la virtud y necesitas tantas calaveras como la dificultad (1 fácil, 2 media, 3 difícil). Siempre verás la probabilidad antes de elegir.' },
+      { id: 'chest', title: 'Botín', arrow: () => chest, label: 'Cofre', focus: true, needsAction: true, skipIf: () => chest.looted,
+        text: `${tap} el cofre para abrirlo (gasta la acción). Al lado hay un atril: leer no cuesta nada.`,
+        until: () => chest.looted && !GAME.busy },
+      { id: 'acts', title: 'Acciones y objetos', ring: '#actions', next: true,
+        text: 'En «Acciones» están Arengar (Presencia), Registrar (Ingenio), En guardia y Correr. En «Objetos», las pociones, los elixires y las bombas.' },
+      { id: 'doom', title: 'El Presagio', ring: '#r-doom', next: true,
+        text: 'El ojo de arriba es el Presagio: crece cada ronda y con el ruido. Cuando se llena, algo errante sube de la Hondura a buscaros. Aquí no pasará; abajo, sí.' }
+    ];
+  },
+  val(v) { return typeof v === 'function' ? v() : v; },
+  go(i) {
+    clearTimeout(this._doneT);
+    this.i = i; this.doneing = false;
+    while (this.i < this.steps.length && this.steps[this.i].skipIf && this.steps[this.i].skipIf()) this.i++;
+    if (this.i >= this.steps.length) { this.finish(); return; }
+    const st = this.steps[this.i];
+    st.round0 = GAME.round; st.t0 = performance.now();
+    if (st.start) this.safe(st.start);
+    // lleva la cámara hasta lo que hay que tocar
+    if (st.focus && st.arrow) this.safe(() => { const t = st.arrow(); if (t) ENGINE.focusTile(t.x, t.y); });
+    this.aside(null);
+    this.render(true);
+  },
+  render(fresh) {
+    const st = this.steps[this.i]; if (!st || !this.el) return;
+    const E = this.el, title = this.val(st.title), text = this.val(st.text);
+    const key = title + '|' + text;
+    if (!fresh && key === this._key) return;
+    this._key = key;
+    E.panel.classList.remove('done');
+    E.n.textContent = `${this.i + 1} de ${this.steps.length}`;
+    E.bar.style.width = `${Math.round((100 * this.i) / this.steps.length)}%`;
+    E.title.textContent = title; E.text.textContent = text;
+    E.next.hidden = !st.next; E.wait.hidden = !!st.next; E.pass.hidden = !!st.next;
+    if (fresh) { E.panel.classList.remove('tu-in'); void E.panel.offsetWidth; E.panel.classList.add('tu-in'); }
+  },
+  complete(manual) {
+    if (!this.active || this.doneing) return;
+    const st = this.steps[this.i]; if (!st) return;
+    this.doneing = true;
+    if (!manual) { this.el.panel.classList.add('done'); this.el.bar.style.width = `${Math.round((100 * (this.i + 1)) / this.steps.length)}%`; audio.sfx('levelUp', { vol: 0.35 }); }
+    this._doneT = setTimeout(() => { if (this.active) this.go(this.i + 1); }, manual ? 60 : 750);
+  },
+
+  /* ---------------- sucesos del juego ---------------- */
+  emit(ev, d) {
+    if (!this.active || !GAME.tutorial) return;
+    const st = this.steps[this.i];
+    if (ev === 'cam') { if (st && st.id === 'camera') this.flags.cam = true; return; }
+    if (ev === 'moved') this.flags.moved = true;
+    if (ev === 'attack') this.flags.attacked = true;
+    if (ev === 'skill') { this.flags.skillUsed = true; if (d && d.h && d.h.id === 'elian') this.flags.elianSkill = true; if (d && d.s && d.s.target === 'enemy') this.flags.attacked = true; }
+    if (ev === 'shadow') this.flags.shadowSeen = true;
+    if (ev === 'round' && this.flags.shadowSeen) this.flags.roundSeen = true;
+    // lecciones al vuelo, una vez cada una
+    if (ev === 'shadow' && st && st.id === 'end') this.said.shadow = true;
+    if (ev === 'shadow' && GAME.visibleEnemies().length) this.once('shadow', 'Turno de la Sombra: ahora actúan los enemigos. Cada criatura piensa según su Ingenio: las torpes van a por el más cercano y las listas, a por el más débil.');
+    if (ev === 'detOffer') this.once('det', 'Arriba se te ofrece Determinación: repetir los dados que han fallado. Úsala cuando el golpe importe; se recupera en cada capítulo.');
+    if (ev === 'oa') this.once('oa', '¡Ataque de oportunidad! Al alejarte de un enemigo cuerpo a cuerpo, te golpea gratis. La ruta marcada lo evita si puede.');
+    if (ev === 'down') this.once('down', 'Un héroe ha caído. En el tutorial se levanta solo al final de la ronda; en la campaña tendrá que levantarle un aliado.');
+    if (ev === 'lock' && d && !d.ok) this.once('lockFail', 'No lo ha conseguido. Puede intentarlo otro héroe con su acción, o el mismo en el siguiente turno.', true);
+    if (!st || this.doneing) return;
+    const on = st.on && st.on[ev];
+    if (on && (on === true || on(d))) this.complete();
+  },
+  once(id, text, again) {
+    if (this.said[id] && !again) return;
+    this.said[id] = true; this.aside(text, 9000);
+  },
+  aside(text, ms) {
+    if (!this.el) return;
+    clearTimeout(this._asideT);
+    this._aside = text || null;
+    this.el.aside.hidden = !text; if (text) this.el.aside.textContent = text;
+    if (text && ms) this._asideT = setTimeout(() => { if (this._aside === text) this.aside(null); }, ms);
+  },
+  /* Comprobación periódica: estados que se cumplen sin un suceso concreto */
+  poll() {
+    if (!this.active || this.doneing || GAME.state !== 'play') return;
+    const st = this.steps[this.i]; if (!st) return;
+    if (st.until && st.until()) { this.complete(); return; }
+    this.render(false);
+    // ¿hace falta una acción y no queda?
+    this._endHint = false;
+    if (st.needsAction && GAME.phase === 'hero' && !GAME.busy) {
+      const who = st.needsAction === true ? GAME.heroesUp() : GAME.heroesUp().filter((h) => h.id === st.needsAction);
+      const any = who.some((h) => !h.ended && h.actions > 0);
+      const a = GAME.active;
+      if (!any) { this._endHint = true; this.aside(st.needsAction === true ? 'A nadie le queda acción este turno: pulsa «Fin de turno» y seguid en el siguiente.' : 'Elian ya ha gastado su acción: pulsa «Fin de turno» y prueba en el siguiente.'); }
+      else if (a && a.actions <= 0 && st.needsAction === true) this.aside('A este héroe ya no le queda acción: elige a otro en su retrato.');
+      else if (a && st.needsAction !== true && a.id !== st.needsAction) this.aside(`Este paso es para ${HERO_DEFS[st.needsAction].name}: ${U.isTouch() ? 'toca' : 'haz clic en'} su retrato.`);
+      else if (this._aside && /acción|paso es para/.test(this._aside)) this.aside(null);
+    }
+  },
+
+  /* ---------------- dibujo: panel, anillo y flecha ---------------- */
+  covered() {
+    const $ = (id) => UI.$(id);
+    if (GAME.state !== 'play' || !$('dlg').hidden || !$('choice').hidden || !$('note').hidden || !$('screen').hidden || document.body.classList.contains('cinema')) return true;
+    if (!$('sheet').hidden && this.steps[this.i] && this.steps[this.i].id !== 'sheetClose') return true;
+    if (!$('sheet').hidden) return 'sheet';
+    return false;
+  },
+  /* En el móvil el panel va justo encima de la barra de acciones (y de lo que asome sobre ella) */
+  place() {
+    const E = this.el;
+    const narrow = window.innerWidth <= 820;
+    // con la ficha de un enemigo abierta en el móvil, el panel se encoge y se aparta encima de ella
+    E.panel.classList.toggle('compact', narrow && !UI.$('preview').hidden);
+    if (!narrow) { if (E.panel.style.bottom) E.panel.style.bottom = ''; return; }
+    let top = window.innerHeight;
+    ['preview', 'cancel-mode', 'undo-move', 'items-pop', 'acts-pop'].forEach((id) => { const e = UI.$(id); if (e && !e.hidden) { const r = e.getBoundingClientRect(); if (r.height) top = Math.min(top, r.top); } });
+    const bar = document.querySelector('.act-bar'); if (bar) { const r = bar.getBoundingClientRect(); if (r.height) top = Math.min(top, r.top); }
+    const b = `${Math.round(window.innerHeight - top + 8)}px`;
+    if (E.panel.style.bottom !== b) E.panel.style.bottom = b;
+  },
+  tick() {
+    const E = this.el, st = this.steps[this.i]; if (!E || !st) return;
+    const cov = this.covered();
+    E.panel.hidden = !!cov;
+    if (!cov) this.place();
+    // anillo sobre un elemento de la interfaz
+    const ringSel = this._endHint ? '#actions [data-act="end"]' : this.val(st.ring);
+    let target = null;
+    if (ringSel && (!cov || (cov === 'sheet' && st.id === 'sheetClose'))) target = typeof ringSel === 'string' ? document.querySelector(ringSel) : ringSel;
+    const r = target && target.getBoundingClientRect();
+    if (r && r.width > 0 && r.height > 0 && !(target.closest('[hidden]'))) {
+      E.ring.hidden = false;
+      E.ring.style.transform = `translate(${(r.left - 6).toFixed(1)}px, ${(r.top - 6).toFixed(1)}px)`;
+      E.ring.style.width = `${r.width + 12}px`; E.ring.style.height = `${r.height + 12}px`;
+    } else E.ring.hidden = true;
+    // flecha sobre el tablero
+    let p = null;
+    const tgt = !cov && GAME.phase === 'hero' && !GAME.busy && st.arrow ? st.arrow() : null;
+    if (tgt) {
+      const t = GAME.T(tgt.x, tgt.y), room = t && GAME.L.rooms[t.room];
+      const seen = tgt.mesh ? tgt.mesh.visible !== false : (t && (t.door || (room && room.revealed)));
+      if (seen) p = tgt.mesh && tgt.side ? new THREE.Vector3(tgt.mesh.position.x, ((tgt.mesh.userData && tgt.mesh.userData.height) || 1.5) + 0.5, tgt.mesh.position.z) : new THREE.Vector3(tgt.x * TILE, t && t.door ? 2.6 : 0.9, tgt.y * TILE);
+    }
+    const s = p && ENGINE.project(p);
+    if (s && s.visible) {
+      // si el objetivo queda fuera de la pantalla, la flecha se queda en el borde y apunta hacia él
+      const m = 34, x = U.clamp(s.x, m, window.innerWidth - m), y = U.clamp(s.y, 70, window.innerHeight - m), edge = x !== s.x || y !== s.y;
+      E.arrow.hidden = false;
+      E.arrow.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+      E.arrow.classList.toggle('edge', edge);
+      E.arrow.lastChild.style.transform = edge ? `rotate(${(Math.atan2(s.y - y, s.x - x) - Math.PI / 2).toFixed(3)}rad)` : '';
+      const lb = st.label || ''; const sp = E.arrow.firstChild; if (sp.textContent !== lb) sp.textContent = lb; sp.hidden = !lb;
+    } else E.arrow.hidden = true;
+  },
+
+  /* ---------------- final ---------------- */
+  finish() {
+    this.stop();
+    U.store.set('umbral.tutorial', 1);
+    GAME.state = 'menu'; GAME.tutorial = false; GAME.gen = (GAME.gen || 0) + 1;
+    audio.heartbeat(false); audio.stinger('victory'); audio.setMusic('menu');
+    UI.showHUD(false); UI.hideAll(); UI.bossBar(null); UI.shadowMode(false);
+    const s = UI.screen(`<div class="card tut-end"><div class="eyebrow">Tutorial completado</div><h2>Listos para descender</h2>
+      <p class="lead">Ya sabéis lo esencial. Lo demás se aprende abajo, con el farol en la mano.</p>
+      <ul class="tu-recap">
+        <li>${icon('boot')} Mover, mirar alrededor, cambiar de héroe y deshacer</li>
+        <li>${icon('skull')} Atacar: calaveras contra escudos</li>
+        <li>${icon('starfire')} Habilidades, Éter y Determinación</li>
+        <li>${icon('crown')} Virtudes y pruebas: quién lo intenta importa</li>
+        <li>${icon('eye')} El Presagio: no os entretengáis</li>
+      </ul>
+      <p class="small">Si dudas de algo durante la partida, el menú tiene «Cómo se juega», y la corona de arriba abre la ficha del grupo.</p>
+      <div class="row"><button class="btn primary" id="tu-camp">${icon('flame')} Empezar la campaña</button><button class="btn" id="tu-again">${icon('rotate')} Repetir el tutorial</button><button class="btn ghost" id="tu-title">Volver al inicio</button></div></div>`, 'dim');
+    s.querySelector('#tu-camp').onclick = () => { audio.sfx('ui'); UI.difficulty(); };
+    s.querySelector('#tu-again').onclick = () => UI.startTutorial();
+    s.querySelector('#tu-title').onclick = () => { audio.sfx('uiBack'); UI.title(); };
+  }
+};
+
+/* ==========================================================================
    Arranque, bucle principal, entrada (ratón, táctil, teclado) y ajustes
    ========================================================================== */
 const SETTINGS = Object.assign({
@@ -6902,7 +7352,8 @@ const INPUT = {
     c.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('keydown', (e) => this.key(e, true));
     window.addEventListener('keyup', (e) => this.key(e, false));
-    c.addEventListener('pointerleave', () => { if (!this.pts.size) { UI.preview(null); WORLD.setHover(null); GAME.showPreview(null); this.hoverK = null; } });
+    // en táctil el navegador lanza «pointerleave» justo después de cada toque: solo cuenta el ratón
+    c.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !this.pts.size) { UI.preview(null); WORLD.setHover(null); GAME.showPreview(null); this.hoverK = null; } });
   },
   ground(cx, cy) {
     const r = ENGINE.raycaster; r.setFromCamera(ENGINE.ndc(cx, cy), ENGINE.camera);
@@ -6970,6 +7421,9 @@ const INPUT = {
     this.keys[k] = down;
     if (!down) return;
     if (!UI.$('dlg').hidden && (k === ' ' || k === 'enter')) { e.preventDefault(); UI.advance(); return; }
+    // los escritos también se cierran con el teclado
+    if (!UI.$('note').hidden && (k === ' ' || k === 'enter' || k === 'escape')) { e.preventDefault(); UI.$('note').dispatchEvent(new PointerEvent('pointerup')); return; }
+    if (k === 'enter' && TUTOR.active && TUTOR.el && !TUTOR.el.panel.hidden && !TUTOR.el.next.hidden) { e.preventDefault(); TUTOR.el.next.click(); return; }
     if (k === 'g' && (GAME.state === 'play' || GAME.state === 'camp')) { UI.sheet(); return; }
     if (k === 'escape' && !UI.$('sheet').hidden) { UI.$('sheet').hidden = true; return; }
     if (GAME.state !== 'play') { if (k === 'escape' && GAME.state === 'camp') UI.pause(); return; }
@@ -7090,7 +7544,7 @@ const MAIN = {
   }
 };
 
-window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, VIRTUES, TALENTS, VIGILS, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, STATUS };
+window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, VIRTUES, TALENTS, VIGILS, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, STATUS, TUTOR, TUTORIAL };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => MAIN.boot()); else MAIN.boot();
 
 })();

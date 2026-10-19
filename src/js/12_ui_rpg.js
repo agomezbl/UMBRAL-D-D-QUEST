@@ -85,14 +85,19 @@ Object.assign(UI, {
   /* ---------------- ficha del grupo ---------------- */
   derivedRows(id, v, h) {
     const d = HERO_DEFS[id], s = GAME.derive(id, v), b = (k) => VBONUS(v[k]);
+    const up = GAME.upgrades, f = GAME.flags, D = GAME.D, tal = GAME.talents[id] || [];
+    const item = (k) => (SHOP.find((q) => q.id === k) || {}).name || k;
+    const plus = (list) => list.filter(Boolean).map((t) => ` + ${t}`).join('');
+    const relic = (id === 'aldric' && up.blade && 'blade') || (id === 'sera' && up.fangs && 'fangs') || (id === 'elian' && up.dawnstaff && 'dawnstaff');
+    const armorUp = (id === 'aldric' && up.aegis && 'aegis') || (id === 'elian' && up.mantle && 'mantle');
     const rows = [
-      ['Vida', `${h ? `${h.hp}/` : ''}${h ? h.maxHp : s.hp}`, `3 + Fuerza ${v.FUE} + vigor ${d.vigor}${h && h.wounds ? ` − herida ${h.wounds}` : ''}`],
+      ['Vida', `${h ? `${h.hp}/` : ''}${h ? h.maxHp : s.hp}`, `3 + Fuerza ${v.FUE} + vigor ${d.vigor}${plus([D.heroHp && `${D.heroHp} (${D.name})`, armorUp && `2 (${item(armorUp)})`])}${h && h.wounds ? ` − herida ${h.wounds}` : ''}`],
       ['Movimiento', s.mv, `3 + Agilidad ${v.AGI}`],
-      ['Ataque', `${h ? h.atk : s.atk} dados`, `${d.weapon.name} ${d.weapon.base} + ${VIRTUES[d.weapon.attr].name} (+${b(d.weapon.attr)})${s.range > 1 ? ` · alcance ${s.range}` : ''}`],
-      ['Defensa', `${h ? h.def : s.def} dados`, `${d.armor.name} ${d.armor.base} + Agilidad (+${b('AGI')})`],
-      ['Determinación', h ? `${h.det}/${h.detMax}` : s.det, `Voluntad ${v.VOL}`]
+      ['Ataque', `${h ? h.atk : s.atk} dados`, `${d.weapon.name} ${d.weapon.base} + ${VIRTUES[d.weapon.attr].name} (+${b(d.weapon.attr)})${plus([relic && `1 (${item(relic)})`, id === 'sera' && f.tomasDagger && '1 (daga de Tomás)'])}${s.range > 1 ? ` · alcance ${s.range}` : ''}`],
+      ['Defensa', `${h ? h.def : s.def} dados`, `${d.armor.name} ${d.armor.base} + Agilidad (+${b('AGI')})${plus([armorUp && `1 (${item(armorUp)})`])}`],
+      ['Determinación', h ? `${h.det}/${h.detMax}` : s.det, `Voluntad ${v.VOL}${plus([D.det && `${D.det} (${D.name})`, f.detAllCh === GAME.chIdx && '1 (velada)'])}`]
     ];
-    if (s.eter) rows.push(['Éter', h ? `${h.eter}/${h.eterMax}` : s.eter, `Ingenio ${v.ING}, +1 por ronda`]);
+    if (s.eter) rows.push(['Éter', h ? `${h.eter}/${h.eterMax}` : s.eter, `Ingenio ${v.ING}${plus([f.eterBonus && `${f.eterBonus} (velada)`, tal.includes('fuente') && '2 (Fuente de éter)'])}, +1 por ronda`]);
     return rows;
   },
   heroSheetHTML(id, opts = {}) {

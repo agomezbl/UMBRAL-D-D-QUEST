@@ -216,10 +216,11 @@ const GAME = {
   async startChapter(idx, opts = {}) {
     this.gen = (this.gen || 0) + 1;
     this.busy = 0;
-    this.state = 'play'; this.chIdx = idx; this.ch = CHAPTERS[idx];
+    this.tutorial = !!opts.tutorial;
+    this.state = 'play'; this.chIdx = idx; this.ch = opts.def || CHAPTERS[idx];
     if (!this.stats) this.stats = this.newStats();
-    this.save('chapter');
-    UI.hideAll();
+    if (!this.tutorial) this.save('chapter');
+    UI.hideAll(); UI.bossBar(null); UI.shadowMode(false);
     this.busy++;
     try {
       const ch = this.ch;
@@ -263,6 +264,13 @@ const GAME = {
     } catch (e) { console.error(e); }
     this.busy = 0;
     await this.startRound();
+  },
+  /* Tutorial guiado: sala de prácticas con reglas de Relato; no toca la partida guardada */
+  async startTutorial() {
+    this.newGame('relato');
+    TUTOR.prepare();
+    await this.startChapter(-1, { def: TUTORIAL, tutorial: true });
+    if (this.tutorial && this.state === 'play') TUTOR.begin();
   },
   updateLantern() {
     const el = this.heroes.find((h) => h.id === 'elian');
@@ -909,6 +917,7 @@ const GAME = {
     if (this.boss && this.boss.alive && this.boss.active) return;
     this.doom += n;
     UI.hintOnce('doom');
+    if (this.tutorial) this.doom = Math.min(this.doom, this.D.doom - 1);
     if (this.doom >= this.D.doom) { this.doom = 0; this.pendingWanderer = true; }
     UI.refresh();
   },
@@ -943,8 +952,8 @@ const GAME = {
     const ad = this.atkDice(att, tgt, o), atkN = ad.n;
     if (att.status && att.status.inspirado && !o.reaction) delete att.status.inspirado;
     let defN = this.defDice(tgt);
-    // Égida de Elian: gasta 1 de Éter para defenderse con un dado más
-    if (tgt.side === 'hero' && tgt.eterMax && tgt.eter >= 1 && !o.noAegis) { tgt.eter--; defN++; FX.text(this.headPos(tgt), 'Égida', 'heal'); }
+    // Escudo de éter de Elian: gasta 1 de Éter para defenderse con un dado más
+    if (tgt.side === 'hero' && tgt.eterMax && tgt.eter >= 1 && !o.noAegis) { tgt.eter--; defN++; FX.text(this.headPos(tgt), 'Escudo de éter', 'heal'); }
     const ranged = o.ranged != null ? o.ranged : (att.ranged && U.cheb(att.x, att.y, tgt.x, tgt.y) > 1);
     this.faceTo(att, tgt.x, tgt.y);
     const m = att.mesh, from = m.position.clone(), dir = new THREE.Vector3(tgt.x * TILE - from.x, 0, tgt.y * TILE - from.z).normalize();
@@ -1687,6 +1696,7 @@ const GAME = {
     const choice = await UI.defeatCard(this.deathOf);
     this.deathOf = null;
     ENGINE.fx.desatT = 0;
+    if (this.tutorial) { TUTOR.stop(); if (choice === 'retry') this.startTutorial(); else UI.title(); return; }
     if (choice === 'retry' && this.checkpoint) { this.restore(this.checkpoint); this.startChapter(this.checkpoint.chIdx); }
     else UI.title();
   },

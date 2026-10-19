@@ -8,6 +8,7 @@ Funciona en ordenador (ratón y teclado) y en móvil (pantalla táctil). Necesit
 
 ## Lo que incluye
 
+- **Tutorial guiado** en una sala de prácticas (unos 10 minutos): un panel enseña paso a paso a moverse, mirar alrededor, abrir puertas, atacar, usar habilidades y Éter, terminar el turno, abrir cerraduras y abrir cofres. Espera a que lo hagas, señala con una flecha dónde tocar y se puede saltar o abandonar en cualquier momento. No toca la partida guardada.
 - Campaña de tres capítulos: **Las Criptas de Malakor**, **La Forja de Karak-Azkul** y **El Ojo de Cristal**, con campamentos entre capítulos.
 - Diálogos con retratos, diarios que se encuentran por el camino, fantasmas, sustos, un giro final, una elección y dos finales.
 - Tres héroes con personalidad propia, definidos por **cinco virtudes**: Fuerza, Agilidad, Ingenio, Voluntad y Presencia. Aldric (paladín) es fuerte y carismático, Sera (exploradora) la más ágil y Elian (Tejedor del Éter) el más listo y voluntarioso.
