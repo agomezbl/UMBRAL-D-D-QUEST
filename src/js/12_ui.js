@@ -438,7 +438,7 @@ const UI = {
       <h1 class="tt-name" aria-label="Umbral">UMBRAL</h1>
       <p class="tt-tag">Tres héroes. Tres sellos. Un farol que no debería brillar.</p></div>
       <nav class="tt-menu">
-        ${save ? `<button class="btn primary" id="t-cont">${icon('play')} Continuar <small>Capítulo ${CHAPTERS[save.chIdx] ? CHAPTERS[save.chIdx].num : ''}${save.stage === 'camp' ? ' · campamento' : ''}</small></button>` : ''}
+        ${save ? `<button class="btn primary" id="t-cont">${icon('play')} Continuar <small>Capítulo ${CHAPTERS[save.chIdx] ? CHAPTERS[save.chIdx].num : ''}${save.stage === 'camp' ? ' · campamento' : save.stage === 'round' && save.run ? ` · ronda ${save.run.round}` : ''}</small></button>` : ''}
         <button class="btn ${save ? '' : 'primary'}" id="t-new">${icon('flame')} Nueva partida</button>
         <button class="btn ${tutDone ? '' : 'recommend'}" id="t-tut">${icon('target')} Tutorial guiado <small>${tutDone ? 'unos 10 min' : 'Recomendado · 10 min'}</small></button>
         <button class="btn" id="t-help">${icon('scroll')} Cómo se juega</button>
@@ -447,7 +447,12 @@ const UI = {
       <div class="tt-foot">Táctica por turnos con dados de calavera y escudo · Ratón, teclado o pantalla táctil</div></div>`, 'title-screen');
     const start = () => audio.init();
     s.addEventListener('pointerdown', start, { once: true });
-    if (save) s.querySelector('#t-cont').onclick = () => { audio.init(); audio.sfx('ui'); GAME.restore(save); this.screen(null); if (save.stage === 'camp') GAME.camp(save.chIdx); else GAME.startChapter(save.chIdx); };
+    if (save) s.querySelector('#t-cont').onclick = () => {
+      audio.init(); audio.sfx('ui'); GAME.restore(save); this.screen(null); MAIN.stopTitle();
+      if (save.stage === 'camp') GAME.camp(save.chIdx);
+      else if (save.stage === 'round' && save.run) GAME.startChapter(save.chIdx, { resume: save });
+      else GAME.startChapter(save.chIdx);
+    };
     s.querySelector('#t-new').onclick = () => { audio.init(); audio.sfx('ui'); this.difficulty(); };
     s.querySelector('#t-tut').onclick = () => this.startTutorial();
     s.querySelector('#t-help').onclick = () => { audio.init(); audio.sfx('ui'); this.help(() => this.title()); };
@@ -539,10 +544,14 @@ const UI = {
     const s = this.screen(`<div class="card settings"><div class="eyebrow">Ajustes</div><h2>Ajustes</h2>
       <div class="set-grid">
         <section><h3>Imagen</h3>
-          ${sel('s-q', 'Calidad gráfica', [['bajo', 'Baja (móviles modestos)'], ['medio', 'Media'], ['alto', 'Alta']], S.quality)}
+          ${sel('s-q', 'Calidad gráfica', [['minimo', 'Mínima (móviles muy lentos)'], ['bajo', 'Baja (móviles modestos)'], ['medio', 'Media'], ['alto', 'Alta']], S.quality)}
           ${chk('s-tilt', 'Efecto miniatura (desenfoque)', S.tilt)}
           ${chk('s-shake', 'Temblor de cámara', S.shake)}
           ${chk('s-flash', 'Destellos intensos en los sustos', S.flashes)}
+        </section>
+        <section><h3>Lectura</h3>
+          ${sel('s-size', 'Tamaño de letra', [['normal', 'Normal'], ['grande', 'Grande'], ['enorme', 'Muy grande']], S.textSize)}
+          ${chk('s-contrast', 'Alto contraste', S.contrast)}
         </section>
         <section><h3>Sonido</h3>
           ${rng('s-music', 'Música', S.music)}${rng('s-sfx', 'Efectos', S.sfx)}${rng('s-amb', 'Ambiente', S.amb)}
@@ -562,7 +571,7 @@ const UI = {
     const $ = (id) => s.querySelector('#' + id);
     const apply = () => {
       const q = $('s-q').value; const qChanged = q !== S.quality;
-      Object.assign(S, { quality: q, tilt: $('s-tilt').checked, shake: $('s-shake').checked, flashes: $('s-flash').checked, music: +$('s-music').value, sfx: +$('s-sfx').value, amb: +$('s-amb').value, voice: $('s-voice').value, textSpeed: $('s-text').value, autoText: $('s-auto').checked, speed: +$('s-speed').value, follow: $('s-follow').checked, confirmTouch: $('s-confirm').checked, quickEnemyDice: $('s-qdice').checked, detOffer: $('s-det').checked });
+      Object.assign(S, { quality: q, tilt: $('s-tilt').checked, shake: $('s-shake').checked, flashes: $('s-flash').checked, music: +$('s-music').value, sfx: +$('s-sfx').value, amb: +$('s-amb').value, voice: $('s-voice').value, textSpeed: $('s-text').value, autoText: $('s-auto').checked, speed: +$('s-speed').value, follow: $('s-follow').checked, confirmTouch: $('s-confirm').checked, quickEnemyDice: $('s-qdice').checked, detOffer: $('s-det').checked, textSize: $('s-size').value, contrast: $('s-contrast').checked });
       MAIN.applySettings(qChanged);
     };
     U.$$('select,input', s).forEach((i) => i.addEventListener('change', apply));

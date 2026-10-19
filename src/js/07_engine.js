@@ -3,6 +3,7 @@
    ========================================================================== */
 const TILE = 2;
 const QUALITY = {
+  minimo: { dpr: 0.75, shadows: false, shadowSize: 512, lights: 2, bloom: false, mist: false, tilt: 0, msaa: 0, particles: 0.25, label: 'Mínima' },
   bajo: { dpr: 1, shadows: false, shadowSize: 512, lights: 3, bloom: false, mist: false, tilt: 0, msaa: 0, particles: 0.4, label: 'Bajo' },
   medio: { dpr: 1.5, shadows: true, shadowSize: 1024, lights: 4, bloom: true, mist: true, tilt: 0, msaa: 2, particles: 0.7, label: 'Medio' },
   alto: { dpr: 2, shadows: true, shadowSize: 2048, lights: 6, bloom: true, mist: true, tilt: 0.55, msaa: 4, particles: 1, label: 'Alto' }

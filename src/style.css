@@ -642,3 +642,30 @@ body.cinema #party { transform: translateX(-20px); }
   .tu-title { font-size: 19px; }
   .tu-text { font-size: var(--t-s); }
 }
+
+/* ------------------------------------------------ lectura: tamaño de letra y alto contraste (Ajustes) */
+body.txt-grande { --t-xs: 12.5px; --t-s: 14.5px; --t-m: 16.5px; --t-l: 21px; }
+body.txt-enorme { --t-xs: 14px; --t-s: 16px; --t-m: 18px; --t-l: 23px; }
+body.txt-grande .act-lb { font-size: 11.5px; } body.txt-enorme .act-lb { font-size: 12.5px; line-height: 1.1; }
+body.txt-grande .hc-hpn, body.txt-grande .hc-tag { font-size: 11.5px; } body.txt-enorme .hc-hpn, body.txt-enorme .hc-tag { font-size: 12.5px; }
+body.txt-grande .dlg-text { font-size: 22px; } body.txt-enorme .dlg-text { font-size: 24px; }
+body.txt-grande .ch-prompt, body.txt-grande #note-text { font-size: 22px; } body.txt-enorme .ch-prompt, body.txt-enorme #note-text { font-size: 24px; }
+body.txt-grande .float-txt.warn, body.txt-grande .float-txt.block { font-size: 23px; } body.txt-enorme .float-txt.warn, body.txt-enorme .float-txt.block { font-size: 26px; }
+body.txt-enorme .hc-st { gap: 6px; }
+@media (max-width: 820px) {
+  body.txt-grande .dlg-text { font-size: 20px; } body.txt-enorme .dlg-text { font-size: 21px; }
+  body.txt-grande .act-lb { font-size: 10.5px; } body.txt-enorme .act-lb { font-size: 11px; }
+}
+body.contraste { --ash: #e3d8c2; --bronze-dim: rgba(233, 196, 140, 0.6); --panel: rgba(8, 6, 5, 0.97); --panel-2: rgba(16, 12, 9, 0.98); --bone: #fffaf0; }
+body.contraste .plate { border-color: var(--candle); }
+body.contraste .lg { background: rgba(0, 0, 0, 0.9); color: var(--bone); }
+body.contraste .act { border-color: rgba(233, 196, 140, 0.75); background: #0e0b08; }
+body.contraste .act:disabled { opacity: 0.45; }
+body.contraste .hc-hpbar { border-color: #ff9a7a; }
+body.contraste .dlg-text, body.contraste .lead, body.contraste .tu-text { color: #fffaf0; }
+body.contraste .float-txt { text-shadow: 0 0 3px #000, 0 2px 0 #000, 0 0 14px #000; }
+body.contraste :focus-visible { outline-width: 3px; }
+/* con letra grande, la barra superior y las fichas no deben desbordarse */
+body.txt-grande .res-pill, body.txt-enorme .res-pill { font-size: 13px; }
+body.txt-enorme .hc-name small { display: none; }
+@media (min-width: 821px) { body.txt-grande .res, body.txt-enorme .res { flex-wrap: nowrap; gap: 5px; } body.txt-enorme #quest { max-width: min(460px, 40vw); } }

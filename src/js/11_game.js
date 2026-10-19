@@ -217,23 +217,26 @@ const GAME = {
     this.gen = (this.gen || 0) + 1;
     this.busy = 0;
     this.tutorial = !!opts.tutorial;
+    const R = opts.resume && opts.resume.run;
     this.state = 'play'; this.chIdx = idx; this.ch = opts.def || CHAPTERS[idx];
     if (!this.stats) this.stats = this.newStats();
-    if (!this.tutorial) this.save('chapter');
+    if (R) this.checkpoint = opts.resume.start || this.snapshot('chapter');
+    else if (!this.tutorial) this.save('chapter');
     UI.hideAll(); UI.bossBar(null); UI.shadowMode(false);
     this.busy++;
     try {
       const ch = this.ch;
-      await UI.chapterCard(ch);
+      await UI.chapterCard(R ? Object.assign({}, ch, { eyebrow: `Capítulo ${ch.num} · ronda ${R.round}` }) : ch);
       FX.clearLabels();
       WORLD.build(ch, ch.theme);
       this.L = WORLD.L;
       this.heroes = HERO_IDS.map((id) => this.makeHero(id));
       this.enemies = []; this.npcs = []; this.boss = null; this.eruptions = []; this.round = 0; this.mode = null; this.pending = null;
-      this.doom = 0; this.wanderers = 0; this.pendingWanderer = false; this.undo = null; this.brokenGroups = {}; this.willFail = [];
+      this.doom = 0; this.wanderers = 0; this.pendingWanderer = false; this.undo = null; this.brokenGroups = {}; this.willFail = []; this.lightsMode = 'on';
       this.summonsLeft = this.D.summons;
       this.heroes.forEach((h) => { const s = this.L.starts[HERO_DEFS[h.id].start]; h.x = s.x; h.y = s.y; WORLD.addUnit(h, { face: Math.PI }); });
       this.updateLantern();
+      if (R) { await this.applyRun(R); this.busy = 0; this.beginHeroPhase(true); return; }
       let nCh = 0;
       this.L.enemies.forEach((p) => {
         const type = ch.legend[p.key]; if (!type) return;
@@ -264,6 +267,89 @@ const GAME = {
     } catch (e) { console.error(e); }
     this.busy = 0;
     await this.startRound();
+  },
+  /* ------------------------------------------------------------ partida en curso: se guarda al empezar cada ronda */
+  runState() {
+    const L = this.L, J = (v) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
+    const pick = (o, keys) => { const r = {}; keys.forEach((k) => { if (o[k] !== undefined) r[k] = J(o[k]); }); return r; };
+    return {
+      v: 1, round: this.round, doom: this.doom, wanderers: this.wanderers || 0, pendingWanderer: !!this.pendingWanderer, summonsLeft: this.summonsLeft, uid: this.uid,
+      brokenGroups: J(this.brokenGroups || {}), willFail: (this.willFail || []).map((h) => h.id), eruptions: (this.eruptions || []).map((t) => ({ x: t.x, y: t.y })),
+      objective: UI.$('q-obj').textContent, lights: this.lightsMode || 'on', bossBar: !!(UI.bossU && UI.bossU.alive), boss: this.boss && this.boss.alive ? this.boss.id : null,
+      heroes: this.heroes.map((h) => Object.assign(pick(h, ['id', 'x', 'y', 'hp', 'maxHp', 'atk', 'meleeAtk', 'def', 'mv', 'range', 'det', 'detMax', 'eter', 'eterMax', 'wounds', 'ko', 'status', 'mvLeft', 'actions', 'ended', 'martirUsed', 'potionUsed']), { cds: h.skills.map((q) => q.cd), rot: h.mesh ? h.mesh.rotation.y : 0 })),
+      enemies: this.enemies.filter((e) => e.alive).map((e) => Object.assign(pick(e, ['id', 'kind', 'name', 'x', 'y', 'hp', 'maxHp', 'atk', 'def', 'mv', 'range', 'gold', 'iq', 'virt', 'status', 'active', 'group', 'champion', 'summoned', 'wanderer', 'phase2', 'doubted', 'boss']), { rot: e.mesh ? e.mesh.rotation.y : 0 })),
+      npcs: this.npcs.map((n) => ({ kind: n.kind, x: n.x, y: n.y })),
+      doors: L.doors.map((d) => ({ open: !!d.open, lock: d.lock || null, swing: d.swing || 1 })),
+      rooms: L.rooms.map((r) => (r.revealed ? 1 : 0) | (r.visited ? 2 : 0) | (r.searched ? 4 : 0)),
+      chests: L.chests.map((c) => !!c.looted), notes: L.notes.map((n) => !!n.read),
+      traps: L.traps.map((t) => (t.revealed ? 1 : 0) | (t.disarmed ? 2 : 0) | (t.sprung ? 4 : 0)), altars: L.altars.map((a) => !!a.used)
+    };
+  },
+  saveRun() {
+    if (this.tutorial || this.state !== 'play' || !this.checkpoint || !this.L) return;
+    try { U.store.set('umbral.save.v2', Object.assign(this.snapshot('round'), { start: this.checkpoint, run: this.runState() })); } catch (e) { console.error('saveRun', e); }
+  },
+  async applyRun(R) {
+    const L = this.L;
+    this.round = R.round; this.doom = R.doom || 0; this.wanderers = R.wanderers || 0; this.pendingWanderer = !!R.pendingWanderer;
+    this.summonsLeft = R.summonsLeft != null ? R.summonsLeft : this.D.summons; this.brokenGroups = R.brokenGroups || {}; this.uid = Math.max(this.uid || 0, R.uid || 0);
+    // salas, puertas, cofres, escritos, trampas
+    (R.rooms || []).forEach((f, i) => { const r = L.rooms[i]; if (!r) return; if (f & 1) WORLD.revealRoom(i, null, true); r.visited = !!(f & 2); r.searched = !!(f & 4); });
+    (R.doors || []).forEach((s, i) => {
+      const d = L.doors[i]; if (!d) return;
+      d.lock = s.lock || null; d.swing = s.swing || 1;
+      if (s.open) { d.open = true; d.mesh.userData.pivot.rotation.y = d.swing * -1.45; d.mesh.userData.leak.visible = false; }
+      else if (d.lock) WORLD.addLock(d);
+    });
+    WORLD.updateDoorLeaks();
+    (R.chests || []).forEach((looted, i) => { const c = L.chests[i]; if (c && looted) { c.looted = true; if (c.mesh) { c.mesh.userData.lid.rotation.x = -1.6; c.mesh.userData.glow.visible = false; } } });
+    (R.notes || []).forEach((read, i) => { if (L.notes[i]) L.notes[i].read = read; });
+    (R.traps || []).forEach((f, i) => {
+      const t = L.traps[i]; if (!t) return;
+      t.revealed = !!(f & 1); t.disarmed = !!(f & 2); t.sprung = !!(f & 4);
+      if (t.mesh) { t.mesh.visible = t.revealed || t.sprung; const sp = t.mesh.userData.spikes; if (t.disarmed) sp.visible = false; else if (t.sprung) sp.position.y = 0.25; }
+    });
+    (R.altars || []).forEach((u, i) => { if (L.altars[i]) L.altars[i].used = u; });
+    // héroes
+    this.heroes.forEach((h) => {
+      const s = (R.heroes || []).find((q) => q.id === h.id); if (!s) return;
+      const { cds, rot, ...rest } = s;
+      Object.assign(h, rest);
+      (cds || []).forEach((cd, i) => { if (h.skills[i]) h.skills[i].cd = cd; });
+      h.mesh.position.set(h.x * TILE, 0, h.y * TILE); h.mesh.rotation.y = rot || 0;
+      if (h.ko) { const ud = h.mesh.userData; ud.lockAnim = true; ud.model.rotation.x = -1.4; ud.model.position.y = 0.1; ud.base.userData.ring.material = MAT.std('#3a3a3a', 0.8); }
+    });
+    // criaturas y PNJ
+    (R.enemies || []).forEach((s) => {
+      const { rot, ...rest } = s;
+      const e = this.makeEnemy(s.kind, s.x, s.y, { champion: s.champion });
+      Object.assign(e, rest);
+      this.enemies.push(e); WORLD.addUnit(e, { face: rot || 0 });
+      e.mesh.visible = !!e.active;
+      if (e.champion) WORLD.markChampion(e);
+    });
+    (R.npcs || []).forEach((n) => {
+      const npc = { id: 'npc_' + n.kind, side: 'npc', kind: n.kind, name: SPEAKERS[n.kind] ? SPEAKERS[n.kind].name : n.kind, model: n.kind, x: n.x, y: n.y, hp: 1, maxHp: 1, alive: true, status: {} };
+      this.npcs.push(npc); WORLD.addUnit(npc, { face: 0 }); const h = this.heroes[0]; this.faceTo(npc, h.x, h.y);
+    });
+    this.willFail = (R.willFail || []).map((id) => this.heroes.find((h) => h.id === id)).filter(Boolean);
+    this.boss = R.boss ? this.enemies.find((e) => e.id === R.boss) || null : null;
+    this.eruptions = (R.eruptions || []).slice(); if (this.eruptions.length) WORLD.setDanger(this.eruptions);
+    // cámara, sonido e interfaz
+    const lead = this.heroesUp()[0] || this.heroes[0];
+    ENGINE.keyPos.set(lead.x * TILE, 0, lead.y * TILE); ENGINE.key.target.position.copy(ENGINE.keyPos);
+    ENGINE.focusTile(lead.x, lead.y, { dist: U.isTouch() && ENGINE.w < ENGINE.h ? 26 : 21, pitch: 0.92, yaw: 0.35, instant: true });
+    audio.startAmbient(this.ch.ambient);
+    const bossOn = this.boss && this.boss.alive && this.boss.active;
+    audio.setMusic(bossOn ? 'boss' : this.visibleEnemies().length ? 'combat' : 'explore', THEMES[this.ch.theme].music);
+    ENGINE.fx.fadeT = 0;
+    UI.showHUD(true);
+    UI.setLocation(this.ch, this.roomOf(lead));
+    if (R.objective) UI.objective(R.objective);
+    if (R.bossBar && bossOn) UI.bossBar(this.boss);
+    if (R.lights === 'out') { this.lightsMode = 'out'; WORLD.setLightsMult(0); ENGINE.key.intensity = 0.12; ENGINE.hemi.intensity = 0.08; }
+    UI.log(`Partida reanudada en la ronda ${this.round}.`, 'good');
+    await U.sleep(250);
   },
   /* Tutorial guiado: sala de prácticas con reglas de Relato; no toca la partida guardada */
   async startTutorial() {
@@ -308,16 +394,21 @@ const GAME = {
         if (h.status.aterrado) h.mvLeft = Math.max(0, h.mvLeft - 2);
       }
     } finally { this.busy = Math.max(0, this.busy - 1); }
+    await this.beginHeroPhase();
+  },
+  async beginHeroPhase(resumed) {
     if (this.state !== 'play') return;
     if (!this.heroesUp().length) { this.state = 'defeat'; setTimeout(() => this.defeat(), 900); return; }
+    this.phase = 'hero';
     const anyHostile = this.visibleEnemies().length > 0;
-    if (!this.boss || !this.boss.alive) audio.setMusic(anyHostile ? 'combat' : 'explore');
-    UI.banner(this.round === 1 ? 'Vuestro turno' : `Ronda ${this.round}`, anyHostile ? 'La Sombra os observa' : 'Explorad con cautela', 'hero');
+    if (!resumed && (!this.boss || !this.boss.alive)) audio.setMusic(anyHostile ? 'combat' : 'explore');
+    UI.banner(resumed ? `Ronda ${this.round}` : this.round === 1 ? 'Vuestro turno' : `Ronda ${this.round}`, resumed ? 'Seguís donde lo dejasteis' : anyHostile ? 'La Sombra os observa' : 'Explorad con cautela', 'hero');
     audio.sfx('turnHero');
-    const first = this.heroes.find((h) => !h.ended);
+    const first = this.heroes.find((h) => !h.ended && !h.ko);
     if (!first) { await this.shadowPhase(); return; }
     this.selectHero(first, true);
     UI.refresh();
+    this.saveRun();
   },
   selectHero(h, auto) {
     if (!h || h.ko || h.ended || this.state !== 'play') return;
@@ -829,7 +920,7 @@ const GAME = {
     door.open = true; this.eventful = true;
     audio.sfx('door');
     const pv = door.mesh.userData.pivot;
-    const sign = (h && (door.vertical ? h.y < door.y : h.x < door.x)) ? -1 : 1;
+    const sign = (h && (door.vertical ? h.y < door.y : h.x < door.x)) ? -1 : 1; door.swing = sign;
     U.tween(650, (k) => { pv.rotation.y = sign * -1.45 * U.easeOut(k); });
     door.mesh.userData.leak.visible = false;
     await U.sleep(280);
@@ -1790,6 +1881,7 @@ const GAME = {
     }
   },
   async lights(mode) {
+    this.lightsMode = mode === 'out' ? 'out' : 'on';
     if (mode === 'out') { audio.sfx('torchOut'); WORLD.setLightsMult(0); ENGINE.key.intensity = 0.12; ENGINE.hemi.intensity = 0.08; await U.sleep(400); }
     else if (mode === 'on') { WORLD.setLightsMult(1); ENGINE.key.intensity = 2.6; ENGINE.hemi.intensity = WORLD.theme.hemi * 2.2; audio.sfx('torch'); }
     else if (mode === 'flicker') { for (let i = 0; i < 5; i++) { WORLD.setLightsMult(i % 2 ? 1 : 0.15); await U.sleep(70 + Math.random() * 90); } WORLD.setLightsMult(1); }
@@ -1831,7 +1923,7 @@ const GAME = {
     if (what === 'tomasDagger') { this.flags.tomasDagger = true; const s = this.heroes.find((h) => h.id === 'sera'); s.atk++; FX.burst('magic', s.mesh.position, { color: '#cfe6ff' }); audio.sfx('levelUp'); }
     else if (what === 'blessing') this.heroes.forEach((h) => { if (!h.ko) this.heal(h, 2); });
     else if (what === 'blessing2') this.heroes.forEach((h) => this.heal(h, 3));
-    else if (what === 'thrainLoot') { this.addGold(60, this.heroes[1] && this.heroes[1].mesh ? this.headPos(this.heroes[1]) : null); this.items.elixir++; }
+    else if (what === 'thrainLoot') { this.addGold(40, this.heroes[1] && this.heroes[1].mesh ? this.headPos(this.heroes[1]) : null); this.items.elixir++; }
     UI.refresh();
   },
   async twist() {
@@ -1850,7 +1942,8 @@ const GAME = {
     let p = { x: al.x, y: al.y - 1 };
     if (!this.passable(p.x, p.y, { flies: true }) || this.unitAt(p.x, p.y)) p = this.freeTileNear(al.x, al.y, 3, false) || p;
     const b = this.makeEnemy(type, p.x, p.y);
-    if (this.flags.broke === false) { b.hp += 4; b.atk += 1; }
+    // entregar el farol la hace más fuerte (algo menos en Pesadilla, que ya la refuerza de por sí)
+    if (this.flags.broke === false) { b.hp += this.D.id === 'pesadilla' ? 2 : 4; b.atk += 1; }
     if (this.flags.tomasTruth) b.hp -= 2;
     if (this.flags.trueName) { b.hp -= 2; b.def = Math.max(1, b.def - 1); }
     b.maxHp = b.hp = Math.max(4, b.hp);

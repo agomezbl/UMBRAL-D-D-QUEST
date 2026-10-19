@@ -256,3 +256,15 @@ Con las cinco virtudes, la Determinación, el Éter y los ataques de oportunidad
 
 El tutorial se recorrió entero de forma automática con toques y clics reales, en ordenador (1280×720) y en móvil (390×844), sin errores. También se probaron salir a mitad, reiniciarlo desde la pausa, y comprobar que la partida guardada sigue intacta y que en la campaña vuelven los consejos normales. Después se repitieron cuatro campañas completas automáticas (Relato, Héroe ×2 y Pesadilla), todas terminadas sin errores, y pruebas de toques al azar en ordenador y móvil.
 
+## 7. Bloque necesario (hoja de ruta, tareas 1–5)
+
+| Tarea | Qué se hizo | Cómo se comprobó |
+| --- | --- | --- |
+| Guardado en cada ronda | Al empezar cada turno de los héroes se guarda todo el tablero: posición, vida, estados y recargas de cada héroe; criaturas vivas (también las convocadas y las errantes); puertas, cerraduras, salas, cofres, trampas, escritos; Presagio, jefe y luces. «Continuar» muestra el capítulo y la ronda y vuelve exactamente a ese punto | Partidas automáticas cortadas en cuatro momentos (capítulos I, II y III, una de ellas con Malakor en pie): al recargar, el tablero coincide campo a campo con lo guardado |
+| Velocidad real | Las animaciones van por reloj aunque el aparato dé pocas imágenes por segundo (antes, por debajo de 20 iban a cámara lenta). Nuevo nivel de calidad «Mínima» y la calidad automática baja hasta él | Medición con la CPU frenada a la cuarta parte |
+| Sin conexión e instalable | El motor 3D y las cuatro tipografías van dentro de `index.html`. En GitHub Pages hay manifiesto, iconos y un trabajador sin conexión que guarda el juego al abrirlo | Carga con la red cortada; registro del trabajador, caché y recarga sin conexión en un servidor local |
+| Equilibrio | Ignis da 50 de oro en lugar de 80 y el botín de la tumba de Thráin 40 en lugar de 60. En Pesadilla, entregar el farol refuerza a Isolde con +2 PV en lugar de +4 | Oro ganado en el capítulo II: 248–274 (antes 278–466). Pesadilla con el farol entregado: dos campañas ganadas, tras 3 y 4 derrotas (antes, perdida tras 7) |
+| Lectura | Ajustes «Tamaño de letra» (normal, grande, muy grande) y «Alto contraste» | Capturas en ordenador y móvil |
+
+El juego pesa ahora unos 1,5 MB porque lleva dentro el motor 3D y las letras; a cambio no depende de nada externo.
+

@@ -4,7 +4,7 @@
 const SETTINGS = Object.assign({
   quality: (() => { const touch = U.isTouch(), cores = navigator.hardwareConcurrency || 4; if (touch && Math.min(screen.width, screen.height) < 820) return 'medio'; return cores <= 4 ? 'medio' : 'alto'; })(),
   autoQ: true, tilt: true, shake: true, flashes: true, music: 0.55, sfx: 0.85, amb: 0.6, voice: 'narrador', textSpeed: 'normal', autoText: false,
-  speed: 1, follow: true, confirmTouch: true, quickEnemyDice: true, detOffer: true
+  speed: 1, follow: true, confirmTouch: true, quickEnemyDice: true, detOffer: true, textSize: 'normal', contrast: false
 }, U.store.get('umbral.settings', {}));
 
 const INPUT = {
@@ -126,7 +126,7 @@ const MAIN = {
       return;
     }
     try {
-      ENGINE.qName = SETTINGS.quality; TEX.size = SETTINGS.quality === 'bajo' ? 256 : 512;
+      ENGINE.qName = SETTINGS.quality; TEX.size = SETTINGS.quality === 'bajo' || SETTINGS.quality === 'minimo' ? 256 : 512;
       say('Encendiendo las antorchas…');
       await U.nextFrame();
       ENGINE.tiltOn = SETTINGS.tilt;
@@ -154,21 +154,24 @@ const MAIN = {
   },
   loop(t) {
     requestAnimationFrame((tt) => this.loop(tt));
-    const dt = Math.min(0.05, (t - (this.last || t)) / 1000); this.last = t;
-    U.updateTweens(dt);
+    // el tiempo real manda: en un aparato lento las animaciones dan saltos, pero no van a cámara lenta
+    // (así cuadran con los temporizadores de la interfaz, que van por reloj)
+    const raw = Math.max(0, (t - (this.last || t)) / 1000); this.last = t;
+    const dt = Math.min(0.1, raw);
+    U.updateTweens(Math.min(1, raw));
     INPUT.update(dt);
     if (this.titleOrbit || GAME.campOrbit) ENGINE.cam.t.yaw += dt * (this.titleOrbit ? 0.035 : 0.05);
     WORLD.update(dt);
     FX.update(dt);
     ENGINE.render(dt);
     // calidad adaptativa
-    this.fpsT += dt; this.fpsN++;
+    this.fpsT += Math.min(1, raw); this.fpsN++;
     if (this.fpsT > 4) {
       const fps = this.fpsN / this.fpsT; this.fpsT = 0; this.fpsN = 0;
       if (SETTINGS.autoQ && GAME.state === 'play' && fps < 26) {
         this.slow++;
-        if (this.slow >= 2 && ENGINE.qName !== 'bajo') {
-          const nq = ENGINE.qName === 'alto' ? 'medio' : 'bajo';
+        if (this.slow >= 2 && ENGINE.qName !== 'minimo') {
+          const nq = ENGINE.qName === 'alto' ? 'medio' : ENGINE.qName === 'medio' ? 'bajo' : 'minimo';
           SETTINGS.quality = nq; this.applySettings(true, true); this.slow = 0;
           UI.toast(`Calidad gráfica ajustada a ${QUALITY[nq].label.toLowerCase()} para que el juego vaya fluido.`);
         }
@@ -205,6 +208,10 @@ const MAIN = {
     if (qChanged && !silent) S.autoQ = false;
     audio.vol.music = S.music; audio.vol.sfx = S.sfx; audio.vol.amb = S.amb; audio.voiceMode = S.voice; audio.applyVolumes();
     U.speed = S.speed;
+    // lectura: tamaño de letra y alto contraste
+    document.body.classList.toggle('txt-grande', S.textSize === 'grande');
+    document.body.classList.toggle('txt-enorme', S.textSize === 'enorme');
+    document.body.classList.toggle('contraste', !!S.contrast);
     ENGINE.tiltOn = S.tilt;
     if (qChanged) ENGINE.setQuality(S.quality);
     if (ENGINE.final) ENGINE.final.uniforms.uTilt.value = S.tilt ? ENGINE.q.tilt : 0;

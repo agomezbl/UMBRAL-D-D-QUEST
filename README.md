@@ -4,7 +4,7 @@
 
 Mazmorra táctica por turnos en 3D, con dados de calavera y escudo. Tres héroes descienden a la Hondura para reavivar la Llama Perenne de Aldmere, guiados por la voz de Madre Isolde a través de un farol. Nada es lo que parece.
 
-Funciona en ordenador (ratón y teclado) y en móvil (pantalla táctil). Necesita conexión a internet para cargar el motor 3D y las fuentes.
+Funciona en ordenador (ratón y teclado) y en móvil (pantalla táctil). No necesita conexión: el motor 3D y las letras van dentro del archivo. En el móvil, desde el navegador, «Añadir a la pantalla de inicio» lo instala como una app.
 
 ## Lo que incluye
 
@@ -20,6 +20,8 @@ Funciona en ordenador (ratón y teclado) y en móvil (pantalla táctil). Necesit
 - Cuatro jefes con mecánicas propias y conversaciones con PNJ que se resuelven según quién hable.
 - Gráficos generados por código: piedra con relieve, antorchas con luz dinámica, lava, miasma, vacío, partículas, brillo y efecto miniatura.
 - Música y efectos generados en tiempo real, ambiente propio en cada capítulo y narración por voz opcional.
+- La partida se guarda al empezar cada ronda: si se cierra el navegador, «Continuar» vuelve a esa misma ronda.
+- Ajustes de lectura (tamaño de letra y alto contraste) y calidad gráfica automática.
 - Tres dificultades que cambian cómo se juega, no solo los números: lo listas que son las criaturas, qué pasa cuando un héroe cae y cada cuánto sube un monstruo errante (el **Presagio**). Guardado automático y calidad gráfica ajustable.
 
 El estudio de diseño completo (estrategias comparadas, solución elegida y resultados de las simulaciones) está en [`DISENO.md`](DISENO.md).
@@ -45,6 +47,8 @@ El estudio de diseño completo (estrategias comparadas, solución elegida y resu
 | Archivo | Para qué sirve |
 | --- | --- |
 | `index.html` | El juego completo en un solo archivo. Es lo que publica GitHub Pages. |
+| `manifest.webmanifest`, `sw.js`, iconos | Permiten instalar el juego en el móvil y abrirlo sin conexión. `build.py` los genera. |
+| `src/vendor/` | Motor 3D y tipografías que van dentro del juego, con sus licencias. |
 | `src/` | El código fuente, dividido por partes (historia, mapas, gráficos, audio, interfaz…). |
 | `src/js/10_rules.js` | Reglas de rol: virtudes, estados, dificultades, talentos y veladas. Aquí se ajusta el equilibrio. |
 | `src/js/10_story.js` | Diálogos, mapas de los capítulos, héroes, enemigos y tienda. Aquí se cambia la historia. |
@@ -60,4 +64,4 @@ El estudio de diseño completo (estrategias comparadas, solución elegida y resu
 3. Arrastra el nuevo `index.html` y pulsa **Commit changes**.
 4. En uno o dos minutos la página de juego se actualiza sola.
 
-**Si has cambiado algo dentro de `src/`:** ejecuta `python build.py` en esta carpeta para generar el nuevo `index.html` y súbelo como en el caso anterior.
+**Si has cambiado algo dentro de `src/`:** ejecuta `python build.py` en esta carpeta: genera el nuevo `index.html` y `sw.js`. Sube los dos como en el caso anterior.
