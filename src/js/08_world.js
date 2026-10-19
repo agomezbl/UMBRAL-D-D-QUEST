@@ -77,7 +77,7 @@ const WORLD = {
       ENGINE.scene.remove(this.group);
       this.group.traverse((o) => { if (o.isInstancedMesh) o.dispose(); if (o.geometry && o.userData.own) o.geometry.dispose(); });
     }
-    this.group = null; this.L = null; this.anims = []; this.dyn = []; this.flames = []; this.liquids = []; this.mists = [];
+    this.group = null; this.L = null; this.anims = []; this.dyn = []; this.flames = []; this.liquids = []; this.mists = []; this.exitGlow = null;
     ENGINE.clearLights();
   },
 
@@ -106,7 +106,7 @@ const WORLD = {
     const floorMat = new THREE.MeshStandardMaterial({ map: FT.map, normalMap: FT.normalMap, roughnessMap: FT.roughnessMap, roughness: 1, metalness: theme.id === 'void' ? 0.25 : 0.02, normalScale: new THREE.Vector2(1, 1) });
     if (FT.emissiveMap) { floorMat.emissiveMap = FT.emissiveMap; floorMat.emissive = new THREE.Color('#ff5a1a'); floorMat.emissiveIntensity = 0.55; }
     const floorTiles = [];
-    for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) { const t = L.T[y][x]; if ((t.floor && !t.hazard) || t.door) floorTiles.push(t); }
+    for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) { const t = L.T[y][x]; if ((t.floor && !t.hazard && t.ch !== 'X') || t.door) floorTiles.push(t); }
     const floorGeo = new THREE.BoxGeometry(TILE, 0.4, TILE);
     floorGeo.translate(0, -0.2, 0);
     // UV de la cara superior: una losa por casilla
@@ -187,7 +187,11 @@ const WORLD = {
         if (theme.block === 'crystals') L.rooms[t.room].torches.push(ENGINE.addLightSource({ pos: new THREE.Vector3(t.x * TILE, 1.2, t.y * TILE), color: new THREE.Color('#9d7bff'), intensity: 0.9, distance: 7, pulse: 1.3, on: false }));
       }
       else if (ch === 'M') { const m = addProp(t, MODELS.mirror(), { ry: this.faceAwayFromWall(t) }); t.mirror = m; }
-      else if (ch === 'X') addProp(t, MODELS.stairs(theme), { ry: this.faceAwayFromWall(t) + Math.PI });
+      else if (ch === 'X') {
+        // la escalera baja por un hueco en el suelo: paredes del pozo para que se vea la bajada
+        const sm = MODELS.stairs(theme), shaft = MAT.std('#' + new THREE.Color(theme.wall).multiplyScalar(0.42).getHexString(), 1);
+        [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => { const b = new THREE.Mesh(G.box(dx ? 0.06 : TILE, 1.4, dy ? 0.06 : TILE), shaft); b.position.set(dx * (TILE / 2 - 0.03), -0.7, dy * (TILE / 2 - 0.03)); sm.add(b); });
+        const m = addProp(t, sm, { ry: this.faceAwayFromWall(t) + Math.PI }); const st = L.stairs.find((q) => q.x === x && q.y === y); if (st) st.mesh = m; }
       else if (ch === ',') {
         const p = theme.debris === 'bones' ? MODELS.bones(rnd) : theme.debris === 'rubble' ? MODELS.rubble(rnd, '#3a2a22') : MODELS.rubble(rnd, '#3a3354');
         addProp(t, p, { ry: rnd() * 6 });
@@ -241,6 +245,19 @@ const WORLD = {
     L.doors.forEach((d) => ENGINE.tall.push({ x: d.x, y: d.y, h: 1.1, r: 0.95, hidden: () => d.open || !d.mesh.visible }));
     L.chests.forEach((c) => ENGINE.tall.push({ x: c.x, y: c.y, h: 0.5, r: 0.7, hidden: () => !c.mesh || !c.mesh.visible }));
     L.notes.forEach((n) => ENGINE.tall.push({ x: n.x, y: n.y, h: 0.9, r: 0.6, hidden: () => !n.mesh || !n.mesh.visible }));
+    // --- escalera de salida (modo Descenso): se puede tocar y brilla ---
+    this.exitGlow = null;
+    const ex = def.exit && L.stairs.find((q) => q.x === def.exit.x && q.y === def.exit.y);
+    if (ex) {
+      ex.exit = true;
+      ENGINE.tall.push({ x: ex.x, y: ex.y, h: 0.9, r: 0.85, hidden: () => !ex.mesh || !ex.mesh.visible });
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.95, 40), new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.flameA), transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.userData.own = true; ring.renderOrder = 4;
+      addProp(L.T[ex.y][ex.x], ring, { y: 0.03 });
+      ring.rotation.x = -Math.PI / 2;
+      this.exitGlow = ring;
+      L.rooms[L.T[ex.y][ex.x].room].torches.push(ENGINE.addLightSource({ pos: new THREE.Vector3(ex.x * TILE, 1.6, ex.y * TILE), color: new THREE.Color(theme.flameA), intensity: 1.5, distance: 9, pulse: 1.1, on: false, priority: 25 }));
+    }
     // --- capas de resaltado ---
     this.buildHighlights();
     const xs = L.w * TILE, zs = L.h * TILE;
@@ -602,6 +619,7 @@ const WORLD = {
       this.tgtRing.rotation.z = -now * 0.8; const sc = 1 + Math.sin(now * 6) * 0.05; this.tgtRing.scale.set(sc, sc, sc);
     }
     if (this.hl) this.hl.material.opacity = 0.75 + Math.sin(now * 3) * 0.2;
+    if (this.exitGlow && this.exitGlow.visible) { this.exitGlow.rotation.z = now * 0.5; this.exitGlow.material.opacity = 0.32 + Math.sin(now * 2.2) * 0.18; }
     if (this.dangerI && this.dangerI.count) { this.dangerI.material.opacity = 0.6 + Math.sin(now * 8) * 0.4; }
     // puertas: luz que se filtra
     this.L && this.L.doors.forEach((d) => {

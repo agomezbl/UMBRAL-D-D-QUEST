@@ -44,6 +44,15 @@ const ICONS = {
   flame: '<path d="M12 21c3.9 0 6.5-2.6 6.5-6.3 0-4.2-3.3-6.6-4.3-11.2-2.6 1.6-3.6 4.4-3.3 6.8-1.3-.6-2-1.8-2.2-3.3C6.6 9 5.5 11.6 5.5 14.7 5.5 18.4 8.1 21 12 21Z" fill="currentColor" fill-opacity=".18"/><path d="M12 21c3.9 0 6.5-2.6 6.5-6.3 0-4.2-3.3-6.6-4.3-11.2-2.6 1.6-3.6 4.4-3.3 6.8-1.3-.6-2-1.8-2.2-3.3C6.6 9 5.5 11.6 5.5 14.7 5.5 18.4 8.1 21 12 21Z"/>',
   key: '<circle cx="7.5" cy="12" r="4"/><path d="M11.5 12H21M17.5 12v3.5M20.5 12v2.5"/>',
   check: '<path d="M4.5 12.5l5 5 10-11"/>',
+  hammer: '<path d="M10.5 4.5h7l1.5 4-1.5 4h-7Z" fill="currentColor" fill-opacity=".18"/><path d="M10.5 4.5h7l1.5 4-1.5 4h-7ZM10.5 6.2H7.5v4.6h3M14 12.5 5 21.5M3.5 20l1.5 1.5"/>',
+  quake: '<path d="M2.5 15.5h4l2-4 3 7 3-10 2.5 7h4.5"/><path d="M5 20h14" stroke-opacity=".5"/><path d="M12 3v2.5M8 4.5l1 2M16 4.5l-1 2" stroke-opacity=".6"/>',
+  anvil: '<path d="M4 7h12c0 2.5 2 4 4.5 4v1.5H15l-1 3h2.5V18h-9v-2.5H10l-1-3H6.5C5 12.5 4 10.5 4 7Z" fill="currentColor" fill-opacity=".16"/><path d="M4 7h12c0 2.5 2 4 4.5 4v1.5H15l-1 3h2.5V18h-9v-2.5H10l-1-3H6.5C5 12.5 4 10.5 4 7Z"/>',
+  bell: '<path d="M6.5 16.5c1-1.2 1-3 1-5.5a4.5 4.5 0 0 1 9 0c0 2.5 0 4.3 1 5.5Z" fill="currentColor" fill-opacity=".16"/><path d="M6.5 16.5c1-1.2 1-3 1-5.5a4.5 4.5 0 0 1 9 0c0 2.5 0 4.3 1 5.5ZM5 16.5h14M10.5 19.5a1.6 1.6 0 0 0 3 0M12 4.5V3"/><path d="M3 8.5c.5-1.5 1.3-2.7 2.5-3.7M21 8.5c-.5-1.5-1.3-2.7-2.5-3.7" stroke-opacity=".6"/>',
+  sling: '<path d="M5 4c3 4 4 9 3.5 16M19 4c-3 4-4 9-3.5 16"/><path d="M8.5 20h7" /><circle cx="12" cy="9" r="2.2" fill="currentColor" fill-opacity=".3"/><circle cx="12" cy="9" r="2.2"/>',
+  stairs: '<path d="M3.5 20.5h4v-4h4v-4h4v-4h4v-4" /><path d="M3.5 20.5h17v-16" stroke-opacity=".35"/><path d="M14 17.5l3 3 3-3" />',
+  ring: '<circle cx="12" cy="14" r="5.5"/><path d="M9.5 6.5 12 3.5l2.5 3L12 9Z" fill="currentColor" fill-opacity=".3"/><path d="M9.5 6.5 12 3.5l2.5 3L12 9Z"/>',
+  armor: '<path d="M8 3.5 5 5v5.5l1.5 1V20h11v-8.5l1.5-1V5l-3-1.5c-.8 1.6-2.2 2.5-4 2.5S8.8 5.1 8 3.5Z" fill="currentColor" fill-opacity=".15"/><path d="M8 3.5 5 5v5.5l1.5 1V20h11v-8.5l1.5-1V5l-3-1.5c-.8 1.6-2.2 2.5-4 2.5S8.8 5.1 8 3.5ZM9 12h6M9 15.5h6"/>',
+  book: '<path d="M5 4.5h10.5a2 2 0 0 1 2 2V20H7a2 2 0 0 1-2-2Z" fill="currentColor" fill-opacity=".14"/><path d="M5 4.5h10.5a2 2 0 0 1 2 2V20H7a2 2 0 0 1-2-2ZM5 18a2 2 0 0 1 2-2h10.5M9 8.5h5"/>',
 };
 function icon(name, cls = '') {
   const p = ICONS[name] || ICONS.target;

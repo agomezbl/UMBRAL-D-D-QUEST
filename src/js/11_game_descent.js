@@ -1,0 +1,142 @@
+/* ==========================================================================
+   Modo Descenso: reglas de la partida (niveles, escaleras, campamentos,
+   velas y récord). La mazmorra la genera DESCENT.make (10_descent.js).
+   ========================================================================== */
+Object.assign(GAME, {
+  descent: null,
+  saveKey() { return this.descent ? 'umbral.descent.v1' : 'umbral.save.v2'; },
+  chapterDef(idx) { return this.descent && idx >= 1000 ? DESCENT.make(this.descent.seed, idx - 1000) : CHAPTERS[idx]; },
+  descentBest() { return U.store.get('umbral.descent.best', null); },
+  noteBest() {
+    const D = this.descent; if (!D) return false;
+    const b = this.descentBest();
+    if (b && b.depth >= D.depth) return false;
+    U.store.set('umbral.descent.best', { depth: D.depth, party: this.party.slice(), difficulty: this.difficulty, date: Date.now() });
+    return true;
+  },
+
+  async startDescent(difficulty, party, build) {
+    this.newGame(difficulty, build, party);
+    this.descent = { seed: (Math.random() * 4294967296) >>> 0, depth: 1, lives: DESCENT.LIVES[this.difficulty] != null ? DESCENT.LIVES[this.difficulty] : 3, camps: 0, campDepth: 0, boonAt: 0, carry: null, record: false };
+    this.gold = 80;
+    U.store.del('umbral.descent.v1');
+    await this.startChapter(1001);
+  },
+
+  /* Al empezar un nivel: la vida y las heridas vienen del nivel anterior */
+  applyCarry() {
+    const C = this.descent && this.descent.carry; if (!C) return;
+    this.heroes.forEach((h) => {
+      const c = C[h.id]; if (!c) return;
+      h.wounds = c.wounds || 0;
+      h.maxHp = Math.max(3, h.maxHp - h.wounds);
+      h.hp = U.clamp(c.hp, 1, h.maxHp);
+    });
+  },
+
+  stairsInfo(h, x, y) {
+    const name = 'Escalera abajo';
+    if (this.boss && this.boss.alive) return { kind: 'none', text: name, sub: 'El guardián del nivel no os dejará pasar.' };
+    if (this.visibleEnemies().length) return { kind: 'none', text: name, sub: 'No podéis bajar con enemigos a la vista.' };
+    const ap = this.adjApproach(h, x, y);
+    if (!ap) return { kind: 'none', text: name, sub: 'Acércate a la escalera para bajar.' };
+    const next = this.descent.depth + 1, camp = DESCENT.isBoss(this.descent.depth);
+    return { kind: 'stairs', x, y, via: ap, text: camp ? 'Bajar y acampar' : `Bajar al nivel ${next}`, sub: `Baja todo el grupo, también los caídos. ${camp ? 'Al pie de la escalera acamparéis: descanso completo, talentos y tienda.' : 'Recuperáis 2 PV; las heridas siguen hasta acampar.'}${this.provText(ap.p)}` };
+  },
+
+  async descend(h) {
+    if (this.state !== 'play') return;
+    this.state = 'between';
+    const D = this.descent, done = D.depth;
+    this.faceTo(h, this.ch.exit.x, this.ch.exit.y);
+    audio.sfx('door'); audio.setMusic('silence');
+    D.carry = {};
+    this.heroes.forEach((q) => { D.carry[q.id] = { hp: Math.min(q.maxHp, (q.ko ? 1 : q.hp) + 2), wounds: q.wounds || 0 }; });
+    D.depth = done + 1;
+    if (this.noteBest()) D.record = true;
+    UI.log(`El grupo baja al nivel ${D.depth}.`, 'good');
+    setTimeout(() => (DESCENT.isBoss(done) ? this.descentCamp() : this.startChapter(1000 + D.depth)), 80);
+  },
+
+  async descentCamp() {
+    const D = this.descent;
+    this.state = 'camp';
+    D.carry = null;
+    if (D.campDepth !== D.depth) { D.campDepth = D.depth; D.camps = (D.camps || 0) + 1; }
+    this.chIdx = 1000 + D.depth;
+    this.save('dcamp');
+    UI.showHUD(false);
+    await UI.fadeOut();
+    FX.clearLabels();
+    WORLD.buildCamp();
+    this.heroes = this.party.map((id) => this.makeHero(id));
+    const spots = [[3.4, 2.6, 2.2], [6.6, 2.4, -2.1], [5, 4.3, 3.14]];
+    this.heroes.forEach((h, i) => { h.x = 0; h.y = 0; WORLD.addUnit(h, { face: 0 }); const m = h.mesh; m.position.set(spots[i][0] * TILE, 0, spots[i][1] * TILE); m.lookAt(5 * TILE, 0, 3 * TILE); });
+    this.enemies = []; this.npcs = [];
+    const theme = DESCENT.theme(D.depth - 1);
+    this.ch = { id: 'dcamp', num: String(D.depth - 1), title: 'Campamento', rooms: {}, lantern: DESCENT.LANTERN[theme], descent: true };
+    this.updateLantern();
+    ENGINE.focus(5 * TILE, 3 * TILE, { dist: 13, pitch: 0.55, yaw: 0.2, instant: true });
+    audio.startAmbient('camp'); audio.setMusic('camp');
+    await UI.fadeIn();
+    UI.locationCard(`Al pie del nivel ${D.depth - 1}`);
+    ENGINE.cam.t.yaw = 0.2;
+    this.campOrbit = true;
+    await this.run([['n', DESCENT.CAMP[(D.camps - 1) % DESCENT.CAMP.length]], ['n', 'Las heridas se cierran junto al fuego. Mañana, el nivel ' + D.depth + '.']], {});
+    UI.endDialogue();
+    // Ascenso: dos rangos de talentos; después, una virtud por campamento
+    const tier = D.camps - 1;
+    if (tier <= 1) {
+      if ((this.talents[this.party[0]] || []).length <= tier) {
+        const picks = await UI.talents(tier);
+        this.party.forEach((id) => { if (picks[id] && !(this.talents[id] = this.talents[id] || []).includes(picks[id])) this.talents[id].push(picks[id]); });
+        this.refreshCampHeroes();
+      }
+    } else if (D.boonAt !== D.depth) {
+      const picks = await UI.boons();
+      this.build = this.build || {};
+      this.party.forEach((id) => { const k = picks[id]; if (!k) return; const b = this.build[id] = Object.assign({}, this.baseVirt(id)); b[k] = Math.min(VMAX, b[k] + 1); });
+      D.boonAt = D.depth;
+      this.refreshCampHeroes();
+    }
+    this.save('dcamp');
+    await UI.shop();
+    this.campOrbit = false;
+    await this.startChapter(1000 + D.depth);
+  },
+
+  /* Derrota: se apaga una vela y se repite el nivel; sin velas, termina el descenso */
+  async descentDefeat() {
+    const D = this.descent, left = D.lives;
+    if (left <= 0) {
+      U.store.del('umbral.descent.v1');
+      this.deathOf = null; ENGINE.fx.desatT = 0;
+      await this.descentOver();
+      return;
+    }
+    if (this.checkpoint && this.checkpoint.descent) { this.checkpoint.descent.lives = left - 1; U.store.set('umbral.descent.v1', this.checkpoint); }
+    const choice = await UI.defeatCard(this.deathOf, { descent: true, lives: left - 1, depth: D.depth });
+    this.deathOf = null; ENGINE.fx.desatT = 0;
+    if (choice === 'retry' && this.checkpoint) { this.restore(this.checkpoint); this.startChapter(this.checkpoint.chIdx); }
+    else UI.title();
+  },
+  async descentOver() {
+    const D = this.descent;
+    const rec = this.noteBest() || D.record;
+    this.state = 'ending';
+    audio.setMusic('menu');
+    const choice = await UI.descentOver({ depth: D.depth, record: rec, best: this.descentBest(), stats: this.stats, party: this.party.slice(), difficulty: this.difficulty });
+    if (choice === 'again') UI.descentSetup(); else UI.title();
+  },
+
+  /* Un cofre con una pieza de equipo: va al arcón para repartirla al acampar */
+  gearLoot() {
+    const pool = GEAR.filter((it) => !it.hero && !this.ownerOf(it.id));
+    if (!pool.length) { const g = U.randi(25, 40); this.addGold(g); UI.log(`Bajo el oro, nada más: ${g} monedas extra.`, 'good'); return; }
+    const it = U.pick(pool);
+    this.stash.push(it.id);
+    audio.sfx('levelUp');
+    UI.banner(it.name, 'Al arcón: podréis dárselo a alguien al acampar', 'place');
+    UI.log(`Encontráis <b>${U.esc(it.name)}</b>. Va al arcón del grupo.`, 'good');
+  }
+});

@@ -6,6 +6,8 @@ const SPEAKERS = {
   aldric: { name: 'Aldric', title: 'Paladín de Vaelmont', color: '#8fb0ff' },
   sera: { name: 'Sera', title: 'Exploradora', color: '#86e0b0' },
   elian: { name: 'Elian', title: 'Tejedor del Éter', color: '#c2adff' },
+  brunna: { name: 'Brunna', title: 'Guardiana de la Forja', color: '#f0a060' },
+  nyra: { name: 'Nyra', title: 'Cantora de la Orden', color: '#ff9ab8' },
   isolde: { name: 'Madre Isolde', title: 'Vidente del Archivo', color: '#f0e4c8' },
   voz: { name: '…', title: 'Un susurro', color: '#c08bff' },
   malakor: { name: 'Malakor', title: 'El Nigromante', color: '#7dffb0' },
@@ -49,6 +51,30 @@ const HERO_DEFS = {
     skills: [
       { id: 'starfire', name: 'Fuego Astral', icon: 'starfire', eter: 3, target: 'enemy', range: 5, los: true, dtype: 'fire' },
       { id: 'dawn', name: 'Luz de la Aurora', icon: 'dawn', eter: 2, target: 'ally', range: 4 }
+    ] },
+  // —— héroes del modo Descenso ——
+  brunna: { name: 'Brunna', full: 'Brunna Martillo-de-Ceniza', role: 'Guardiana de la Forja', model: 'brunna', color: '#e0782f', start: '1', descent: true,
+    virt: { FUE: 5, AGI: 1, ING: 2, VOL: 4, PRE: 2 }, vigor: 3,
+    weapon: { name: 'Martillo de guerra', attr: 'FUE', base: 1, range: 1, dtype: 'phys' },
+    armor: { name: 'Coraza de forja', base: 3 },
+    blurb: 'La más fuerte y la más terca. Lenta, pero sus golpes atraviesan escudos y sacuden a quien esté cerca. Casi nada la asusta.',
+    trait: { name: 'Rompeescudos', desc: 'Sus golpes cuerpo a cuerpo ignoran 1 escudo del defensor.' },
+    basic: { name: 'Martillazo', icon: 'hammer' },
+    skills: [
+      { id: 'quake', name: 'Golpe sísmico', icon: 'quake', cd: 3, target: 'enemy', range: 1, dtype: 'phys' },
+      { id: 'anvil', name: 'Piel de yunque', icon: 'anvil', cd: 3, target: 'self' }
+    ] },
+  nyra: { name: 'Nyra', full: 'Nyra del Valle', role: 'Cantora de la Orden', model: 'nyra', color: '#e0607e', start: '2', descent: true,
+    virt: { FUE: 2, AGI: 3, ING: 3, VOL: 3, PRE: 5 }, vigor: 2,
+    weapon: { name: 'Honda', attr: 'AGI', base: 1, range: 4, ranged: true, dtype: 'phys' },
+    melee: { name: 'Cetro', attr: 'FUE', base: 1 },
+    armor: { name: 'Brigantina ligera', base: 2 },
+    blurb: 'La voz del grupo. Inspira, cura poco a poco y hace huir a las criaturas con una orden. Ataca de lejos con la honda.',
+    trait: { name: 'Voz de la Orden', desc: 'Su arenga tira un dado más y los enemigos a 2 casillas aguantan peor la moral.' },
+    basic: { name: 'Honda', icon: 'sling' },
+    skills: [
+      { id: 'hymn', name: 'Himno de batalla', icon: 'bell', cd: 3, target: 'self' },
+      { id: 'command', name: '¡Atrás!', icon: 'crown', cd: 3, target: 'enemy', range: 4, los: true }
     ] }
 };
 
@@ -77,19 +103,14 @@ const ENEMY_TYPES = {
 };
 
 const SHOP = [
-  { id: 'potion', kind: 'item', name: 'Poción de curación', icon: 'potion', cost: 35, desc: 'Cura 4 PV. Beberla no gasta la acción (una por turno).' },
-  { id: 'elixir', kind: 'item', name: 'Elixir de ímpetu', icon: 'elixir', cost: 45, desc: 'Concede una acción extra este turno.' },
-  { id: 'bomb', kind: 'item', name: 'Bomba alquímica', icon: 'bomb', cost: 40, desc: 'Se lanza a 4 casillas: 3 dados a todo lo que haya en un área de 3×3.' },
-  { id: 'kit', kind: 'kit', name: 'Ganzúas enanas', icon: 'key', cost: 60, desc: '+2 dados para desarmar trampas y forzar cerraduras con Agilidad.' },
-  { id: 'blade', kind: 'up', hero: 'aldric', name: 'Hoja de Vaelmont', icon: 'sword', cost: 120, desc: 'Aldric: +1 dado de ataque. Arma mágica: hiere de lleno a los espectros.' },
-  { id: 'aegis', kind: 'up', hero: 'aldric', name: 'Égida de plata', icon: 'shield', cost: 130, desc: 'Aldric: +1 dado de defensa y +2 PV máximos.' },
-  { id: 'fangs', kind: 'up', hero: 'sera', name: 'Colmillos gemelos', icon: 'dagger', cost: 110, desc: 'Sera: +1 dado de ataque. Armas mágicas: hieren de lleno a los espectros.' },
-  { id: 'bow', kind: 'up', hero: 'sera', name: 'Arco de tejo negro', icon: 'bow', cost: 120, desc: 'Sera puede atacar a 5 casillas con su ataque básico.' },
-  { id: 'dawnstaff', kind: 'up', hero: 'elian', name: 'Báculo del Alba', icon: 'starfire', cost: 120, desc: 'Elian: +1 dado a la Saeta Arcana y Luz de la Aurora cura 1 más.' },
-  { id: 'mantle', kind: 'up', hero: 'elian', name: 'Manto de Vigilia', icon: 'feather', cost: 100, desc: 'Elian: +1 dado de defensa y +2 PV máximos.' }
+  { id: 'potion', kind: 'item', name: 'Poción de curación', icon: 'potion', cost: 35, max: 6, desc: 'Cura 4 PV. Beberla no gasta la acción (una por turno).' },
+  { id: 'elixir', kind: 'item', name: 'Elixir de ímpetu', icon: 'elixir', cost: 45, max: 3, desc: 'Concede una acción extra este turno.' },
+  { id: 'bomb', kind: 'item', name: 'Bomba alquímica', icon: 'bomb', cost: 40, max: 4, desc: 'Se lanza a 4 casillas: 3 dados a todo lo que haya en un área de 3×3.' }
 ];
 
 const BARKS = {
+  brunna: { kill: ['¡Al yunque contigo!', 'Hierro manda.', 'Otro para la fragua.'], hurt: ['¿Eso es todo?', 'Mi abuela pegaba más fuerte.'], low: ['Aún… me tengo en pie.'], skill: ['¡Tierra, tiembla!', '¡Golpe de forja!', 'Que vengan.'] },
+  nyra: { kill: ['Descansa en la luz.', 'Una voz menos en la oscuridad.'], hurt: ['¡Ah! Seguid cantando.', 'No me callaréis.'], low: ['La voz… se me apaga.'], skill: ['¡Cantad conmigo!', '¡Atrás, sombra!', 'Escuchad la Orden.'] },
   aldric: { kill: ['Uno menos.', '¡Por Vaelmont!', 'Descansa ya.', 'Vuelve al polvo.'], hurt: ['Solo es un rasguño.', '¡Aguantad la línea!', 'Mi escudo ha visto cosas peores.'], low: ['No caeré aquí…'], skill: ['¡Detrás de mí!', '¡Luz, guía mi brazo!'] },
   sera: { kill: ['Demasiado lento.', '¿Siguiente?', 'Ni lo has visto venir.', 'Esto por Tomás.'], hurt: ['¡Eso dolió!', 'Vale. Ahora estoy enfadada.'], low: ['Necesito… un respiro.'], trap: ['Trampa. Quietos todos.', 'Alto. Aquí hay algo.'], gold: ['Esto me lo quedo.', 'Para la jubilación.'], skill: ['Sorpresa.', 'Por aquí.'] },
   elian: { kill: ['Que el éter te lleve.', 'Lo… lo siento.', '¡Funciona!'], hurt: ['¡Ah! No estoy hecho para esto.', '¡Cuidado conmigo!'], low: ['Veo… puntos negros.'], heal: ['Aguanta, ya te tengo.', 'Respira. Así.'], skill: ['¡Arde!', 'Estrellas, escuchadme.'] }

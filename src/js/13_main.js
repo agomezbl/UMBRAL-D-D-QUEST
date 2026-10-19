@@ -137,6 +137,7 @@ const MAIN = {
       await U.nextFrame();
       UI.portraits = ENGINE.portraits([
         { id: 'aldric', kind: 'aldric', bg: '#18202e' }, { id: 'sera', kind: 'sera', bg: '#16221c' }, { id: 'elian', kind: 'elian', bg: '#1e1830' },
+        { id: 'brunna', kind: 'brunna', bg: '#2a1a10' }, { id: 'nyra', kind: 'nyra', bg: '#2a1420' },
         { id: 'isolde', kind: 'isolde', opts: { small: true }, bg: '#241f1a' }, { id: 'malakor', kind: 'malakor', bg: '#0c1a12' }, { id: 'ignis', kind: 'ignis', bg: '#2a0d06' },
         { id: 'aethelgard', kind: 'aethelgard', bg: '#0c1a2a' }, { id: 'thrain', kind: 'thrain', bg: '#0c1a22' }, { id: 'tomas', kind: 'tomas', bg: '#101a24' }
       ]);
@@ -219,5 +220,5 @@ const MAIN = {
   }
 };
 
-window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, VIRTUES, TALENTS, VIGILS, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, STATUS, TUTOR, TUTORIAL };
+window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, VIRTUES, TALENTS, VIGILS, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, GEAR, SLOTS, STATUS, TUTOR, TUTORIAL, DESCENT };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => MAIN.boot()); else MAIN.boot();

@@ -39,6 +39,7 @@ const STATUS = {
   guard: { name: 'En guardia', icon: 'shield', desc: '+1 dado de defensa hasta su próximo turno.' },
   wall: { name: 'Muro de escudos', icon: 'shield', desc: '+2 dados de defensa hasta su próximo turno.' },
   taunt: { name: 'Provocando', icon: 'target', desc: 'Los enemigos cercanos le prefieren como objetivo.' },
+  yunque: { name: 'Piel de yunque', icon: 'anvil', desc: 'El próximo golpe que reciba le hace menos daño.' },
   desangrando: { name: 'Desangrándose', icon: 'heart', bad: true, desc: 'Si nadie le levanta a tiempo, morirá.' }
 };
 
@@ -105,8 +106,41 @@ const TALENTS = {
       { id: 'cadena', name: 'Cadena estelar', desc: 'Fuego Astral salpica con 3 dados en lugar de 2.' }],
     [{ id: 'manoAlba', name: 'Mano del alba', desc: 'Luz de la Aurora cuesta 1 de Éter menos y también cura 2 PV al aliado más herido junto al objetivo.' },
       { id: 'fuente', name: 'Fuente de éter', desc: '+2 de Éter máximo y la Saeta Arcana alcanza 5 casillas.' }]
+  ],
+  brunna: [
+    [{ id: 'tozuda', name: 'Terca como la roca', virt: { VOL: 1 }, desc: '+1 Voluntad: un punto más de Determinación.' },
+      { id: 'fuerzaBruta', name: 'Fuerza bruta', virt: { FUE: 1 }, desc: '+1 Fuerza: más vida y golpes aún más duros.' }],
+    [{ id: 'terremoto', name: 'Terremoto', desc: 'Golpe sísmico sacude a los enemigos a 2 casillas, no solo a los adyacentes.' },
+      { id: 'forjada', name: 'Forjada en la fragua', desc: 'Piel de yunque absorbe 3 de daño en lugar de 2.' }]
+  ],
+  nyra: [
+    [{ id: 'coro', name: 'Coro', desc: 'Himno de batalla alcanza a los aliados a 1 casilla más.' },
+      { id: 'carisma', name: 'Carisma', virt: { PRE: 1 }, desc: '+1 Presencia: arengas y órdenes más fuertes, mejores precios.' }],
+    [{ id: 'salmo', name: 'Salmo de alivio', desc: 'Himno de batalla cura 2 PV en lugar de 1.' },
+      { id: 'mandato', name: 'Mandato', desc: '¡Atrás! alcanza 5 casillas y su prueba es un grado más difícil.' }]
   ]
 };
+
+/* Equipo: cada pieza pide una virtud mínima. Las reliquias solo las puede llevar su héroe */
+const SLOTS = { mano: 'Mano', cuerpo: 'Cuerpo', extra: 'Extra' };
+const GEAR = [
+  { id: 'blade', hero: 'aldric', slot: 'mano', name: 'Hoja de Vaelmont', icon: 'sword', cost: 120, req: { FUE: 4 }, mods: { atk: 1, magic: true }, look: 'blade', desc: '+1 dado de ataque. Arma mágica: hiere de lleno a los espectros.' },
+  { id: 'aegis', hero: 'aldric', slot: 'cuerpo', name: 'Égida de plata', icon: 'shield', cost: 130, req: { FUE: 4 }, mods: { def: 1, hp: 2 }, look: 'aegis', desc: '+1 dado de defensa y +2 PV máximos.' },
+  { id: 'fangs', hero: 'sera', slot: 'mano', name: 'Colmillos gemelos', icon: 'dagger', cost: 110, req: { AGI: 4 }, mods: { atk: 1, magic: true }, look: 'fangs', desc: '+1 dado de ataque y a la Daga Sombría. Armas mágicas.' },
+  { id: 'bow', hero: 'sera', slot: 'extra', name: 'Arco de tejo negro', icon: 'bow', cost: 120, req: { AGI: 3 }, mods: { range: 5, ranged: true }, look: 'bow', desc: 'Su ataque básico alcanza 5 casillas.' },
+  { id: 'dawnstaff', hero: 'elian', slot: 'mano', name: 'Báculo del Alba', icon: 'starfire', cost: 120, req: { ING: 4 }, mods: { atk: 1, spell: 1 }, look: 'dawn', desc: '+1 dado a la Saeta Arcana y al Fuego Astral; Luz de la Aurora cura 1 más.' },
+  { id: 'mantle', hero: 'elian', slot: 'cuerpo', name: 'Manto de Vigilia', icon: 'feather', cost: 100, req: { VOL: 4 }, mods: { def: 1, hp: 2 }, look: 'mantle', desc: '+1 dado de defensa y +2 PV máximos.' },
+  { id: 'forgeHammer', hero: 'brunna', slot: 'mano', name: 'Martillo de la Forja Madre', icon: 'hammer', cost: 120, req: { FUE: 5 }, mods: { atk: 1, magic: true }, look: 'hammer', desc: '+1 dado de ataque y al Golpe sísmico. Arma mágica.' },
+  { id: 'hymnal', hero: 'nyra', slot: 'extra', name: 'Salterio de plata', icon: 'book', cost: 100, req: { PRE: 4 }, mods: { rally: 1, hymn: 1 }, look: 'hymnal', desc: 'Himno de batalla alcanza 1 casilla más y su arenga tira un dado más.' },
+  { id: 'plate', slot: 'cuerpo', name: 'Coraza de placas', icon: 'armor', cost: 140, req: { FUE: 5 }, mods: { def: 2, mv: -1 }, desc: '+2 dados de defensa, pero −1 de movimiento.' },
+  { id: 'brigandine', slot: 'cuerpo', name: 'Brigantina remachada', icon: 'armor', cost: 70, req: { FUE: 3 }, mods: { def: 1 }, desc: '+1 dado de defensa.' },
+  { id: 'gauntlets', slot: 'extra', name: 'Guanteletes de hierro', icon: 'hand', cost: 90, req: { FUE: 4 }, mods: { melee: 1 }, desc: '+1 dado en los ataques cuerpo a cuerpo.' },
+  { id: 'boots', slot: 'extra', name: 'Botas de zancada', icon: 'boot', cost: 80, req: { AGI: 4 }, mods: { mv: 1 }, desc: '+1 de movimiento.' },
+  { id: 'kit', slot: 'extra', name: 'Ganzúas enanas', icon: 'key', cost: 60, req: { AGI: 3 }, mods: { kit: 2 }, desc: '+2 dados para forzar cerraduras y desarmar trampas.' },
+  { id: 'amulet', slot: 'extra', name: 'Amuleto de la Llama', icon: 'flame', cost: 90, req: { VOL: 4 }, mods: { det: 1 }, desc: '+1 de Determinación.' },
+  { id: 'grimoire', slot: 'extra', name: 'Grimorio de cenizas', icon: 'book', cost: 110, req: { ING: 5 }, mods: { ing: 1, eter: 1 }, desc: '+1 dado en las pruebas de Ingenio y +1 de Éter máximo.' },
+  { id: 'signet', slot: 'extra', name: 'Sello de la Orden', icon: 'ring', cost: 90, req: { PRE: 4 }, mods: { rally: 1, haggle: 1 }, desc: '+1 dado al arengar y la tienda rebaja un 5 % más.' }
+];
 
 /* Velada en el campamento: una actividad por noche, resuelta con una prueba */
 const VIGILS = [

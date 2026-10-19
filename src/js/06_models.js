@@ -208,6 +208,74 @@ const MODELS = (() => {
     return root;
   }
 
+  /* Brunna, guardiana enana de la forja: baja, ancha, barba de cobre y martillo de dos manos */
+  function brunna(o = {}) {
+    const iron = MAT.std('#6f747c', 0.38, 0.85), dark = MAT.std('#2f2a26', 0.6, 0.5), leather = MAT.std('#5a3a24', 0.8), copper = MAT.std('#c26a2e', 0.4, 0.75);
+    const beard = MAT.std('#b8582a', 0.9), skin = MAT.std('#c28a68', 0.7), wood = MAT.std('#4a3020', 0.8);
+    const root = new THREE.Group(), fig = grp(root, [0, 0.12, 0]);
+    P(fig, G.cyl(0.1, 0.09, 0.28, 10), dark, [-0.12, 0.14, 0]); P(fig, G.cyl(0.1, 0.09, 0.28, 10), dark, [0.12, 0.14, 0]);
+    P(fig, G.box(0.16, 0.08, 0.22), iron, [-0.12, 0.03, 0.03]); P(fig, G.box(0.16, 0.08, 0.22), iron, [0.12, 0.03, 0.03]);
+    P(fig, G.lathe([[0.32, 0.22], [0.35, 0.4], [0.34, 0.6], [0.3, 0.76], [0.16, 0.86]], 22), iron);
+    P(fig, G.box(0.36, 0.42, 0.03), leather, [0, 0.36, 0.3], [-0.08, 0, 0]);
+    P(fig, G.tor(0.335, 0.035, 6, 26), leather, [0, 0.46, 0], [Math.PI / 2, 0, 0]);
+    P(fig, G.box(0.1, 0.08, 0.04), copper, [0, 0.46, 0.34]);
+    [-1, 1].forEach((sx) => {
+      P(fig, G.sph(0.15, 14, 10), iron, [sx * 0.33, 0.76, 0], [0, 0, sx * -0.35], [1, 0.75, 1]);
+      P(fig, G.tor(0.13, 0.016, 6, 20), copper, [sx * 0.34, 0.72, 0], [Math.PI / 2, 0, sx * -0.35]);
+      const arm = grp(fig, [sx * 0.37, 0.72, 0]);
+      P(arm, G.cyl(0.08, 0.075, 0.34, 8), leather, [0, -0.17, 0.08], [0.7, 0, sx * -0.1]);
+      P(arm, G.sph(0.085, 8, 6), iron, [0, -0.3, 0.24]);
+    });
+    const head = grp(fig, [0, 0.98, 0.02]);
+    P(head, G.sph(0.15, 16, 12), skin, [0, 0, 0.02]);
+    P(head, G.lathe([[0.17, 0.0], [0.165, 0.06], [0.13, 0.13], [0.06, 0.17], [0.0, 0.18]], 18), iron, [0, 0.02, -0.01]);
+    P(head, G.box(0.03, 0.12, 0.03), iron, [0, 0.0, 0.16]);
+    P(head, G.tor(0.162, 0.018, 6, 24), copper, [0, 0.0, 0], [Math.PI / 2, 0, 0]);
+    P(head, G.cone(0.035, 0.16, 6), MAT.std('#d8cbb0', 0.6), [-0.17, 0.12, 0], [0, 0, 1.0]); P(head, G.cone(0.035, 0.16, 6), MAT.std('#d8cbb0', 0.6), [0.17, 0.12, 0], [0, 0, -1.0]);
+    P(head, G.sph(0.016, 6, 4), MAT.std('#111', 0.5), [-0.05, 0.0, 0.15]); P(head, G.sph(0.016, 6, 4), MAT.std('#111', 0.5), [0.05, 0.0, 0.15]);
+    P(head, G.cone(0.17, 0.42, 12), beard, [0, -0.26, 0.09], [Math.PI + 0.2, 0, 0]);
+    [-1, 1].forEach((sx) => { P(head, G.cyl(0.03, 0.02, 0.22, 6), beard, [sx * 0.07, -0.42, 0.14], [0.25, 0, 0]); P(head, G.sph(0.03, 6, 4), copper, [sx * 0.07, -0.54, 0.17]); });
+    // martillo de dos manos
+    const hm = grp(fig, [0.3, 0.42, 0.3], [0.35, 0, -0.45]);
+    P(hm, G.cyl(0.032, 0.032, 1.0, 8), wood, [0, 0.3, 0]);
+    P(hm, G.box(0.3, 0.17, 0.17), o.hammer ? MAT.std('#e0b46a', 0.25, 1, { emissive: '#ff8a2a', emissiveIntensity: 0.6 }) : iron, [0, 0.82, 0]);
+    P(hm, G.box(0.32, 0.04, 0.19), copper, [0, 0.82, 0]);
+    P(hm, G.cone(0.05, 0.14, 4), iron, [-0.21, 0.82, 0], [0, 0, Math.PI / 2]);
+    root.userData = { fig, head, weapon: hm, height: 1.3 };
+    return root;
+  }
+
+  /* Nyra, cantora de la Orden: túnica clara, cetro con campana y libro de himnos */
+  function nyra(o = {}) {
+    const ivory = MAT.std('#e8dcc4', 0.75), rose = MAT.std('#a8324e', 0.7), silver = MAT.std('#d2d6de', 0.25, 0.95), skin = MAT.std('#d0a080', 0.7), hair = MAT.std('#6a2e1a', 0.85);
+    const root = new THREE.Group(), fig = grp(root, [0, 0.12, 0]);
+    P(fig, G.lathe([[0.31, 0.02], [0.28, 0.25], [0.22, 0.55], [0.19, 0.8], [0.18, 0.98], [0.11, 1.1]], 24), ivory);
+    P(fig, G.tor(0.305, 0.022, 6, 32), rose, [0, 0.04, 0], [Math.PI / 2, 0, 0]);
+    P(fig, G.box(0.13, 0.86, 0.02), rose, [0, 0.5, 0.21], [-0.12, 0, 0]);
+    P(fig, G.sph(0.05, 10, 8), MAT.glow('#ff8fb0', 1.6), [0, 0.86, 0.2], [0, 0, 0], [1, 1, 0.4], false);
+    P(fig, G.tor(0.195, 0.026, 6, 24), silver, [0, 0.66, 0], [Math.PI / 2, 0, 0]);
+    P(fig, G.tor(0.12, 0.05, 8, 18), rose, [0, 1.09, 0], [Math.PI / 2, 0, 0]);
+    const sleeve = (sx) => { const a = grp(fig, [sx * 0.22, 0.98, 0]); P(a, G.cyl(0.045, 0.09, 0.4, 10), ivory, [sx * 0.04, -0.19, 0.06], [0.4, 0, sx * 0.12]); P(a, G.sph(0.042, 8, 6), skin, [sx * 0.07, -0.4, 0.16]); return a; };
+    sleeve(-1); sleeve(1);
+    const head = grp(fig, [0, 1.24, 0]);
+    P(head, G.sph(0.12, 16, 12), skin, [0, 0, 0.01]);
+    P(head, G.sph(0.13, 16, 12), hair, [0, 0.03, -0.03], [0, 0, 0], [1.02, 0.98, 1]);
+    P(head, G.cone(0.12, 0.42, 12), hair, [0, -0.2, -0.08], [0.15, 0, 0]);
+    P(head, G.tor(0.125, 0.012, 6, 24), silver, [0, 0.05, 0.0], [Math.PI / 2 - 0.2, 0, 0]);
+    P(head, G.oct(0.02), MAT.glow('#ff9ab8', 2.4), [0, 0.08, 0.125]);
+    P(head, G.sph(0.011, 6, 4), MAT.std('#111', 0.5), [-0.042, 0.0, 0.11]); P(head, G.sph(0.011, 6, 4), MAT.std('#111', 0.5), [0.042, 0.0, 0.11]);
+    // cetro con campana
+    const sc = grp(fig, [0.32, 0.2, 0.18], [0.05, 0, -0.06]);
+    P(sc, G.cyl(0.022, 0.026, 1.25, 8), silver, [0, 0.62, 0]);
+    P(sc, G.lathe([[0.0, 0.0], [0.07, 0.02], [0.075, 0.1], [0.045, 0.16], [0.0, 0.17]], 14), MAT.std('#d6b25a', 0.3, 0.95), [0, 1.18, 0], [Math.PI, 0, 0]);
+    P(sc, G.sph(0.03, 8, 6), MAT.glow('#ffe0a0', 2), [0, 1.27, 0], [0, 0, 0], [1, 1, 1], false);
+    // libro de himnos al costado (con el Salterio de plata, brilla)
+    const book = grp(fig, [-0.22, 0.6, 0.14], [0, 0.5, 0.15]);
+    P(book, G.box(0.16, 0.2, 0.06), o.hymnal ? MAT.std('#c9ccd6', 0.2, 1, { emissive: '#ff9ab8', emissiveIntensity: 0.35 }) : MAT.std('#5a1e2c', 0.7));
+    root.userData = { fig, head, weapon: sc, height: 1.55 };
+    return root;
+  }
+
   /* ----------------------------- CRIATURAS ----------------------------- */
   function skeleton(o = {}) {
     const bone = MAT.std('#d6ccb3', 0.85), rust = MAT.std('#6e4a33', 0.65, 0.5), dark = MAT.std('#0a0908', 1);
@@ -663,7 +731,7 @@ const MODELS = (() => {
   }
 
   const builders = {
-    aldric, sera, elian, skeleton, ghoul, cultist, orc, wraith, golem, malakor, ignis, aethelgard, isolde,
+    aldric, sera, elian, brunna, nyra, skeleton, ghoul, cultist, orc, wraith, golem, malakor, ignis, aethelgard, isolde,
     thrain: dwarfGhost, tomas: humanGhost,
     archer: (o) => skeleton(Object.assign({ bow: true }, o)),
     goblin: (o) => orc(Object.assign({ scale: 0.72, skin: '#6a7a2a', spear: true, helm: false, eye: '#ffd23a' }, o)),

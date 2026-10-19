@@ -268,3 +268,56 @@ El tutorial se recorrió entero de forma automática con toques y clics reales, 
 
 El juego pesa ahora unos 1,5 MB porque lleva dentro el motor 3D y las letras; a cambio no depende de nada externo.
 
+
+## 8. Salto de calidad (hoja de ruta, tareas 6–8)
+
+### 8.1 Equipo que exige virtudes
+
+La tienda deja de vender «mejoras» y pasa a ser una **armería**: cada pieza ocupa un hueco (mano, cuerpo o extra), pide una virtud mínima y se elige quién la lleva. Así, el reparto de virtudes de la forja y los talentos deciden también qué equipo puede usar cada héroe.
+
+| Pieza | Hueco | Requisito | Efecto |
+| --- | --- | --- | --- |
+| Reliquias de cada héroe (Hoja de Vaelmont, Colmillos gemelos, Báculo del Alba, Martillo de la Forja Madre, Salterio de plata…) | Según la pieza | La virtud principal del héroe a 4 o 5 | Como antes: +1 dado, arma mágica, más alcance o más curación |
+| Coraza de placas | Cuerpo | Fuerza 5 | +2 defensa, −1 movimiento |
+| Brigantina remachada | Cuerpo | Fuerza 3 | +1 defensa |
+| Guanteletes de hierro | Extra | Fuerza 4 | +1 dado cuerpo a cuerpo |
+| Botas de zancada | Extra | Agilidad 4 | +1 movimiento |
+| Ganzúas enanas | Extra | Agilidad 3 | +2 dados para cerraduras y trampas (antes eran de todo el grupo; ahora, de quien las lleve) |
+| Amuleto de la Llama | Extra | Voluntad 4 | +1 Determinación |
+| Grimorio de cenizas | Extra | Ingenio 5 | +1 dado en Ingenio, +1 Éter |
+| Sello de la Orden | Extra | Presencia 4 | +1 dado al arengar y 5 % más de rebaja |
+
+Lo que se cambia de hueco vuelve al **arcón** y se puede dar a otro. Si un héroe deja de cumplir un requisito, la pieza vuelve sola al arcón. La ficha del grupo muestra el equipo y de dónde sale cada número. Las provisiones tienen tope por mochila (6 pociones, 3 elixires, 4 bombas). Las partidas guardadas antiguas se convierten: las reliquias pasan a su héroe y las ganzúas a Sera.
+
+### 8.2 Dos héroes nuevos (solo en el modo Descenso)
+
+La campaña conserva el trío porque la historia gira en torno a ellos. En el Descenso se eligen 3 de 5:
+
+- **Brunna Martillo-de-Ceniza**, guardiana de la forja (Fuerza 5, Agilidad 1). Sus golpes cuerpo a cuerpo ignoran un escudo. *Golpe sísmico*: martillazo que además puede aturdir a los enemigos cercanos. *Piel de yunque*: absorbe el siguiente golpe y atrae a los enemigos.
+- **Nyra del Valle**, cantora de la Orden (Presencia 5). Ataca con honda a 4 casillas, arenga con un dado más y los enemigos cercanos aguantan peor la moral. *Himno de batalla*: inspira, quita el miedo y cura 1 PV al grupo cercano. *¡Atrás!*: una prueba de Voluntad que hace huir a una criatura.
+
+Cada una tiene miniatura, retrato, frases propias y dos rangos de talentos.
+
+### 8.3 Modo Descenso
+
+Mazmorras que se generan solas, nivel a nivel, sin final. Se elige dificultad y grupo, se reparten virtudes y se baja.
+
+- **Generador.** Cada nivel es una cuadrícula de 6 a 12 salas con tamaños al azar; algunas se unen en salas grandes. Un árbol une todas las salas y se añaden una o dos puertas de más para dar rodeos. La entrada está en una esquina y la escalera de salida en la sala más alejada. Columnas, bloques y fosas solo se colocan si no cortan el paso (se comprueba casilla a casilla), y delante de cada puerta nunca hay nada. Cofres en esquinas de salas sin salida, trampas, escritos, cerraduras en la puerta de la salida y criaturas según la profundidad.
+- **Semilla.** Cada partida tiene una semilla. El mismo nivel sale siempre igual, así que «repetir el nivel» y «continuar» encuentran exactamente la misma mazmorra.
+- **Tramos de cuatro niveles.** Cripta, forja y vacío, por turnos. El cuarto nivel de cada tramo tiene guardián (Malakor, Ignis o Aethelgard) y, tras él, **campamento**: descanso completo, talentos (dos rangos) o, más adelante, +1 a una virtud, y la armería.
+- **Entre niveles** se conservan la vida y las heridas, con 2 PV de respiro; los caídos bajan con el grupo.
+- **Escalera.** Brilla y tiene luz propia. Se baja tocándola, sin enemigos a la vista; así se puede elegir entre explorar por botín o bajar ya.
+- **Velas.** Relato 5, Héroe 3, Pesadilla 1. Al caer se apaga una y se repite el nivel desde su comienzo; sin velas, termina el descenso. Salir al inicio no la devuelve.
+- **Dificultad creciente.** Más criaturas cada nivel, campeones cada vez más frecuentes (hasta el 30 %), +1 PV a partir del nivel 7 y del 13, +1 de ataque a partir del 11, guardianes más duros en cada vuelta. El oro rinde menos que en la campaña porque solo se gasta al acampar.
+- **Récord** de profundidad en la pantalla de inicio y en la pantalla final. Guardado propio, también en cada ronda, independiente de la campaña.
+
+### 8.4 Verificación
+
+| Prueba | Resultado |
+| --- | --- |
+| Partidas automáticas del Descenso, tras el ajuste final | Relato: llega al nivel 12 sin perder ninguna vela. Héroe: dos partidas, ambas hasta el nivel 11 (primera vela perdida en el guardián del nivel 8). Pesadilla: nivel 8 |
+| Antes del ajuste (sin subida de dificultad) | Héroe llegaba al nivel 15 sin una sola derrota y con 2.700 de oro sin gastar: demasiado fácil |
+| Guardado en cada ronda en el Descenso | Cortes en los niveles 1, 2 y 4 (con el guardián en pie): al recargar, mismo mapa y tablero idéntico campo a campo |
+| Generador | 960 niveles (60 semillas × 16 niveles) comprobados uno a uno: todos conectados, con salida, inicio y guardián donde toca, puertas bien orientadas y libres, cofres y escritos alcanzables. Media de 11 criaturas por nivel (máximo 16); mapas de 21×15 casillas de media |
+| Armería | Compra, requisitos («Sera necesita Fuerza 3»), cambio de hueco y arcón comprobados en ordenador y móvil |
+| Campaña y tutorial | Una campaña completa automática y el tutorial guiado, sin errores |

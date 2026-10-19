@@ -32,7 +32,7 @@ const UI = {
   /* ---------------- grupo ---------------- */
   buildParty() {
     const p = this.$('party'); p.innerHTML = '';
-    ['aldric', 'sera', 'elian'].forEach((id) => {
+    GAME.party.forEach((id) => {
       const d = HERO_DEFS[id];
       const c = U.el('button', 'hero-card', `
         <span class="hc-port"><img alt="" data-port="${id}"><i class="hc-ring" style="--hc:${d.color}"></i><i class="hc-b det" title="Determinación"></i>${id === 'elian' ? '<i class="hc-b eter" title="Éter"></i>' : ''}</span>
@@ -110,7 +110,7 @@ const UI = {
       this.btn.attack.disabled = !can || h.actions <= 0;
       this.btn.attack.classList.toggle('mode', !!(GAME.mode && GAME.mode.key === 'attack'));
       this.btn.acts.disabled = !can || h.actions <= 0;
-      const odds = { rally: `${h.virt.PRE + (RULES.perk(h, 'PRE') ? 1 : 0)}d`, search: `${h.virt.ING}d`, guard: '', dash: '' };
+      const odds = { rally: `${GAME.rallyDice(h)}d`, search: `${GAME.checkDice(h, 'ING')}d`, guard: '', dash: '' };
       U.$$('[data-odds]', this.$('acts-pop')).forEach((e) => (e.textContent = odds[e.dataset.odds] || ''));
       this.btn.items.disabled = !can;
       this.btn.end.disabled = !can;
@@ -328,52 +328,77 @@ const UI = {
       s.querySelector('#v-go').onclick = () => { audio.sfx('ui'); this.screen(null); resolve(); };
     });
   },
-  defeatCard(dead) {
+  defeatCard(dead, o = {}) {
     return new Promise((resolve) => {
       this.showHUD(false);
-      const s = this.screen(`<div class="card defeat"><div class="eyebrow">Fin del camino</div><h2>${dead ? `${U.esc(dead.name)} no volverá a levantarse` : 'Las sombras os reclaman'}</h2>
-        <p class="lead">${dead ? 'Nadie llegó a tiempo. Sin los tres, el descenso no puede continuar.' : 'El farol rueda por el suelo de piedra. Arriba, en Aldmere, nadie sabrá cómo terminó la historia.'}</p>
-        <div class="row"><button class="btn primary" id="d-retry">${icon('rotate')} Reintentar el capítulo</button><button class="btn" id="d-menu">Volver al inicio</button></div></div>`, 'dim red');
+      const candles = o.descent ? `<div class="candles" aria-label="${o.lives} velas">${Array.from({ length: Math.max(o.lives + 1, 1) }, (_, i) => `<i class="${i < o.lives ? 'on' : 'out'}">${icon('flame')}</i>`).join('')}</div>` : '';
+      const s = this.screen(`<div class="card defeat"><div class="eyebrow">${o.descent ? `Descenso · nivel ${o.depth}` : 'Fin del camino'}</div><h2>${o.descent ? 'Una vela se apaga' : dead ? `${U.esc(dead.name)} no volverá a levantarse` : 'Las sombras os reclaman'}</h2>
+        ${candles}
+        <p class="lead">${o.descent ? `${dead ? `${U.esc(dead.name)} no ha vuelto a levantarse. ` : ''}Os ${o.lives === 1 ? 'queda una vela' : `quedan ${o.lives} velas`}: podéis repetir este nivel desde su comienzo, tal como lo encontrasteis.` : dead ? 'Nadie llegó a tiempo. Sin los tres, el descenso no puede continuar.' : 'El farol rueda por el suelo de piedra. Arriba, en Aldmere, nadie sabrá cómo terminó la historia.'}</p>
+        <div class="row"><button class="btn primary" id="d-retry">${icon('rotate')} ${o.descent ? 'Repetir el nivel' : 'Reintentar el capítulo'}</button><button class="btn" id="d-menu">${o.descent ? 'Salir (se guarda)' : 'Volver al inicio'}</button></div></div>`, 'dim red');
       s.querySelector('#d-retry').onclick = () => { audio.sfx('ui'); this.screen(null); resolve('retry'); };
       s.querySelector('#d-menu').onclick = () => { audio.sfx('ui'); this.screen(null); resolve('menu'); };
     });
   },
   shop() {
     return new Promise((resolve) => {
-      const render = () => {
-        const heroes = ['aldric', 'sera', 'elian'];
-        const item = (it) => {
-          const owned = it.kind === 'up' ? GAME.upgrades[it.id] : it.kind === 'kit' ? GAME.kit : false;
-          const cnt = it.kind === 'item' ? GAME.items[it.id] : null;
-          const cost = price(it), can = !owned && GAME.gold >= cost;
-          return `<div class="shop-item ${owned ? 'owned' : ''}"><span class="si-ic">${icon(it.icon)}</span><span class="si-t"><b>${it.name}</b><small>${it.desc}</small></span>
-            <span class="si-buy">${cnt != null ? `<em>Tenéis ${cnt}</em>` : ''}<button class="btn small" data-buy="${it.id}" ${can ? '' : 'disabled'}>${owned ? 'Adquirido' : `${icon('coin')} ${cost}${cost < it.cost ? ` <s>${it.cost}</s>` : ''}`}</button></span></div>`;
-        };
-        s.querySelector('.shop-gold b').textContent = GAME.gold;
-        s.querySelector('.shop-haggle').innerHTML = disc ? `${icon('crown')} ${U.esc(haggler.name)} regatea con su Presencia ${haggler.virt.PRE}: −${Math.round(disc * 100)}% en todo.` : 'Nadie del grupo tiene Presencia para regatear (hace falta 3 o más).';
-        s.querySelector('.shop-cons').innerHTML = SHOP.filter((i) => i.kind !== 'up').map(item).join('');
-        s.querySelector('.shop-ups').innerHTML = heroes.map((h) => `<div class="shop-hero"><div class="sh-h"><img src="${this.portraits[h] || ''}" alt=""><b>${HERO_DEFS[h].full}</b></div>${SHOP.filter((i) => i.hero === h).map(item).join('')}</div>`).join('');
-        U.$$('[data-buy]', s).forEach((b) => (b.onclick = () => buy(b.dataset.buy)));
+      const party = GAME.party;
+      const port = (id) => `<img src="${this.portraits[id] || ''}" alt="">`;
+      const reqTxt = (it) => Object.entries(it.req || {}).map(([k, n]) => `${VIRTUES[k].name} ${n}`).join(' · ');
+      const rebuild = (id) => {
+        const h = GAME.heroes.find((q) => q.id === id); if (!h || !h.mesh) return;
+        const nh = GAME.makeHero(id);
+        if (GAME.state === 'camp') Object.assign(h, nh, { mesh: h.mesh }); else h.modelOpts = nh.modelOpts;
+        const pos = h.mesh.position.clone(), rot = h.mesh.rotation.y; WORLD.rebuildUnit(h); h.mesh.position.copy(pos); h.mesh.rotation.y = rot;
+        FX.burst('magic', pos, { color: '#ffe6a0', color2: '#ffb000' }); GAME.updateLantern();
       };
-      const haggler = HERO_IDS.map((id) => ({ name: HERO_DEFS[id].name, virt: GAME.virtOf(id) })).sort((a, b) => b.virt.PRE - a.virt.PRE)[0];
-      const disc = Math.max(0, haggler.virt.PRE - 2) * 0.05;
-      const price = (it) => Math.round(it.cost * (1 - disc));
-      const buy = (id) => {
-        const it = SHOP.find((i) => i.id === id); if (!it || GAME.gold < price(it)) return;
-        GAME.gold -= price(it); audio.sfx('buy');
-        if (it.kind === 'item') GAME.items[id]++;
-        else if (it.kind === 'kit') GAME.kit = true;
-        else {
-          GAME.upgrades[id] = true;
-          const h = GAME.heroes.find((q) => q.id === it.hero);
-          if (h) { const nh = GAME.makeHero(h.id); Object.assign(h, { modelOpts: nh.modelOpts }); const pos = h.mesh.position.clone(), rot = h.mesh.rotation.y; WORLD.rebuildUnit(h); h.mesh.position.copy(pos); h.mesh.rotation.y = rot; FX.burst('magic', pos, { color: '#ffe6a0', color2: '#ffb000' }); GAME.updateLantern(); }
-        }
-        render();
+      const render = () => {
+        const disc = GAME.gearDiscount();
+        const best = party.map((id) => ({ id, pre: GAME.virtOf(id).PRE })).sort((a, b) => b.pre - a.pre)[0];
+        s.querySelector('.shop-gold b').textContent = GAME.gold;
+        s.querySelector('.shop-haggle').innerHTML = disc ? `${icon('crown')} ${U.esc(HERO_DEFS[best.id].name)} regatea con su Presencia ${best.pre}: −${Math.round(disc * 100)} % en todo.` : 'Nadie del grupo tiene Presencia para regatear (hace falta 3 o más).';
+        // lo que lleva cada héroe
+        s.querySelector('.shop-kit').innerHTML = party.map((id) => `<div class="kit-h" style="--hc:${HERO_DEFS[id].color}">${port(id)}<b>${HERO_DEFS[id].name}</b>${Object.keys(SLOTS).map((sl) => { const it = GAME.gearOf(id).find((g) => g.slot === sl); return `<span class="kit-slot ${it ? 'on' : ''}"><em>${SLOTS[sl]}</em>${it ? U.esc(it.name) : '—'}</span>`; }).join('')}</div>`).join('') +
+          (GAME.stash.length ? `<div class="kit-h stash">${icon('chest')}<b>Arcón</b><span class="kit-slot on">${GAME.stash.map((k) => U.esc(GAME.gearDef(k).name)).join(' · ')}</span></div>` : '');
+        const cons = (it) => {
+          const cost = Math.round(it.cost * (1 - disc)), full = it.max && GAME.items[it.id] >= it.max, can = GAME.gold >= cost && !full;
+          return `<div class="shop-item"><span class="si-ic">${icon(it.icon)}</span><span class="si-t"><b>${it.name}</b><small>${it.desc}</small></span>
+            <span class="si-buy"><em>${full ? `Mochila llena (${it.max})` : `Tenéis ${GAME.items[it.id]}${it.max ? ` de ${it.max}` : ''}`}</em><button class="btn small" data-buy="${it.id}" ${can ? '' : 'disabled'}>${icon('coin')} ${cost}${cost < it.cost ? ` <s>${it.cost}</s>` : ''}</button></span></div>`;
+        };
+        const gearRow = (it) => {
+          const owner = GAME.ownerOf(it.id), cost = GAME.gearPrice(it);
+          const who = (it.hero ? [it.hero] : party).filter((id) => party.includes(id));
+          const btns = who.map((id) => {
+            const why = GAME.gearBlock(id, it), here = GAME.hasGear(id, it.id);
+            const off = here || why || (!owner && GAME.gold < cost);
+            const title = here ? `Lo lleva ${HERO_DEFS[id].name}` : why || (!owner && GAME.gold < cost ? 'No os llega el oro' : owner ? `Dárselo a ${HERO_DEFS[id].name}` : `Comprar para ${HERO_DEFS[id].name}`);
+            return `<button class="gear-to ${here ? 'here' : ''}" data-gear="${it.id}" data-to="${id}" ${off ? 'disabled' : ''} title="${U.esc(title)}" aria-label="${U.esc(title)}" style="--hc:${HERO_DEFS[id].color}">${port(id)}</button>`;
+          }).join('');
+          const state = owner === 'stash' ? 'En el arcón: elige quién lo lleva' : owner ? `Lo lleva ${HERO_DEFS[owner].name}` : `${icon('coin')} ${cost}${cost < it.cost ? ` <s>${it.cost}</s>` : ''} · elige quién lo lleva`;
+          const blockedAll = who.every((id) => GAME.gearBlock(id, it));
+          return `<div class="shop-item gear ${owner ? 'owned' : ''} ${blockedAll ? 'blocked' : ''}"><span class="si-ic">${icon(it.icon)}</span>
+            <span class="si-t"><b>${it.name}</b><span class="gear-tags"><i>${SLOTS[it.slot]}</i>${it.req ? `<i class="req">${reqTxt(it)}</i>` : ''}${it.hero ? `<i>Solo ${HERO_DEFS[it.hero].name}</i>` : ''}</span><small>${it.desc}</small></span>
+            <span class="si-buy gear-buy"><em>${state}</em><span class="gear-tos">${btns}</span></span></div>`;
+        };
+        s.querySelector('.shop-cons').innerHTML = SHOP.map(cons).join('');
+        const relics = GEAR.filter((it) => it.hero && party.includes(it.hero));
+        const common = GEAR.filter((it) => !it.hero);
+        s.querySelector('.shop-ups').innerHTML = `<h4>Reliquias del grupo</h4>${relics.map(gearRow).join('')}<h4>Equipo de la Orden</h4>${common.map(gearRow).join('')}`;
+        U.$$('[data-buy]', s).forEach((b) => (b.onclick = () => { const it = SHOP.find((i) => i.id === b.dataset.buy), cost = Math.round(it.cost * (1 - GAME.gearDiscount())); if (GAME.gold < cost || (it.max && GAME.items[it.id] >= it.max)) return; GAME.gold -= cost; GAME.items[it.id]++; audio.sfx('buy'); render(); }));
+        U.$$('[data-gear]', s).forEach((b) => (b.onclick = () => {
+          const id = b.dataset.to, k = b.dataset.gear, prevOwner = GAME.ownerOf(k);
+          const ok = prevOwner ? GAME.equip(k, id) : GAME.buyGear(k, id);
+          if (!ok) return;
+          audio.sfx(prevOwner ? 'ui' : 'buy');
+          rebuild(id); if (prevOwner && prevOwner !== 'stash') rebuild(prevOwner);
+          render();
+        }));
       };
       const s = this.screen(`<div class="card shop"><div class="shop-head"><div><div class="eyebrow">Arcón de la Orden</div><h2>Antes de descender</h2></div><div class="shop-gold">${icon('coin')}<b></b><span>monedas</span></div></div>
-        <p class="lead">Las hermanas del Archivo dejaron provisiones en el rellano. Pagad lo justo: la Orden lleva las cuentas.</p>
+        <p class="lead">Las hermanas del Archivo dejaron provisiones y equipo en el rellano. Cada pieza pide una virtud mínima: elegid bien quién la lleva.</p>
         <p class="shop-haggle"></p>
-        <div class="shop-grid"><section><h3>Provisiones</h3><div class="shop-cons"></div></section><section><h3>Reliquias</h3><div class="shop-ups"></div></section></div>
+        <div class="shop-kit"></div>
+        <div class="shop-grid"><section><h3>Provisiones</h3><div class="shop-cons"></div></section><section><h3>Armería</h3><div class="shop-ups"></div></section></div>
         <div class="row end"><button class="btn primary" id="shop-go">${icon('play')} Descender</button></div></div>`, 'dim shop-screen');
       render();
       s.querySelector('#shop-go').onclick = () => { audio.sfx('ui'); this.screen(null); resolve(); };
@@ -432,6 +457,8 @@ const UI = {
     document.body.classList.remove('cinema'); audio.stopSpeech(); audio.heartbeat(false);
     this.showHUD(false); this.hideAll(); this.bossBar(null); this.shadowMode(false);
     const save = U.store.get('umbral.save.v2', null);
+    const dsave = (() => { const d = U.store.get('umbral.descent.v1', null); return d && d.descent ? d : null; })();
+    const dbest = U.store.get('umbral.descent.best', null);
     const tutDone = !!U.store.get('umbral.tutorial', 0);
     const s = this.screen(`<div class="title">
       <div class="tt-top"><div class="tt-eyebrow">Crónicas de la Última Llama</div>
@@ -439,7 +466,9 @@ const UI = {
       <p class="tt-tag">Tres héroes. Tres sellos. Un farol que no debería brillar.</p></div>
       <nav class="tt-menu">
         ${save ? `<button class="btn primary" id="t-cont">${icon('play')} Continuar <small>Capítulo ${CHAPTERS[save.chIdx] ? CHAPTERS[save.chIdx].num : ''}${save.stage === 'camp' ? ' · campamento' : save.stage === 'round' && save.run ? ` · ronda ${save.run.round}` : ''}</small></button>` : ''}
-        <button class="btn ${save ? '' : 'primary'}" id="t-new">${icon('flame')} Nueva partida</button>
+        <button class="btn ${save ? '' : 'primary'}" id="t-new">${icon('flame')} Nueva partida <small>Campaña · tres capítulos</small></button>
+        ${dsave ? `<button class="btn" id="t-dcont">${icon('stairs')} Seguir bajando <small>Nivel ${dsave.descent.depth}${dsave.stage === 'dcamp' ? ' · campamento' : dsave.stage === 'round' && dsave.run ? ` · ronda ${dsave.run.round}` : ''} · ${dsave.descent.lives} ${dsave.descent.lives === 1 ? 'vela' : 'velas'}</small></button>` : ''}
+        <button class="btn" id="t-desc">${icon('stairs')} Modo Descenso <small>${dbest ? `Récord: nivel ${dbest.depth}` : 'Mazmorras sin fin · elige 3 de 5'}</small></button>
         <button class="btn ${tutDone ? '' : 'recommend'}" id="t-tut">${icon('target')} Tutorial guiado <small>${tutDone ? 'unos 10 min' : 'Recomendado · 10 min'}</small></button>
         <button class="btn" id="t-help">${icon('scroll')} Cómo se juega</button>
         <button class="btn" id="t-set">${icon('gear')} Ajustes</button>
@@ -454,6 +483,13 @@ const UI = {
       else GAME.startChapter(save.chIdx);
     };
     s.querySelector('#t-new').onclick = () => { audio.init(); audio.sfx('ui'); this.difficulty(); };
+    s.querySelector('#t-desc').onclick = () => { audio.init(); audio.sfx('ui'); this.descentSetup(); };
+    if (dsave) s.querySelector('#t-dcont').onclick = () => {
+      audio.init(); audio.sfx('ui'); GAME.restore(dsave); this.screen(null); MAIN.stopTitle();
+      if (dsave.stage === 'dcamp') GAME.descentCamp();
+      else if (dsave.stage === 'round' && dsave.run) GAME.startChapter(dsave.chIdx, { resume: dsave });
+      else GAME.startChapter(dsave.chIdx);
+    };
     s.querySelector('#t-tut').onclick = () => this.startTutorial();
     s.querySelector('#t-help').onclick = () => { audio.init(); audio.sfx('ui'); this.help(() => this.title()); };
     s.querySelector('#t-set').onclick = () => { audio.init(); audio.sfx('ui'); this.settings(() => this.title()); };
@@ -465,20 +501,21 @@ const UI = {
     this.screen(null); await this.fadeOut(); MAIN.stopTitle();
     GAME.startTutorial();
   },
-  difficulty() {
-    const tutDone = !!U.store.get('umbral.tutorial', 0);
+  difficulty(mode) {
+    const tutDone = !!U.store.get('umbral.tutorial', 0), desc = mode === 'descent';
     const opts = ['relato', 'heroe', 'pesadilla'].map((id) => DIFFICULTY[id]);
-    const s = this.screen(`<div class="card diff"><div class="eyebrow">Nueva partida</div><h2>¿Cuánta oscuridad soportáis?</h2>
+    const s = this.screen(`<div class="card diff"><div class="eyebrow">${desc ? 'Modo Descenso' : 'Nueva partida'}</div><h2>¿Cuánta oscuridad soportáis?</h2>
       <div class="diff-opts">${opts.map((d) => `<button class="diff-opt ${d.id === 'heroe' ? 'sel' : ''}" data-d="${d.id}"><b>${d.name}</b><small>${d.blurb}</small>
-        <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: cada ${d.doom} rondas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}</ul></button>`).join('')}</div>
+        <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: cada ${d.doom} rondas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}${desc ? `<li>Velas: ${DESCENT.LIVES[d.id]} ${DESCENT.LIVES[d.id] === 1 ? 'intento de más' : 'intentos de más'}</li>` : ''}</ul></button>`).join('')}</div>
       ${tutDone ? '' : `<p class="df-tut">${icon('target')} <span>¿Primera vez? El <b>tutorial guiado</b> te enseña lo esencial en unos diez minutos, sin tocar tu partida.</span> <button class="btn small" id="df-tut">Hacer el tutorial</button></p>`}
-      <div class="row"><button class="btn" id="df-back">Volver</button><button class="btn primary" id="df-go">${icon('crown')} Forjar el grupo</button></div></div>`, 'dim title-screen');
+      <div class="row"><button class="btn" id="df-back">Volver</button><button class="btn primary" id="df-go">${icon('crown')} ${desc ? 'Elegir el grupo' : 'Forjar el grupo'}</button></div></div>`, 'dim title-screen');
     const dt = s.querySelector('#df-tut'); if (dt) dt.onclick = () => this.startTutorial();
     let pick = 'heroe';
     U.$$('.diff-opt', s).forEach((b) => (b.onclick = () => { pick = b.dataset.d; U.$$('.diff-opt', s).forEach((q) => q.classList.toggle('sel', q === b)); audio.sfx('ui'); }));
     s.querySelector('#df-back').onclick = () => { audio.sfx('uiBack'); this.title(); };
     s.querySelector('#df-go').onclick = async () => {
       audio.sfx('ui');
+      if (desc) { this.partyPick(pick); return; }
       GAME.newGame(pick);
       const build = await this.forge();
       if (!build) { this.difficulty(); return; }
@@ -503,8 +540,8 @@ const UI = {
       return;
     }
     const s = this.screen(`<div class="card pause"><div class="eyebrow">Pausa</div><h2>${GAME.ch ? GAME.ch.title : 'Umbral'}</h2>
-      <div class="col"><button class="btn primary" id="p-back">${icon('play')} Seguir jugando</button><button class="btn" id="p-help">${icon('scroll')} Cómo se juega</button><button class="btn" id="p-set">${icon('gear')} Ajustes</button><button class="btn" id="p-full">${icon('fullscreen')} Pantalla completa</button>${GAME.state === 'play' ? `<button class="btn" id="p-retry">${icon('rotate')} Reiniciar capítulo</button>` : ''}<button class="btn danger" id="p-quit">Salir al inicio</button></div>
-      <p class="small">La partida se guarda al comenzar cada capítulo y al llegar al campamento.</p></div>`, 'dim');
+      <div class="col"><button class="btn primary" id="p-back">${icon('play')} Seguir jugando</button><button class="btn" id="p-help">${icon('scroll')} Cómo se juega</button><button class="btn" id="p-set">${icon('gear')} Ajustes</button><button class="btn" id="p-full">${icon('fullscreen')} Pantalla completa</button>${GAME.state === 'play' && !GAME.descent ? `<button class="btn" id="p-retry">${icon('rotate')} Reiniciar capítulo</button>` : ''}<button class="btn danger" id="p-quit">Salir al inicio</button></div>
+      <p class="small">${GAME.descent ? `Descenso · nivel ${GAME.descent.depth} · ${GAME.descent.lives} ${GAME.descent.lives === 1 ? 'vela' : 'velas'}. Se guarda al comenzar cada ronda.` : 'La partida se guarda al comenzar cada ronda, cada capítulo y al llegar al campamento.'}</p></div>`, 'dim');
     s.querySelector('#p-back').onclick = () => { audio.sfx('uiBack'); this.screen(null); };
     s.querySelector('#p-help').onclick = () => this.help(() => this.pause());
     s.querySelector('#p-set').onclick = () => this.settings(() => this.pause());
@@ -527,6 +564,8 @@ const UI = {
         <section><h3>${icon('search')} Registrar y Presagio</h3><p>Registrar usa el Ingenio: más calaveras, mejor botín y trampas reveladas. El <b>Presagio</b> (ojo de arriba) crece cada ronda y con el ruido; al llenarse, algo errante sube a buscaros.</p></section>
         <section><h3>${icon('revive')} Caer y levantarse</h3><p>Un héroe a 0 PV cae. Un aliado a su lado puede levantarle con su acción, o Elian con Luz de la Aurora. Vuelve Herido (−1 PV máximo hasta acampar). En Pesadilla, quien cae se desangra.</p></section>
         <section><h3>${icon('door')} Cerraduras y sellos</h3><p>Algunas puertas se abren con Agilidad (ganzúa) o Fuerza (con estruendo); otras con Ingenio o Voluntad. Elige bien quién lo intenta.</p></section>
+        <section><h3>${icon('armor')} Equipo</h3><p>Cada pieza ocupa un hueco (mano, cuerpo o extra) y pide una virtud mínima: la coraza de placas, Fuerza 5; el grimorio, Ingenio 5. Se compra y se reparte en el campamento; lo que nadie lleva queda en el arcón.</p></section>
+        <section><h3>${icon('stairs')} Modo Descenso</h3><p>Elige 3 de 5 héroes y baja por mazmorras que se generan solas. Busca la <b>escalera que brilla</b> y tócala sin enemigos a la vista. Cada cuatro niveles espera un guardián y después se acampa. Al caer se apaga una <b>vela</b> y se repite el nivel.</p></section>
       </div>
       <div class="help-grid controls">
         <section><h3>Ordenador</h3><p>Clic: mover, atacar, abrir · Arrastrar: desplazar · Clic derecho y arrastrar: girar · Rueda: zoom · <kbd>1</kbd>–<kbd>5</kbd> acciones · <kbd>Z</kbd> deshacer movimiento · <kbd>G</kbd> ficha del grupo · <kbd>Espacio</kbd> fin de turno · <kbd>Tab</kbd> siguiente héroe · <kbd>Q</kbd>/<kbd>E</kbd> girar · <kbd>WASD</kbd> mover cámara · <kbd>Esc</kbd> cancelar</p></section>

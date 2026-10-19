@@ -9,29 +9,41 @@ const GAME = {
   state: 'title', chIdx: 0, ch: null, L: null,
   heroes: [], enemies: [], npcs: [],
   round: 0, phase: 'idle', active: null, busy: 0, mode: null, pending: null,
-  gold: 60, items: { potion: 2, elixir: 0, bomb: 1 }, kit: false, upgrades: {}, flags: {}, difficulty: 'heroe', D: DIFFICULTY.heroe,
-  talents: { aldric: [], sera: [], elian: [] }, build: null,
+  gold: 60, items: { potion: 2, elixir: 0, bomb: 1 }, gear: {}, stash: [], flags: {}, difficulty: 'heroe', D: DIFFICULTY.heroe,
+  party: ['aldric', 'sera', 'elian'], talents: { aldric: [], sera: [], elian: [] }, build: null,
   stats: null, boss: null, eruptions: [], uid: 0, doom: 0, undo: null,
 
   newStats() { return { kills: 0, rounds: 0, gold: 0, dealt: 0, taken: 0, chests: 0, notes: 0, falls: 0, checks: 0, checksOk: 0, start: Date.now() }; },
 
   /* ------------------------------------------------------------ partida */
   setDifficulty(d) { this.difficulty = DIFFICULTY[d] ? d : 'heroe'; this.D = DIFFICULTY[this.difficulty]; window.GAME_DIFF = this.difficulty; },
-  newGame(difficulty, build) {
-    this.setDifficulty(difficulty);
-    this.gold = 60; this.items = { potion: this.D.potions, elixir: 0, bomb: 1 }; this.kit = false; this.upgrades = {}; this.flags = {};
-    this.talents = { aldric: [], sera: [], elian: [] }; this.build = build || null;
+  newGame(difficulty, build, party) {
+    this.setDifficulty(difficulty); this.descent = null;
+    this.party = party && party.length === 3 ? party.slice() : HERO_IDS.slice();
+    this.gold = 60; this.items = { potion: this.D.potions, elixir: 0, bomb: 1 }; this.flags = {};
+    this.gear = {}; this.stash = []; this.talents = {};
+    this.party.forEach((id) => { this.gear[id] = []; this.talents[id] = []; });
+    this.build = build || null;
     this.stats = this.newStats();
   },
   snapshot(stage) {
-    return { v: 2, stage, chIdx: this.chIdx, gold: this.gold, items: Object.assign({}, this.items), kit: this.kit, upgrades: Object.assign({}, this.upgrades), flags: JSON.parse(JSON.stringify(this.flags)), difficulty: this.difficulty, stats: Object.assign({}, this.stats), talents: JSON.parse(JSON.stringify(this.talents)), build: this.build ? JSON.parse(JSON.stringify(this.build)) : null };
+    return { v: 2, stage, chIdx: this.chIdx, gold: this.gold, items: Object.assign({}, this.items), party: this.party.slice(), gear: JSON.parse(JSON.stringify(this.gear || {})), stash: (this.stash || []).slice(), flags: JSON.parse(JSON.stringify(this.flags)), difficulty: this.difficulty, stats: Object.assign({}, this.stats), talents: JSON.parse(JSON.stringify(this.talents)), build: this.build ? JSON.parse(JSON.stringify(this.build)) : null, descent: this.descent ? JSON.parse(JSON.stringify(this.descent)) : null };
   },
   restore(s) {
-    this.chIdx = s.chIdx; this.gold = s.gold; this.items = Object.assign({}, s.items); this.kit = s.kit; this.upgrades = Object.assign({}, s.upgrades);
+    this.chIdx = s.chIdx; this.gold = s.gold; this.items = Object.assign({}, s.items);
     this.flags = Object.assign({}, s.flags); this.setDifficulty(s.difficulty); this.stats = Object.assign(this.newStats(), s.stats || {});
-    this.talents = Object.assign({ aldric: [], sera: [], elian: [] }, s.talents || {}); this.build = s.build || null;
+    this.party = s.party && s.party.length === 3 ? s.party.slice() : HERO_IDS.slice();
+    this.talents = {}; this.gear = {};
+    this.party.forEach((id) => { this.talents[id] = ((s.talents || {})[id] || []).slice(); this.gear[id] = ((s.gear || {})[id] || []).slice(); });
+    this.stash = (s.stash || []).slice(); this.build = s.build ? JSON.parse(JSON.stringify(s.build)) : null;
+    this.descent = s.descent ? JSON.parse(JSON.stringify(s.descent)) : null;
+    // partidas guardadas antes del equipo con requisitos: las reliquias pasan a su héroe y las ganzúas a Sera
+    if (!s.gear) {
+      GEAR.forEach((it) => { if (s.upgrades && s.upgrades[it.id] && it.hero && this.gear[it.hero]) this.gear[it.hero].push(it.id); });
+      if (s.kit) { if (this.gear.sera && !this.gearOf('sera').some((g) => g.slot === 'extra')) this.gear.sera.push('kit'); else this.stash.push('kit'); }
+    }
   },
-  save(stage) { const s = this.snapshot(stage); this.checkpoint = s; U.store.set('umbral.save.v2', s); },
+  save(stage) { const s = this.snapshot(stage); this.checkpoint = s; U.store.set(this.saveKey(), s); },
 
   /* ------------------------------------------------------------ virtudes y héroes */
   baseVirt(id) { return Object.assign({}, HERO_DEFS[id].virt, (this.build && this.build[id]) || {}); },
@@ -43,46 +55,87 @@ const GAME = {
   talentDef(id, tid) { for (const tier of TALENTS[id]) for (const t of tier) if (t.id === tid) return t; return null; },
   /* Estadísticas derivadas de las virtudes: cada número de la ficha sale de aquí */
   derive(id, v) {
-    const d = HERO_DEFS[id], up = this.upgrades, f = this.flags, tal = this.talents[id] || [], D = this.D;
-    const relic = (id === 'aldric' && up.blade) || (id === 'sera' && up.fangs) || (id === 'elian' && up.dawnstaff) ? 1 : 0;
+    const d = HERO_DEFS[id], f = this.flags, tal = this.talents[id] || [], D = this.D, g = (k) => this.gearMod(id, k);
     const out = {
-      hp: 3 + v.FUE + d.vigor + D.heroHp + (id === 'aldric' && up.aegis ? 2 : 0) + (id === 'elian' && up.mantle ? 2 : 0),
-      mv: 3 + v.AGI,
-      atk: d.weapon.base + VBONUS(v[d.weapon.attr]) + relic + (id === 'sera' && f.tomasDagger ? 1 : 0),
-      def: d.armor.base + VBONUS(v.AGI) + (id === 'aldric' && up.aegis ? 1 : 0) + (id === 'elian' && up.mantle ? 1 : 0),
-      det: v.VOL + D.det + (f.detAllCh === this.chIdx ? 1 : 0),
-      range: (id === 'sera' && up.bow) ? 5 : d.weapon.range + (id === 'elian' && tal.includes('fuente') ? 1 : 0),
-      eter: id === 'elian' ? v.ING + (f.eterBonus || 0) + (tal.includes('fuente') ? 2 : 0) : 0
+      hp: 3 + v.FUE + d.vigor + D.heroHp + g('hp'),
+      mv: Math.max(2, 3 + v.AGI + g('mv')),
+      atk: d.weapon.base + VBONUS(v[d.weapon.attr]) + g('atk') + (d.weapon.ranged ? 0 : g('melee')) + (id === 'sera' && f.tomasDagger ? 1 : 0),
+      def: d.armor.base + VBONUS(v.AGI) + g('def'),
+      det: v.VOL + D.det + g('det') + (f.detAllCh === this.chIdx ? 1 : 0),
+      range: Math.max(g('range'), d.weapon.range + (id === 'elian' && tal.includes('fuente') ? 1 : 0)),
+      eter: id === 'elian' ? v.ING + (f.eterBonus || 0) + (tal.includes('fuente') ? 2 : 0) + g('eter') : 0
     };
-    out.melee = d.melee ? d.melee.base + VBONUS(v[d.melee.attr]) : out.atk;
+    out.melee = d.melee ? d.melee.base + VBONUS(v[d.melee.attr]) + g('melee') : out.atk;
     return out;
   },
+  /* ------------------------------------------------------------ equipo con requisitos */
+  gearDef(itemId) { return GEAR.find((q) => q.id === itemId) || null; },
+  gearOf(id) { return ((this.gear && this.gear[id]) || []).map((k) => this.gearDef(k)).filter(Boolean); },
+  gearMod(id, key) { let n = 0; this.gearOf(id).forEach((it) => { const v = it.mods && it.mods[key]; if (v === true) n = Math.max(n, 1); else if (key === 'range' && v) n = Math.max(n, v); else if (v) n += v; }); return n; },
+  hasGear(id, itemId) { return !!(this.gear && this.gear[id] && this.gear[id].includes(itemId)); },
+  ownerOf(itemId) { return this.party.find((id) => this.hasGear(id, itemId)) || (this.stash.includes(itemId) ? 'stash' : null); },
+  /* ¿Puede llevarlo? Devuelve el motivo si no */
+  gearBlock(id, it) {
+    if (it.hero && it.hero !== id) return `Solo ${HERO_DEFS[it.hero].name}`;
+    const v = this.virtOf(id);
+    const miss = Object.entries(it.req || {}).filter(([k, n]) => v[k] < n);
+    return miss.length ? `${HERO_DEFS[id].name} necesita ${miss.map(([k, n]) => `${VIRTUES[k].name} ${n}`).join(' y ')}` : null;
+  },
+  gearDiscount() {
+    const best = Math.max(...this.party.map((id) => this.virtOf(id).PRE));
+    const sig = this.party.some((id) => this.gearMod(id, 'haggle')) ? 0.05 : 0;
+    return Math.max(0, best - 2) * 0.05 + sig;
+  },
+  gearPrice(it) { return Math.round(it.cost * (1 - this.gearDiscount())); },
+  /* Pone el objeto a un héroe; lo que llevaba en ese hueco vuelve al arcón */
+  equip(itemId, id) {
+    const it = this.gearDef(itemId); if (!it || this.gearBlock(id, it)) return false;
+    this.party.forEach((h) => { if (this.gear[h]) this.gear[h] = this.gear[h].filter((k) => k !== itemId); });
+    this.stash = this.stash.filter((k) => k !== itemId);
+    const prev = this.gearOf(id).find((g) => g.slot === it.slot);
+    if (prev) { this.gear[id] = this.gear[id].filter((k) => k !== prev.id); this.stash.push(prev.id); }
+    (this.gear[id] = this.gear[id] || []).push(itemId);
+    return true;
+  },
+  /* Si un héroe ya no cumple los requisitos de algo que lleva, vuelve al arcón */
+  checkGear() {
+    this.party.forEach((id) => { (this.gear[id] || []).slice().forEach((k) => { const it = this.gearDef(k); if (!it || this.gearBlock(id, it)) { this.gear[id] = this.gear[id].filter((q) => q !== k); if (it) this.stash.push(k); } }); });
+  },
+  buyGear(itemId, id) {
+    const it = this.gearDef(itemId); if (!it || this.ownerOf(itemId)) return false;
+    const price = this.gearPrice(it); if (this.gold < price || this.gearBlock(id, it)) return false;
+    this.gold -= price; this.equip(itemId, id); return true;
+  },
+  rallyDice(h) { return h.virt.PRE + (RULES.perk(h, 'PRE') ? 1 : 0) + this.gearMod(h.id, 'rally') + (h.id === 'nyra' ? 1 : 0); },
   makeHero(id) {
-    const d = HERO_DEFS[id], v = this.virtOf(id), s = this.derive(id, v), up = this.upgrades, tal = this.talents[id] || [];
+    const d = HERO_DEFS[id], v = this.virtOf(id), s = this.derive(id, v), tal = this.talents[id] || [];
     const h = {
       id, side: 'hero', kind: id, name: d.name, full: d.full, role: d.role, model: d.model, color: d.color,
       virt: v, tal: new Set(tal), hp: s.hp, maxHp: s.hp, atk: s.atk, meleeAtk: s.melee, def: s.def, mv: s.mv, range: s.range,
-      ranged: !!d.weapon.ranged || (id === 'sera' && !!up.bow), dtype: d.weapon.dtype,
-      magic: id === 'elian' || (id === 'aldric' && !!up.blade) || (id === 'sera' && !!up.fangs),
+      ranged: !!d.weapon.ranged || !!this.gearMod(id, 'ranged'), dtype: d.weapon.dtype,
+      magic: id === 'elian' || !!this.gearMod(id, 'magic'),
       det: s.det, detMax: s.det, eter: s.eter, eterMax: s.eter, wounds: 0,
       skills: d.skills.map((sk) => Object.assign({}, sk, { cd: 0 })), basic: d.basic,
       mvLeft: 0, actions: 0, ended: false, ko: false, alive: true, status: {}, potionUsed: false, modelOpts: {}
     };
-    if (id === 'aldric') { h.modelOpts.blade = !!up.blade; h.modelOpts.aegis = !!up.aegis; }
-    if (id === 'sera') { h.modelOpts.fangs = !!up.fangs; h.modelOpts.bow = !!up.bow; }
-    if (id === 'elian') { h.modelOpts.dawn = !!up.dawnstaff; h.modelOpts.mantle = !!up.mantle; }
+    this.gearOf(id).forEach((it) => { if (it.look) h.modelOpts[it.look] = true; });
+    if (tal.includes('mandato')) { const c = h.skills.find((q) => q.id === 'command'); if (c) c.range = 5; }
     if (id === 'sera' && this.flags.seraCutCh === this.chIdx) h.hp = Math.max(1, h.hp - 1);
     return h;
   },
   skillInfo(h, s) {
-    const v = h.virt, up = this.upgrades, t = h.tal;
+    const v = h.virt, t = h.tal, spell = this.gearMod(h.id, 'spell');
     switch (s.id) {
       case 'wall': return { text: '+2 dados de defensa para Aldric y +1 para los aliados adyacentes hasta su próximo turno. Los enemigos cercanos irán a por él.' };
       case 'smite': return { dice: h.meleeAtk + 2, text: `Golpe sagrado: ${h.meleeAtk + 2} dados de daño radiante (los no muertos tiran 1 dado más en contra).` };
-      case 'throw': { const n = 2 + VBONUS(v.AGI) + (up.fangs ? 1 : 0); return { dice: n, text: `Lanza una daga a 4 casillas: ${n} dados (Agilidad) que ignoran 1 escudo.` }; }
+      case 'throw': { const n = 2 + VBONUS(v.AGI) + (this.hasGear(h.id, 'fangs') ? 1 : 0); return { dice: n, text: `Lanza una daga a 4 casillas: ${n} dados (Agilidad) que ignoran 1 escudo.` }; }
       case 'step': return { cd: t.has('piesSombra') ? 2 : 3, text: `Reaparece a hasta 4 casillas, atravesando enemigos. No gasta la acción${t.has('piesSombra') ? ' ni el movimiento' : ', pero sí el movimiento restante'}.` };
-      case 'starfire': { const n = 2 + VBONUS(v.ING) + (up.dawnstaff ? 1 : 0), sp = t.has('cadena') ? 3 : 2; return { dice: n, splash: sp, cost: 3, text: `${n} dados de fuego al objetivo (Ingenio) y ${sp} a cada enemigo junto a él. Cuesta 3 de Éter.` }; }
-      case 'dawn': { const n = 1 + VBONUS(v.ING) + (up.dawnstaff ? 1 : 0), c = t.has('manoAlba') ? 1 : 2; return { heal: n, cost: c, text: `Cura ${n} PV (Ingenio) a un aliado a 4 casillas o lo levanta si ha caído.${t.has('manoAlba') ? ' Cura 2 PV al aliado más herido junto a él.' : ''} Cuesta ${c} de Éter.` }; }
+      case 'starfire': { const n = 2 + VBONUS(v.ING) + spell, sp = t.has('cadena') ? 3 : 2; return { dice: n, splash: sp, cost: 3, text: `${n} dados de fuego al objetivo (Ingenio) y ${sp} a cada enemigo junto a él. Cuesta 3 de Éter.` }; }
+      case 'dawn': { const n = 1 + VBONUS(v.ING) + spell, c = t.has('manoAlba') ? 1 : 2; return { heal: n, cost: c, text: `Cura ${n} PV (Ingenio) a un aliado a 4 casillas o lo levanta si ha caído.${t.has('manoAlba') ? ' Cura 2 PV al aliado más herido junto a él.' : ''} Cuesta ${c} de Éter.` }; }
+      case 'quake': { const r = t.has('terremoto') ? 2 : 1; return { dice: h.meleeAtk, radius: r, text: `Martillazo de ${h.meleeAtk} dados que ignora 1 escudo. Los demás enemigos a ${r} casilla${r > 1 ? 's' : ''} de Brunna superan una prueba de Fuerza (media) o quedan Aturdidos.` }; }
+      case 'anvil': { const k = t.has('forjada') ? 3 : 2; return { absorb: k, text: `Hasta su próximo turno, el primer golpe que reciba le hace ${k} de daño menos, y los enemigos cercanos irán a por ella.` }; }
+      case 'hymn': { const r = 2 + (t.has('coro') ? 1 : 0) + this.gearMod(h.id, 'hymn'), heal = t.has('salmo') ? 2 : 1; return { radius: r, heal, text: `Nyra y los aliados a ${r} casillas quedan Inspirados (+1 dado), pierden el miedo y recuperan ${heal} PV.` }; }
+      case 'command': { const dif = Math.max(1, v.PRE - 3) + (t.has('mandato') ? 1 : 0); return { dif, text: `El enemigo supera una prueba de Voluntad de dificultad ${RULES.difName(dif)} o huye 2 turnos (si no conoce el miedo, queda Aturdido). No afecta a los guardianes.` }; }
     }
     return { text: '' };
   },
@@ -92,8 +145,9 @@ const GAME = {
     const T = ENEMY_TYPES[type], D = this.D;
     const e = { id: 'e' + (++this.uid), side: 'enemy', kind: type, name: T.name, model: T.model, hp: T.hp, maxHp: T.hp, atk: T.atk, def: T.def, mv: T.mv, range: T.range || 1, ranged: !!T.ranged, proj: T.proj,
       boss: !!T.boss, undead: !!T.undead, flies: !!T.flies, gold: T.gold, x, y, alive: true, active: false, status: {}, T, virt: Object.assign({}, T.virt), role: T.role, dtype: 'phys', magic: true };
-    if (e.boss) { e.hp += D.bossHp; e.atk += D.bossAtk; }
-    else if (type !== 'risen') { e.hp += D.enemyHp; e.atk = Math.max(1, e.atk + D.enemyAtk); }
+    const S = (this.ch && this.ch.scale) || null;
+    if (e.boss) { e.hp += D.bossHp + (S ? S.bossHp : 0); e.atk += D.bossAtk; }
+    else if (type !== 'risen') { e.hp += D.enemyHp + (S ? S.hp : 0); e.atk = Math.max(1, e.atk + D.enemyAtk + (S ? S.atk : 0)); }
     if (o.champion) { e.champion = true; e.hp += 1; e.atk += 1; e.gold *= 2; e.name = 'Campeón · ' + e.name; e.virt.ING = Math.min(5, e.virt.ING + 1); }
     if (type === 'ignis' && this.flags.ignisWeak) e.def = Math.max(1, e.def - 1);
     e.maxHp = e.hp = Math.max(1, e.hp);
@@ -218,7 +272,7 @@ const GAME = {
     this.busy = 0;
     this.tutorial = !!opts.tutorial;
     const R = opts.resume && opts.resume.run;
-    this.state = 'play'; this.chIdx = idx; this.ch = opts.def || CHAPTERS[idx];
+    this.state = 'play'; this.chIdx = idx; this.ch = opts.def || this.chapterDef(idx);
     if (!this.stats) this.stats = this.newStats();
     if (R) this.checkpoint = opts.resume.start || this.snapshot('chapter');
     else if (!this.tutorial) this.save('chapter');
@@ -226,22 +280,25 @@ const GAME = {
     this.busy++;
     try {
       const ch = this.ch;
-      await UI.chapterCard(R ? Object.assign({}, ch, { eyebrow: `Capítulo ${ch.num} · ronda ${R.round}` }) : ch);
+      await UI.chapterCard(R ? Object.assign({}, ch, { eyebrow: ch.descent ? `Descenso · Nivel ${ch.num} · ronda ${R.round}` : `Capítulo ${ch.num} · ronda ${R.round}` }) : ch);
       FX.clearLabels();
       WORLD.build(ch, ch.theme);
       this.L = WORLD.L;
-      this.heroes = HERO_IDS.map((id) => this.makeHero(id));
+      this.checkGear();
+      this.heroes = this.party.map((id) => this.makeHero(id));
+      this.applyCarry();
+      UI.buildParty();
       this.enemies = []; this.npcs = []; this.boss = null; this.eruptions = []; this.round = 0; this.mode = null; this.pending = null;
       this.doom = 0; this.wanderers = 0; this.pendingWanderer = false; this.undo = null; this.brokenGroups = {}; this.willFail = []; this.lightsMode = 'on';
       this.summonsLeft = this.D.summons;
-      this.heroes.forEach((h) => { const s = this.L.starts[HERO_DEFS[h.id].start]; h.x = s.x; h.y = s.y; WORLD.addUnit(h, { face: Math.PI }); });
+      this.heroes.forEach((h, i) => { const s = this.L.starts[String(i + 1)] || this.L.starts['1']; h.x = s.x; h.y = s.y; WORLD.addUnit(h, { face: Math.PI }); });
       this.updateLantern();
       if (R) { await this.applyRun(R); this.busy = 0; this.beginHeroPhase(true); return; }
       let nCh = 0;
       this.L.enemies.forEach((p) => {
         const type = ch.legend[p.key]; if (!type) return;
         nCh++;
-        const champ = this.D.champions && nCh % this.D.champions === 0;
+        const champ = (this.D.champions && nCh % this.D.champions === 0) || (ch.champChance && Math.random() < ch.champChance);
         const e = this.makeEnemy(type, p.x, p.y, { champion: champ }); this.enemies.push(e); WORLD.addUnit(e, { face: Math.random() * 6 }); e.mesh.visible = false;
         if (champ) WORLD.markChampion(e);
       });
@@ -287,7 +344,7 @@ const GAME = {
   },
   saveRun() {
     if (this.tutorial || this.state !== 'play' || !this.checkpoint || !this.L) return;
-    try { U.store.set('umbral.save.v2', Object.assign(this.snapshot('round'), { start: this.checkpoint, run: this.runState() })); } catch (e) { console.error('saveRun', e); }
+    try { U.store.set(this.saveKey(), Object.assign(this.snapshot('round'), { start: this.checkpoint, run: this.runState() })); } catch (e) { console.error('saveRun', e); }
   },
   async applyRun(R) {
     const L = this.L;
@@ -386,7 +443,7 @@ const GAME = {
         }
         h.ended = false; h.mvLeft = h.mv; h.actions = 1; h.potionUsed = false;
         h.skills.forEach((s) => (s.cd = Math.max(0, s.cd - 1)));
-        delete h.status.wall; delete h.status.guard; delete h.status.taunt;
+        delete h.status.wall; delete h.status.guard; delete h.status.taunt; delete h.status.yunque;
         if (h.eterMax) h.eter = Math.min(h.eterMax, h.eter + 1);
         await this.tickStart(h);
         if (h.ko) continue;
@@ -482,7 +539,7 @@ const GAME = {
 
   /* ------------------------------------------------------------ pruebas de virtud */
   rollDie() { const r = Math.floor(Math.random() * 6); return r < 3 ? 'skull' : r < 5 ? 'white' : 'black'; },
-  checkDice(u, attr, bonus = 0) { return Math.max(0, (u.virt[attr] || 0) + bonus + (u.side === 'hero' && u.status.inspirado ? 1 : 0)); },
+  checkDice(u, attr, bonus = 0) { return Math.max(0, (u.virt[attr] || 0) + bonus + (u.side === 'hero' && u.status.inspirado ? 1 : 0) + (u.side === 'hero' && attr === 'ING' ? this.gearMod(u.id, 'ing') : 0)); },
   effDif(u, dif) { return Math.max(1, dif + (u.side === 'hero' ? this.D.checkMod : 0)); },
   async check(u, attr, dif, o = {}) {
     dif = this.effDif(u, dif);
@@ -613,6 +670,11 @@ const GAME = {
       if (this.mode.type === 'attack') return this.attackPreview(h, u, null);
       if (this.mode.type === 'bomb') return { kind: 'bomb', x, y, text: 'Lanzar bomba alquímica', sub: '3 dados de fuego a cada criatura del área 3×3, y prende fuego. ¡Cuidado con los aliados!', area: true };
       const s = this.mode.skill, si = this.skillInfo(h, s);
+      if (s.id === 'command') {
+        if (u.boss) return { kind: 'skill', x, y, unit: u, text: `${s.name} → ${u.name}`, sub: 'Los guardianes no obedecen órdenes.' };
+        const p = 1 - RULES.pCheck(this.checkDice(u, 'VOL'), si.dif);
+        return { kind: 'skill', x, y, unit: u, text: `${s.name} → ${u.name}`, sub: `Voluntad ${u.virt.VOL} contra dificultad ${RULES.difName(si.dif)} · ${RULES.pct(p)} de que ${this.immuneTo(u, 'aterrado') ? 'quede aturdido' : 'huya'}` };
+      }
       if (s.target === 'enemy') return this.attackPreview(h, u, s);
       if (s.target === 'ally') return { kind: 'skill', x, y, unit: u, text: `${s.name} → ${u.name}`, sub: u.ko ? `Lo levanta con ${si.heal} PV.` : `Cura ${si.heal} PV.` };
       if (s.target === 'tile') return { kind: 'skill', x, y, text: s.name, sub: h.tal.has('piesSombra') ? 'Reaparecerás aquí sin perder movimiento.' : 'Reaparecerás aquí. Pierdes el movimiento restante.' };
@@ -652,10 +714,11 @@ const GAME = {
       const ap = this.adjApproach(h, x, y);
       return ap ? { kind: 'note', x, y, note: n, via: ap, text: n.read ? 'Releer' : 'Leer', sub: 'Sin coste.' + this.provText(ap.p) } : { kind: 'none', text: 'Un escrito', sub: 'Acércate para leerlo.' };
     }
+    if (t.ch === 'X' && this.descent && this.ch.exit && this.ch.exit.x === x && this.ch.exit.y === y) return this.stairsInfo(h, x, y);
     if (t.ch === '*') return { kind: 'none', text: 'El sello', sub: this.boss && this.boss.alive ? 'Su guardián lo protege.' : 'Late con una luz antigua.' };
     if (t.trap && t.trap.revealed && !t.trap.disarmed && !t.trap.sprung) {
       const ap = h.actions > 0 && this.adjApproach(h, x, y);
-      const n = this.checkDice(h, 'AGI', this.kit ? 2 : 0);
+      const n = this.checkDice(h, 'AGI', this.gearMod(h.id, 'kit'));
       const p = RULES.pCheck(n, this.effDif(h, 2));
       return ap ? { kind: 'disarm', x, y, trap: t.trap, via: ap, text: 'Desarmar trampa', sub: `Agilidad ${n} dados contra dificultad 2 · ${RULES.pct(p)} · gasta tu acción.${this.provText(ap.p)}` } : { kind: 'none', text: 'Trampa', sub: 'Acércate para desarmarla.' };
     }
@@ -705,6 +768,8 @@ const GAME = {
       if (skill.id === 'throw') o = { atk: si.dice, ignore: 1, ranged: true, dtype: 'pierce' };
       if (skill.id === 'starfire') o = { atk: si.dice, ranged: true, dtype: 'fire' };
     } else o = { ranged };
+    if (skill && skill.id === 'quake') o = { atk: this.skillInfo(h, skill).dice };
+    if (h.id === 'brunna' && !ranged && !o.ranged) o.ignore = (o.ignore || 0) + 1;
     const ghost = Object.assign({}, h, { x: fx, y: fy });
     const ad = this.atkDice(ghost, e, o);
     const def = this.defDice(e);
@@ -757,6 +822,7 @@ const GAME = {
         case 'note': await this.readNote(h, d.note); break;
         case 'revive': await this.revive(h, d.unit); break;
         case 'disarm': await this.disarm(h, d.trap); break;
+        case 'stairs': await this.descend(h); break;
       }
     });
     if (snap && !this.eventful && !h.ko && this.state === 'play' && (h.x !== snap.x || h.y !== snap.y)) this.undo = snap;
@@ -937,7 +1003,7 @@ const GAME = {
       { id: 'quebrar', attr: 'VOL', dif: 3, hurt: 1, label: 'Quebrarlo a fuerza de voluntad', desc: 'Difícil. Si falla, el sello muerde: −1 PV.' }
     ];
     return [
-      { id: 'ganzua', attr: 'AGI', dif: 2, bonus: this.kit ? 2 : 0, label: 'Forzar la cerradura', desc: `Silencioso.${this.kit ? ' +2 dados por las ganzúas enanas.' : ''}` },
+      { id: 'ganzua', attr: 'AGI', dif: 2, kit: true, label: 'Forzar la cerradura', desc: `Silencioso.${this.party.some((id) => this.hasGear(id, 'kit')) ? ' Las ganzúas enanas dan +2 dados a quien las lleve.' : ''}` },
       { id: 'romper', attr: 'FUE', dif: 3, auto: 'FUE', noise: 2, label: 'Echar la puerta abajo', desc: 'Hace ruido: +2 Presagio. Brazo firme (Fuerza 4+) la tira sin tirada.' }
     ];
   },
@@ -950,7 +1016,7 @@ const GAME = {
     this.faceTo(h, door.x, door.y);
     let ok;
     if (opt.auto && RULES.perk(h, opt.auto)) { ok = true; FX.text(this.headPos(h), VIRTUES[opt.auto].perk.name, 'heal'); await U.sleep(300); }
-    else ok = (await this.check(h, opt.attr, opt.dif, { label: opt.label, bonus: opt.bonus || 0 })).ok;
+    else ok = (await this.check(h, opt.attr, opt.dif, { label: opt.label, bonus: opt.kit ? this.gearMod(h.id, 'kit') : (opt.bonus || 0) })).ok;
     if (opt.noise) { audio.sfx('doorSlam'); ENGINE.shake(0.5); this.addDoom(opt.noise, 'ruido'); UI.log('El estruendo resuena por la Hondura. (+2 Presagio)', 'bad'); }
     if (ok) {
       UI.log(`${h.name}: ${opt.label.toLowerCase()} — lo consigue.`, 'good');
@@ -1046,6 +1112,7 @@ const GAME = {
     // Escudo de éter de Elian: gasta 1 de Éter para defenderse con un dado más
     if (tgt.side === 'hero' && tgt.eterMax && tgt.eter >= 1 && !o.noAegis) { tgt.eter--; defN++; FX.text(this.headPos(tgt), 'Escudo de éter', 'heal'); }
     const ranged = o.ranged != null ? o.ranged : (att.ranged && U.cheb(att.x, att.y, tgt.x, tgt.y) > 1);
+    if (att.id === 'brunna' && !ranged) o = Object.assign({}, o, { ignore: (o.ignore || 0) + 1 });
     this.faceTo(att, tgt.x, tgt.y);
     const m = att.mesh, from = m.position.clone(), dir = new THREE.Vector3(tgt.x * TILE - from.x, 0, tgt.y * TILE - from.z).normalize();
     const pan = (ENGINE.project(tgt.mesh.position).x / ENGINE.w - 0.5) * 1.2;
@@ -1093,6 +1160,11 @@ const GAME = {
     if (tgt.side === 'hero' && R.dmg >= tgt.hp) {
       const mart = this.heroes.find((a) => a !== tgt && !a.ko && a.tal.has('martir') && !a.martirUsed && U.cheb(a.x, a.y, tgt.x, tgt.y) === 1 && a.hp > R.dmg);
       if (mart) { mart.martirUsed = true; victim = mart; FX.text(this.headPos(mart), 'Mártir', 'heal'); UI.log(`${mart.name} se interpone y recibe el golpe destinado a ${tgt.name}.`, 'good'); }
+    }
+    if (R.dmg > 0 && victim.status && victim.status.yunque) {
+      const k = Math.min(R.dmg, victim.tal && victim.tal.has('forjada') ? 3 : 2);
+      R.dmg -= k; delete victim.status.yunque;
+      FX.text(this.headPos(victim), `Yunque −${k}`, 'block'); audio.sfx('block');
     }
     const tp = new THREE.Vector3(victim.mesh.position.x, 1.1, victim.mesh.position.z);
     if (R.dmg > 0) {
@@ -1206,13 +1278,15 @@ const GAME = {
   async moraleCheck(list) {
     for (const e of list) {
       if (!e.alive || e.boss || e.status.huyendo || this.immuneTo(e, 'aterrado')) continue;
-      const r = await this.check(e, 'VOL', 2, { bonus: this.leaderNear(e) ? 1 : 0 });
+      const nyra = this.heroes.some((h) => h.id === 'nyra' && !h.ko && U.cheb(h.x, h.y, e.x, e.y) <= 2);
+      const r = await this.check(e, 'VOL', 2, { bonus: (this.leaderNear(e) ? 1 : 0) - (nyra ? 1 : 0) });
       if (!r.ok) { e.status.huyendo = 2; FX.text(this.headPos(e), '¡Huye!', 'heal'); UI.log(`${e.name} pierde los nervios y huye.`, 'good'); if (e.T.barks && Math.random() < 0.5) FX.bubble(e, '¡No, no, no!', 1.6); }
       else FX.text(this.headPos(e), 'Aguanta', 'block');
       await U.sleep(120);
     }
   },
   addGold(n, pos) {
+    if (this.descent) n = Math.max(1, Math.round(n * 0.6)); // en el Descenso solo se compra al acampar: el oro escasea más
     this.gold += n; this.stats.gold += n;
     if (pos) { FX.text(pos, `+${n} oro`, 'gold'); FX.burst('gold', pos); }
     audio.sfx('gold', { vol: 0.6 });
@@ -1275,6 +1349,35 @@ const GAME = {
         if (b) await this.heal(b, 2);
       }
       FX.bubble(h, U.pick(BARKS.elian.heal));
+    } else if (s.id === 'quake') {
+      const e = d.unit;
+      ENGINE.shake(0.7); audio.sfx('quake', { vol: 0.8 });
+      await this.attack(h, e, { atk: si.dice, label: s.name });
+      FX.burst('dust', h.mesh.position); FX.burst('explode', { x: h.x * TILE, y: 0.2, z: h.y * TILE });
+      const near = this.visibleEnemies().filter((o) => o !== e && !o.boss && U.cheb(o.x, o.y, h.x, h.y) <= si.radius);
+      for (const o of near) await this.addStatus(o, 'aturdido', 1, { resist: 'FUE', dif: 2 });
+    } else if (s.id === 'anvil') {
+      h.status.yunque = 1; h.status.taunt = 1;
+      audio.sfx('shield'); FX.burst('shield', h.mesh.position);
+      ENGINE.flashLight(new THREE.Vector3(h.x * TILE, 1.4, h.y * TILE), '#ffb070', 3, 0.7);
+      FX.text(this.headPos(h), 'Piel de yunque', 'heal');
+      UI.log(`${h.name} aprieta los dientes: el próximo golpe le hará ${si.absorb} de daño menos.`, 'good');
+    } else if (s.id === 'hymn') {
+      audio.sfx('levelUp', { vol: 0.7 }); ENGINE.flashLight(new THREE.Vector3(h.x * TILE, 1.6, h.y * TILE), '#ffd0e0', 3.5, 0.8);
+      const allies = this.heroes.filter((a) => !a.ko && U.cheb(a.x, a.y, h.x, h.y) <= si.radius);
+      for (const a of allies) { a.status.inspirado = 2; delete a.status.aterrado; FX.burst('heal', a.mesh.position); if (a.hp < a.maxHp) await this.heal(a, si.heal); FX.text(this.headPos(a), 'Inspirado', 'heal'); }
+      UI.log(`${h.name} canta el Himno de batalla: ${allies.length} héroe${allies.length === 1 ? '' : 's'} inspirado${allies.length === 1 ? '' : 's'}.`, 'good');
+    } else if (s.id === 'command') {
+      const e = d.unit;
+      FX.bubble(h, '¡Atrás, criatura!', 1.6); audio.sfx('reveal', { vol: 0.7 });
+      await FX.projectile(new THREE.Vector3(h.x * TILE, 1.6, h.y * TILE), new THREE.Vector3(e.x * TILE, 1.2, e.y * TILE), 'dawn');
+      if (e.boss) { FX.text(this.headPos(e), 'No le afecta', 'block'); UI.log(`${e.name} ni se inmuta ante la orden.`, 'neutral'); }
+      else {
+        const r = await this.check(e, 'VOL', si.dif, { show: true, okText: 'Resiste', koText: 'Cede' });
+        if (r.ok) UI.log(`${e.name} resiste la orden de ${h.name}.`, 'neutral');
+        else if (this.immuneTo(e, 'aterrado')) { e.status.aturdido = 1; FX.text(this.headPos(e), 'Aturdido', 'heal'); UI.log(`${e.name} no conoce el miedo, pero la orden lo deja aturdido.`, 'good'); }
+        else { e.status.huyendo = 2; FX.text(this.headPos(e), '¡Huye!', 'heal'); UI.log(`${e.name} obedece y huye.`, 'good'); }
+      }
     }
     UI.refresh();
   },
@@ -1294,10 +1397,10 @@ const GAME = {
   async rally(h) {
     if (h.actions <= 0) return UI.toast('Arengar gasta tu acción.');
     h.actions--;
-    const r = await this.check(h, 'PRE', 1, { label: 'Arenga', bonus: RULES.perk(h, 'PRE') ? 1 : 0 });
+    const r = await this.check(h, 'PRE', 1, { label: 'Arenga', bonus: this.rallyDice(h) - h.virt.PRE });
     const allies = this.heroes.filter((a) => a !== h && !a.ko && U.cheb(a.x, a.y, h.x, h.y) <= 4).sort((a, b) => (b.status.aterrado ? 1 : 0) - (a.status.aterrado ? 1 : 0) || U.cheb(a.x, a.y, h.x, h.y) - U.cheb(b.x, b.y, h.x, h.y));
     let left = r.skulls;
-    FX.bubble(h, h.id === 'aldric' ? '¡Conmigo! ¡Nadie cae hoy!' : h.id === 'sera' ? '¡Vamos, que no tengo todo el día!' : '¡Podemos! ¡Lo he leído!', 2);
+    FX.bubble(h, { aldric: '¡Conmigo! ¡Nadie cae hoy!', sera: '¡Vamos, que no tengo todo el día!', elian: '¡Podemos! ¡Lo he leído!', brunna: '¡En pie, que esto no ha hecho más que empezar!', nyra: '¡Cantad conmigo!' }[h.id] || '¡Adelante!', 2);
     for (const a of allies) { if (left <= 0) break; left--; a.status.inspirado = 2; delete a.status.aterrado; FX.burst('shield', a.mesh.position); FX.text(this.headPos(a), 'Inspirado', 'heal'); }
     if (left > 0) { h.status.inspirado = 2; FX.text(this.headPos(h), 'Inspirado', 'heal'); }
     audio.sfx('levelUp', { vol: 0.6 });
@@ -1421,14 +1524,14 @@ const GAME = {
     this.standUp(a);
     await this.heal(a, 2);
     this.woundOnRise(a);
-    FX.bubble(a, a.id === 'aldric' ? 'Gracias. No volverá a pasar.' : a.id === 'sera' ? 'Uf. Te debo una.' : 'Estoy… estoy bien.');
+    FX.bubble(a, { aldric: 'Gracias. No volverá a pasar.', sera: 'Uf. Te debo una.', elian: 'Estoy… estoy bien.', brunna: 'Ni una palabra de esto.', nyra: 'La luz no me suelta tan fácil.' }[a.id] || 'Gracias.');
     UI.log(`${h.name} levanta a ${a.name}.`, 'good');
   },
   async disarm(h, tr) {
     if (h.actions <= 0) return;
     h.actions--; this.eventful = true;
     this.faceTo(h, tr.x, tr.y);
-    const r = await this.check(h, 'AGI', 2, { label: 'Desarmar la trampa', bonus: this.kit ? 2 : 0 });
+    const r = await this.check(h, 'AGI', 2, { label: 'Desarmar la trampa', bonus: this.gearMod(h.id, 'kit') });
     if (r.ok) {
       tr.disarmed = true; audio.sfx('block');
       tr.mesh.userData.spikes.visible = false;
@@ -1687,6 +1790,7 @@ const GAME = {
       ENGINE.fx.flash = 0.5; ENGINE.shake(1.2); audio.sfx('explode');
       this.enemies.filter((e) => e.alive && e.summoned).forEach((e) => { e.hp = 0; this.kill(e); });
       const ch = this.ch;
+      if (this.descent) { await this.run(ch.boss && ch.boss.defeat, {}); audio.setMusic('explore'); UI.refresh(); return; }
       if (b.kind === 'isolde') { await this.run(ch.finalDefeat, {}); this.state = 'ending'; setTimeout(() => this.ending(), 60); return; }
       await this.run(ch.boss.defeat, {});
       if (b.kind === 'aethelgard') return;
@@ -1727,7 +1831,7 @@ const GAME = {
     await UI.fadeOut();
     FX.clearLabels();
     WORLD.buildCamp();
-    this.heroes = HERO_IDS.map((id) => this.makeHero(id));
+    this.heroes = this.party.map((id) => this.makeHero(id));
     const spots = [[3.4, 2.6, 2.2], [6.6, 2.4, -2.1], [5, 4.3, 3.14]];
     this.heroes.forEach((h, i) => { h.x = 0; h.y = 0; WORLD.addUnit(h, { face: 0 }); const m = h.mesh; m.position.set(spots[i][0] * TILE, 0, spots[i][1] * TILE); m.lookAt(5 * TILE, 0, 3 * TILE); });
     this.enemies = []; this.npcs = []; this.ch = Object.assign({}, CHAPTERS[idx], { lantern: this.flags.lantern || CHAPTERS[idx].lantern });
@@ -1743,7 +1847,7 @@ const GAME = {
     const tier = Math.min(idx, 1);
     if ((this.talents.aldric || []).length <= tier) {
       const picks = await UI.talents(tier);
-      HERO_IDS.forEach((id) => { if (picks[id] && !this.talents[id].includes(picks[id])) this.talents[id].push(picks[id]); });
+      this.party.forEach((id) => { if (picks[id] && !(this.talents[id] = this.talents[id] || []).includes(picks[id])) this.talents[id].push(picks[id]); });
       this.refreshCampHeroes();
     }
     // Velada: una actividad, resuelta con una prueba
@@ -1784,6 +1888,7 @@ const GAME = {
     this.state = 'defeat';
     audio.stinger('defeat'); audio.setMusic('silence'); audio.heartbeat(false);
     ENGINE.fx.desatT = 0.9;
+    if (this.descent && !this.tutorial) { await this.descentDefeat(); return; }
     const choice = await UI.defeatCard(this.deathOf);
     this.deathOf = null;
     ENGINE.fx.desatT = 0;
@@ -1832,6 +1937,7 @@ const GAME = {
           case 'flag': this.flags[a[0]] = a[1]; break;
           case 'lantern': this.flags.lantern = a[0]; this.updateLantern(); break;
           case 'seal': await this.seal(); break;
+          case 'gearLoot': this.gearLoot(); break;
           case 'twist': await this.twist(); break;
           case 'spawnBoss': await this.spawnFinalBoss(a[0]); break;
           case 'choice': case 'check': await this.runChoice(a[0], a[1], ctx); break;

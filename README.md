@@ -10,13 +10,15 @@ Funciona en ordenador (ratón y teclado) y en móvil (pantalla táctil). No nece
 
 - **Tutorial guiado** en una sala de prácticas (unos 10 minutos): un panel enseña paso a paso a moverse, mirar alrededor, abrir puertas, atacar, usar habilidades y Éter, terminar el turno, abrir cerraduras y abrir cofres. Espera a que lo hagas, señala con una flecha dónde tocar y se puede saltar o abandonar en cualquier momento. No toca la partida guardada.
 - Campaña de tres capítulos: **Las Criptas de Malakor**, **La Forja de Karak-Azkul** y **El Ojo de Cristal**, con campamentos entre capítulos.
+- **Modo Descenso**: mazmorras que se generan solas, cada partida distinta. Eliges 3 de 5 héroes y bajas nivel a nivel hasta donde aguante el grupo: guardián cada cuatro niveles, campamento después, velas para repetir un nivel y récord de profundidad.
 - Diálogos con retratos, diarios que se encuentran por el camino, fantasmas, sustos, un giro final, una elección y dos finales.
-- Tres héroes con personalidad propia, definidos por **cinco virtudes**: Fuerza, Agilidad, Ingenio, Voluntad y Presencia. Aldric (paladín) es fuerte y carismático, Sera (exploradora) la más ágil y Elian (Tejedor del Éter) el más listo y voluntarioso.
+- Héroes con personalidad propia, definidos por **cinco virtudes**: Fuerza, Agilidad, Ingenio, Voluntad y Presencia. Aldric (paladín) es fuerte y carismático, Sera (exploradora) la más ágil y Elian (Tejedor del Éter) el más listo y voluntarioso. En el Descenso se suman Brunna (guardiana de la forja, la más fuerte) y Nyra (cantora de la Orden, la voz del grupo).
 - Las virtudes lo deciden todo: vida, movimiento, dados de ataque y defensa, quién abre una cerradura o descifra un sello, quién convence a un fantasma, quién resiste el miedo y quién regatea en la tienda. Antes de cada prueba se ve la probabilidad de éxito de cada héroe.
 - **Determinación** para repetir tiradas, **Éter** para la magia de Elian, flanqueo, ataques de oportunidad y estados (aterrado, envenenado, ardiendo, aturdido, inspirado…).
 - Progresión: reparto inicial de virtudes, un talento por héroe en cada campamento y una velada con prueba antes de cada capítulo.
 - Criaturas con virtudes, rol y rasgos: las más listas eligen mejor a quién atacar, las de poca voluntad huyen cuando cae su líder, los no muertos temen la luz y los espectros resisten el acero.
-- Combate con dados, probabilidades visibles antes de atacar, zona de amenaza de cada enemigo, trampas, cofres, objetos y reliquias que cambian el aspecto de las miniaturas.
+- Combate con dados, probabilidades visibles antes de atacar, zona de amenaza de cada enemigo, trampas, cofres y objetos.
+- **Armería con requisitos**: armas, armaduras y objetos que piden una virtud mínima (Fuerza 5 para la coraza de placas, Ingenio 5 para el grimorio). Se elige quién lleva cada pieza; las reliquias cambian el aspecto de las miniaturas.
 - Cuatro jefes con mecánicas propias y conversaciones con PNJ que se resuelven según quién hable.
 - Gráficos generados por código: piedra con relieve, antorchas con luz dinámica, lava, miasma, vacío, partículas, brillo y efecto miniatura.
 - Música y efectos generados en tiempo real, ambiente propio en cada capítulo y narración por voz opcional.
@@ -52,6 +54,8 @@ El estudio de diseño completo (estrategias comparadas, solución elegida y resu
 | `src/` | El código fuente, dividido por partes (historia, mapas, gráficos, audio, interfaz…). |
 | `src/js/10_rules.js` | Reglas de rol: virtudes, estados, dificultades, talentos y veladas. Aquí se ajusta el equilibrio. |
 | `src/js/10_story.js` | Diálogos, mapas de los capítulos, héroes, enemigos y tienda. Aquí se cambia la historia. |
+| `src/js/10_descent.js` | Generador de mazmorras del modo Descenso: tamaños, criaturas, nombres y frases. |
+| `src/js/11_game_descent.js` | Reglas del Descenso: escaleras, campamentos, velas y récord. |
 | `DISENO.md` | Estudio de diseño y resultados de las pruebas automáticas. |
 | `build.py` | Une todo `src/` en un nuevo `index.html`. |
 

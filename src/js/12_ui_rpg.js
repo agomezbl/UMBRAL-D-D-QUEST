@@ -69,7 +69,7 @@ Object.assign(UI, {
       const heroes = GAME.heroes;
       const line = (op) => heroes.filter((q) => !q.ko).map((q) => {
         const auto = op.auto && RULES.perk(q, op.auto);
-        const p = auto ? 1 : this.chanceFor(q, op.attr, op.dif, op.bonus || 0);
+        const p = auto ? 1 : this.chanceFor(q, op.attr, op.dif, op.kit ? GAME.gearMod(q.id, 'kit') : (op.bonus || 0));
         return `<span class="lk-h ${q === h ? 'me' : ''}"><img src="${this.portraits[q.id] || ''}" alt="">${U.esc(q.name)} ${auto ? 'seguro' : RULES.pct(p)}</span>`;
       }).join('');
       c.innerHTML = `<div class="eyebrow">${door.lock === 'sello' ? 'Sello rúnico' : 'Cerradura de hierro'}</div><div class="ch-prompt">¿Cómo la abre ${U.esc(h.name)}? Gasta su acción; si falla, podéis volver a intentarlo.</div>
@@ -85,19 +85,18 @@ Object.assign(UI, {
   /* ---------------- ficha del grupo ---------------- */
   derivedRows(id, v, h) {
     const d = HERO_DEFS[id], s = GAME.derive(id, v), b = (k) => VBONUS(v[k]);
-    const up = GAME.upgrades, f = GAME.flags, D = GAME.D, tal = GAME.talents[id] || [];
-    const item = (k) => (SHOP.find((q) => q.id === k) || {}).name || k;
+    const f = GAME.flags, D = GAME.D, tal = GAME.talents[id] || [], gear = GAME.gearOf(id);
     const plus = (list) => list.filter(Boolean).map((t) => ` + ${t}`).join('');
-    const relic = (id === 'aldric' && up.blade && 'blade') || (id === 'sera' && up.fangs && 'fangs') || (id === 'elian' && up.dawnstaff && 'dawnstaff');
-    const armorUp = (id === 'aldric' && up.aegis && 'aegis') || (id === 'elian' && up.mantle && 'mantle');
+    const from = (key, unit = '') => gear.filter((it) => it.mods && typeof it.mods[key] === 'number' && it.mods[key] > 0).map((it) => `${it.mods[key]}${unit} (${it.name})`);
+    const minus = (key) => gear.filter((it) => it.mods && it.mods[key] < 0).map((it) => ` − ${-it.mods[key]} (${it.name})`).join('');
     const rows = [
-      ['Vida', `${h ? `${h.hp}/` : ''}${h ? h.maxHp : s.hp}`, `3 + Fuerza ${v.FUE} + vigor ${d.vigor}${plus([D.heroHp && `${D.heroHp} (${D.name})`, armorUp && `2 (${item(armorUp)})`])}${h && h.wounds ? ` − herida ${h.wounds}` : ''}`],
-      ['Movimiento', s.mv, `3 + Agilidad ${v.AGI}`],
-      ['Ataque', `${h ? h.atk : s.atk} dados`, `${d.weapon.name} ${d.weapon.base} + ${VIRTUES[d.weapon.attr].name} (+${b(d.weapon.attr)})${plus([relic && `1 (${item(relic)})`, id === 'sera' && f.tomasDagger && '1 (daga de Tomás)'])}${s.range > 1 ? ` · alcance ${s.range}` : ''}`],
-      ['Defensa', `${h ? h.def : s.def} dados`, `${d.armor.name} ${d.armor.base} + Agilidad (+${b('AGI')})${plus([armorUp && `1 (${item(armorUp)})`])}`],
-      ['Determinación', h ? `${h.det}/${h.detMax}` : s.det, `Voluntad ${v.VOL}${plus([D.det && `${D.det} (${D.name})`, f.detAllCh === GAME.chIdx && '1 (velada)'])}`]
+      ['Vida', `${h ? `${h.hp}/` : ''}${h ? h.maxHp : s.hp}`, `3 + Fuerza ${v.FUE} + vigor ${d.vigor}${plus([D.heroHp && `${D.heroHp} (${D.name})`, ...from('hp')])}${h && h.wounds ? ` − herida ${h.wounds}` : ''}`],
+      ['Movimiento', s.mv, `3 + Agilidad ${v.AGI}${plus(from('mv'))}${minus('mv')}`],
+      ['Ataque', `${h ? h.atk : s.atk} dados`, `${d.weapon.name} ${d.weapon.base} + ${VIRTUES[d.weapon.attr].name} (+${b(d.weapon.attr)})${plus([...from('atk'), ...(d.weapon.ranged ? [] : from('melee')), id === 'sera' && f.tomasDagger && '1 (daga de Tomás)'])}${s.range > 1 ? ` · alcance ${s.range}` : ''}`],
+      ['Defensa', `${h ? h.def : s.def} dados`, `${d.armor.name} ${d.armor.base} + Agilidad (+${b('AGI')})${plus(from('def'))}`],
+      ['Determinación', h ? `${h.det}/${h.detMax}` : s.det, `Voluntad ${v.VOL}${plus([D.det && `${D.det} (${D.name})`, ...from('det'), f.detAllCh === GAME.chIdx && '1 (velada)'])}`]
     ];
-    if (s.eter) rows.push(['Éter', h ? `${h.eter}/${h.eterMax}` : s.eter, `Ingenio ${v.ING}${plus([f.eterBonus && `${f.eterBonus} (velada)`, tal.includes('fuente') && '2 (Fuente de éter)'])}, +1 por ronda`]);
+    if (s.eter) rows.push(['Éter', h ? `${h.eter}/${h.eterMax}` : s.eter, `Ingenio ${v.ING}${plus([f.eterBonus && `${f.eterBonus} (velada)`, tal.includes('fuente') && '2 (Fuente de éter)', ...from('eter')])}, +1 por ronda`]);
     return rows;
   },
   heroSheetHTML(id, opts = {}) {
@@ -120,6 +119,7 @@ Object.assign(UI, {
       <dl class="sh-derived">${rows}</dl>
       <section class="sh-more"><h4>Rasgo · ${d.trait.name}</h4><p>${d.trait.desc}</p>
         <h4>Habilidades</h4><ul class="sh-skills">${skills}<li><b>${icon('crown')} Arengar · Registrar · Guardia · Correr</b><span>Acciones comunes. Arengar usa la Presencia y Registrar el Ingenio.</span></li></ul>
+        ${GAME.gearOf(id).length ? `<h4>Equipo</h4><ul class="sh-skills">${GAME.gearOf(id).map((it) => `<li><b>${icon(it.icon)} ${it.name}</b> <small>${SLOTS[it.slot]}</small><span>${it.desc}</span></li>`).join('')}</ul>` : ''}
         ${tal.length ? `<h4>Talentos</h4><ul class="sh-skills">${tal.map((t) => `<li><b>${t.name}</b><span>${t.desc}</span></li>`).join('')}</ul>` : ''}
         ${st ? `<h4>Estados</h4><div class="pv-traits">${st}</div>` : ''}</section>
     </div>`;
@@ -127,8 +127,8 @@ Object.assign(UI, {
   sheet(focus) {
     const el = this.$('sheet');
     if (!el.hidden && !focus) { el.hidden = true; return; }
-    const ids = HERO_IDS;
-    let cur = focus || (GAME.active && GAME.active.id) || this._sheetCur || 'aldric';
+    const ids = GAME.party;
+    let cur = focus || (GAME.active && GAME.active.id) || (ids.includes(this._sheetCur) ? this._sheetCur : ids[0]);
     const render = () => {
       this._sheetCur = cur;
       const h = GAME.heroes.find((q) => q.id === cur && q.virt && GAME.state === 'play') || null;
@@ -143,21 +143,22 @@ Object.assign(UI, {
   },
 
   /* ---------------- forja del grupo (reparto inicial) ---------------- */
-  forge() {
+  forge(party) {
+    const IDS = party || GAME.party;
     return new Promise((resolve) => {
       const v = {}, moved = {};
-      HERO_IDS.forEach((id) => { v[id] = Object.assign({}, HERO_DEFS[id].virt); moved[id] = 0; });
+      IDS.forEach((id) => { v[id] = Object.assign({}, HERO_DEFS[id].virt); moved[id] = 0; });
       const free = (id) => VKEYS.reduce((a, k) => a + Math.max(0, HERO_DEFS[id].virt[k] - v[id][k]), 0) - VKEYS.reduce((a, k) => a + Math.max(0, v[id][k] - HERO_DEFS[id].virt[k]), 0);
       const lowered = (id) => VKEYS.reduce((a, k) => a + Math.max(0, HERO_DEFS[id].virt[k] - v[id][k]), 0);
-      let cur = 'aldric';
+      let cur = IDS[0];
       const s = this.screen(`<div class="card forge"><div class="eyebrow">Forja del grupo</div><h2>Cada héroe, a su manera</h2>
         <p class="lead">Así son por defecto. Si quieres, mueve hasta 2 puntos por héroe: baja una virtud para subir otra. Todo lo demás (vida, dados, movimiento) cambia con ellas.</p>
         <div class="sh-tabs forge-tabs"></div><div class="forge-body"></div>
         <div class="row"><button class="btn" id="fg-back">Volver</button><button class="btn" id="fg-reset">Restablecer</button><span class="fg-msg"></span><button class="btn primary" id="fg-go">${icon('flame')} Descender</button></div></div>`, 'dim title-screen forge-screen');
       const render = () => {
-        s.querySelector('.forge-tabs').innerHTML = HERO_IDS.map((id) => `<button class="sh-tab ${id === cur ? 'on' : ''}" data-t="${id}" style="--hc:${HERO_DEFS[id].color}"><img src="${this.portraits[id] || ''}" alt="">${HERO_DEFS[id].name}${free(id) ? ` <em>${free(id)}</em>` : ''}</button>`).join('');
+        s.querySelector('.forge-tabs').innerHTML = IDS.map((id) => `<button class="sh-tab ${id === cur ? 'on' : ''}" data-t="${id}" style="--hc:${HERO_DEFS[id].color}"><img src="${this.portraits[id] || ''}" alt="">${HERO_DEFS[id].name}${free(id) ? ` <em>${free(id)}</em>` : ''}</button>`).join('');
         s.querySelector('.forge-body').innerHTML = this.heroSheetHTML(cur, { v: v[cur], edit: true, free: free(cur) > 0 });
-        const pend = HERO_IDS.filter((id) => free(id) !== 0);
+        const pend = IDS.filter((id) => free(id) !== 0);
         s.querySelector('#fg-go').disabled = pend.length > 0;
         s.querySelector('.fg-msg').textContent = pend.length ? `Reparte los puntos que has quitado (${pend.map((id) => HERO_DEFS[id].name).join(', ')}).` : '';
         U.$$('.sh-tab', s).forEach((b) => (b.onclick = () => { cur = b.dataset.t; audio.sfx('ui'); render(); }));
@@ -170,11 +171,11 @@ Object.assign(UI, {
       };
       render();
       s.querySelector('#fg-back').onclick = () => { audio.sfx('uiBack'); resolve(null); };
-      s.querySelector('#fg-reset').onclick = () => { HERO_IDS.forEach((id) => (v[id] = Object.assign({}, HERO_DEFS[id].virt))); audio.sfx('uiBack'); render(); };
+      s.querySelector('#fg-reset').onclick = () => { IDS.forEach((id) => (v[id] = Object.assign({}, HERO_DEFS[id].virt))); audio.sfx('uiBack'); render(); };
       s.querySelector('#fg-go').onclick = () => {
-        if (HERO_IDS.some((id) => free(id) !== 0)) return;
+        if (IDS.some((id) => free(id) !== 0)) return;
         audio.sfx('ui');
-        const custom = HERO_IDS.some((id) => VKEYS.some((k) => v[id][k] !== HERO_DEFS[id].virt[k]));
+        const custom = IDS.some((id) => VKEYS.some((k) => v[id][k] !== HERO_DEFS[id].virt[k]));
         resolve({ custom, virt: v });
       };
       void moved;
@@ -187,13 +188,13 @@ Object.assign(UI, {
       const picks = {};
       const s = this.screen(`<div class="card talents"><div class="eyebrow">Ascenso · Rango ${tier + 2}</div><h2>Lo que la Hondura os ha enseñado</h2>
         <p class="lead">Cada héroe elige un talento. Algunos suben una virtud; otros cambian cómo lucha.</p>
-        <div class="tal-grid">${HERO_IDS.map((id) => `<section class="tal-col" style="--hc:${HERO_DEFS[id].color}"><header><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].full}</b></header>
+        <div class="tal-grid">${GAME.party.map((id) => `<section class="tal-col" style="--hc:${HERO_DEFS[id].color}"><header><img src="${this.portraits[id] || ''}" alt=""><b>${HERO_DEFS[id].full}</b></header>
           ${TALENTS[id][tier].map((t) => `<button class="tal-opt" data-h="${id}" data-t="${t.id}"><b>${t.name}</b><small>${t.desc}</small>${t.virt ? `<em>${Object.entries(t.virt).map(([k, n]) => `+${n} ${VIRTUES[k].name}`).join(', ')}</em>` : ''}</button>`).join('')}</section>`).join('')}</div>
         <div class="row end"><button class="btn primary" id="tl-go" disabled>${icon('check')} Confirmar talentos</button></div></div>`, 'dim');
       U.$$('.tal-opt', s).forEach((b) => (b.onclick = () => {
         picks[b.dataset.h] = b.dataset.t; audio.sfx('ui');
         U.$$(`.tal-opt[data-h="${b.dataset.h}"]`, s).forEach((q) => q.classList.toggle('sel', q === b));
-        s.querySelector('#tl-go').disabled = HERO_IDS.some((id) => !picks[id]);
+        s.querySelector('#tl-go').disabled = GAME.party.some((id) => !picks[id]);
       }));
       s.querySelector('#tl-go').onclick = () => { audio.sfx('levelUp'); this.screen(null); resolve(picks); };
     });
