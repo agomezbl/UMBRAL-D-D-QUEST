@@ -1,0 +1,53 @@
+<div id="app">
+  <header class="top">
+    <div class="brand"><span class="eyebrow">Umbral · laboratorio de dados</span><h1>Probador de dados</h1></div>
+    <nav id="modes" class="modes" role="tablist" aria-label="Sistema de dados"></nav>
+    <p id="mode-desc" class="mode-desc"></p>
+  </header>
+  <main class="main">
+    <section class="board">
+      <div id="stage"><canvas id="cv" aria-label="Sala de la cripta con los dados"></canvas><div id="labels"></div>
+        <div id="doom" class="doom" title="Presagio: sube con las máscaras trágicas"></div>
+        <div class="toggles">
+          <button id="do-speed" class="tog" aria-pressed="false">Animación <span>Normal</span></button>
+          <button id="do-sound" class="tog" aria-pressed="true">Sonido <span>Sí</span></button>
+        </div>
+        <div id="toast" class="toast" role="status"></div>
+        <div id="strip" class="strip" aria-live="polite"></div>
+      </div>
+      <div class="actions">
+        <button id="do-attack" class="act primary"><b>Atacar</b><kbd>A</kbd></button>
+        <button id="do-defend" class="act"><b>Recibir ataque</b><kbd>R</kbd></button>
+        <button id="do-search" class="act"><b>Buscar</b><kbd>B</kbd></button>
+        <button id="do-lock" class="act"><b>Forzar cerradura</b><kbd>C</kbd></button>
+      </div>
+    </section>
+    <aside class="side">
+      <section class="card">
+        <h2>Lo que acaba de pasar</h2>
+        <div id="result" class="result"></div>
+      </section>
+      <section class="card">
+        <h2>Quién lucha</h2>
+        <h3>Héroe</h3><div id="heroes" class="chips"></div>
+        <h3>Enemigo</h3><div id="foes" class="chips"></div>
+      </section>
+      <section class="card">
+        <h2>Este sistema, con esta pareja</h2>
+        <p id="mode-desc2" class="mode-desc2"></p>
+        <dl id="now" class="now"></dl>
+        <div id="legend" class="legend"></div>
+      </section>
+      <section class="card">
+        <h2>Los tres sistemas, lado a lado</h2>
+        <div class="tablewrap"><table id="cmp" class="cmp"></table></div>
+        <p class="note">Daño medio por ataque, con la pareja elegida. «Ronda típica»: 3 héroes y 5 enemigos de 3 dados cada uno, contando las veces que hay que leer y aplicar un efecto además del daño.</p>
+        <p id="tally" class="note"></p>
+      </section>
+      <section class="card">
+        <h2>Últimas tiradas</h2>
+        <ol id="log" class="log"></ol>
+      </section>
+    </aside>
+  </main>
+</div>
