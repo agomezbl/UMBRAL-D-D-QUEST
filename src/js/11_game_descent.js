@@ -4,7 +4,7 @@
    ========================================================================== */
 Object.assign(GAME, {
   descent: null,
-  saveKey() { return this.descent ? 'umbral.descent.v1' : 'umbral.save.v2'; },
+  saveKey() { return this.descent ? DESCENT_KEY : SAVE_KEY; },
   chapterDef(idx) { return this.descent && idx >= 1000 ? DESCENT.make(this.descent.seed, idx - 1000) : CHAPTERS[idx]; },
   descentBest() { return U.store.get('umbral.descent.best', null); },
   noteBest() {
@@ -15,12 +15,11 @@ Object.assign(GAME, {
     return true;
   },
 
-  async startDescent(difficulty, party, build, mp) {
-    this.newGame(difficulty, build, party);
-    if (mp) this.setPlayers(mp.players, mp.owner);
+  async startDescent(difficulty, party) {
+    this.newGame(difficulty, null, party);
     this.descent = { seed: (Math.random() * 4294967296) >>> 0, depth: 1, lives: DESCENT.LIVES[this.difficulty] != null ? DESCENT.LIVES[this.difficulty] : 3, camps: 0, campDepth: 0, boonAt: 0, carry: null, record: false };
     this.gold = 80;
-    U.store.del('umbral.descent.v1');
+    U.store.del(DESCENT_KEY);
     await this.startChapter(1001);
   },
 
@@ -70,13 +69,10 @@ Object.assign(GAME, {
     await UI.fadeOut();
     FX.clearLabels();
     WORLD.buildCamp();
-    this.heroes = this.party.map((id) => this.makeHero(id));
-    const spots = [[3.4, 2.6, 2.2], [6.6, 2.4, -2.1], [5, 4.3, 3.14]];
-    this.heroes.forEach((h, i) => { h.x = 0; h.y = 0; WORLD.addUnit(h, { face: 0 }); const m = h.mesh; m.position.set(spots[i][0] * TILE, 0, spots[i][1] * TILE); m.lookAt(5 * TILE, 0, 3 * TILE); });
-    this.enemies = []; this.npcs = [];
+    this.heroes = []; this.enemies = []; this.npcs = [];
     const theme = DESCENT.theme(D.depth - 1);
     this.ch = { id: 'dcamp', num: String(D.depth - 1), title: 'Campamento', rooms: {}, lantern: DESCENT.LANTERN[theme], descent: true };
-    this.updateLantern();
+    this.placeCampHeroes();
     ENGINE.focus(5 * TILE, 3 * TILE, { dist: 13, pitch: 0.55, yaw: 0.2, instant: true });
     audio.startAmbient('camp'); audio.setMusic('camp');
     await UI.fadeIn();
@@ -85,18 +81,17 @@ Object.assign(GAME, {
     this.campOrbit = true;
     await this.run([['n', DESCENT.CAMP[(D.camps - 1) % DESCENT.CAMP.length]], ['n', 'Las heridas se cierran junto al fuego. Mañana, el nivel ' + D.depth + '.']], {});
     UI.endDialogue();
-    // Ascenso: dos rangos de talentos; después, una virtud por campamento
+    // Ascenso: dos rangos de talentos; después, una mejora por campamento
     const tier = D.camps - 1;
-    if (tier <= 1) {
-      if ((this.talents[this.party[0]] || []).length <= tier) {
-        const picks = await UI.talents(tier);
-        this.party.forEach((id) => { if (picks[id] && !(this.talents[id] = this.talents[id] || []).includes(picks[id])) this.talents[id].push(picks[id]); });
-        this.refreshCampHeroes();
-      }
-    } else if (D.boonAt !== D.depth) {
+    await this.campTalents(Math.min(tier, 1));
+    if (tier >= 2 && D.boonAt !== D.depth) {
       const picks = await UI.boons();
       this.build = this.build || {};
-      this.party.forEach((id) => { const k = picks[id]; if (!k) return; const b = this.build[id] = Object.assign({}, this.baseVirt(id)); b[k] = Math.min(VMAX, b[k] + 1); });
+      this.party.forEach((id) => {
+        const bn = BOONS.find((q) => q.id === picks[id]); if (!bn) return;
+        const b = (this.build[id] = this.build[id] || {});
+        Object.entries(bn.mods).forEach(([k, v]) => (b[k] = (b[k] || 0) + v));
+      });
       D.boonAt = D.depth;
       this.refreshCampHeroes();
     }
@@ -110,12 +105,12 @@ Object.assign(GAME, {
   async descentDefeat() {
     const D = this.descent, left = D.lives;
     if (left <= 0) {
-      U.store.del('umbral.descent.v1');
+      U.store.del(DESCENT_KEY);
       this.deathOf = null; ENGINE.fx.desatT = 0;
       await this.descentOver();
       return;
     }
-    if (this.checkpoint && this.checkpoint.descent) { this.checkpoint.descent.lives = left - 1; U.store.set('umbral.descent.v1', this.checkpoint); }
+    if (this.checkpoint && this.checkpoint.descent) { this.checkpoint.descent.lives = left - 1; U.store.set(DESCENT_KEY, this.checkpoint); }
     const choice = await UI.defeatCard(this.deathOf, { descent: true, lives: left - 1, depth: D.depth });
     this.deathOf = null; ENGINE.fx.desatT = 0;
     if (choice === 'retry' && this.checkpoint) { this.restore(this.checkpoint); this.startChapter(this.checkpoint.chIdx); }
@@ -132,7 +127,7 @@ Object.assign(GAME, {
 
   /* Un cofre con una pieza de equipo: va al arcón para repartirla al acampar */
   gearLoot() {
-    const pool = GEAR.filter((it) => !it.hero && !this.ownerOf(it.id));
+    const pool = GEAR.filter((it) => !it.found && !this.ownerOf(it.id) && (!it.who || it.who.some((id) => this.party.includes(id))));
     if (!pool.length) { const g = U.randi(25, 40); this.addGold(g); UI.log(`Bajo el oro, nada más: ${g} monedas extra.`, 'good'); return; }
     const it = U.pick(pool);
     this.stash.push(it.id);

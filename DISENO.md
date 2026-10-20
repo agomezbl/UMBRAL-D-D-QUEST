@@ -2,6 +2,8 @@
 
 Este documento recoge el análisis de la versión anterior, las estrategias que se compararon para darle profundidad de juego de rol (al estilo de HeroQuest y Baldur's Gate) y la solución que se implantó.
 
+> **Nota (rediseño de la sección 11):** las virtudes, la Determinación, el Éter, los ataques de oportunidad, las pruebas de virtud y el cooperativo en el mismo aparato que se describen en las secciones 3 a 10 se retiraron. Se conservan como registro de cómo se llegó hasta aquí. Las reglas vigentes están en la sección 11.
+
 ## 1. Diagnóstico de la versión anterior
 
 Se jugaron campañas completas con un jugador automático en las tres dificultades y se midió lo que hacía cada héroe.
@@ -343,3 +345,85 @@ Rendimiento: los adornos se unen en una sola malla por material. Con un capítul
 - El retrato de cada héroe lleva el nombre de su jugador (en el móvil, su inicial en un círculo de color). Los talentos y dones del campamento también lo indican.
 - Desde la pausa, «Jugadores en este aparato» permite cambiar nombres, reparto o número de jugadores a mitad de partida (por ejemplo, si alguien se va).
 - El reparto se guarda con la partida: al continuar, lo primero es la pantalla de paso para quien tenga el turno.
+
+## 11. Rediseño: cinco héroes clásicos y un juego más directo
+
+### 11.1 Lo que se pidió
+
+- En el móvil, la acción de buscar tesoro abría un menú de cuatro opciones y había ataques que parecían repetidos. Demasiado complicado.
+- Elegir con cuántos héroes se juega en el mapa (de 1 a 5) y cuáles, con cinco héroes bien diferenciados al estilo clásico; que cada aventura recomiende un grupo.
+- Más sencillo pero adictivo y fluido, y comprobar que el juego sigue compensado.
+
+### 11.2 Decisiones
+
+| Pregunta | Opción elegida |
+| --- | --- |
+| Héroes | Clásicos: Bárbaro, Enano, Elfa arquera, Hechicero y Amazona |
+| Controles | Intermedio: Atacar + 2 habilidades distintas, con Buscar y Objetos a la vista |
+| Virtudes | Quitarlas del todo: vida, ataque, defensa y movimiento, como en HeroQuest |
+| Varios jugadores en el mismo aparato | Quitarlo del todo |
+
+### 11.3 Reglas vigentes
+
+- **Cuatro números por héroe:** vida, dados de ataque, dados de defensa y movimiento (más el alcance de los que disparan). El equipo y los talentos los suben.
+- **Barra de acciones:** Atacar · Habilidad 1 · Habilidad 2 · Buscar · Objetos · Fin de turno. Cada habilidad tiene una recarga en rondas; la del Salto élfico no gasta la acción.
+- **Los cinco héroes:**
+
+| Héroe | Vida · Ataque · Defensa · Mov. | Rasgo | Habilidades |
+| --- | --- | --- | --- |
+| Korvak, Bárbaro | 11 · 3 · 2 · 6 | Sin miedo; +1 dado con media vida o menos | Torbellino (todos los de al lado) · Grito de guerra (aterra y cura 2) |
+| Borin, Enano | 10 · 2 · 3 · 5 | Ignora 1 escudo; abre cerraduras y desarma trampas sin tirar | Martillo sísmico (golpe y aturde alrededor) · Muralla (+2 defensa y atrae enemigos) |
+| Lyriel, Elfa arquera | 7 · 2 · 2 · 7, alcance 6 | Ve las trampas a 2 casillas | Lluvia de flechas (zona 3×3) · Salto élfico (5 casillas, sin gastar acción) |
+| Aldebrán, Hechicero | 6 · 2 · 2 · 5, alcance 5 | Ataques mágicos; abre los sellos sin tirar | Bola de fuego (objetivo y los de al lado) · Luz sanadora (cura o levanta) |
+| Thalia, Amazona | 9 · 3 · 2 · 6, alcance 2 | Lanza: golpea a 2 casillas | Carga (corre 5 casillas y golpea +1) · Grito de la tribu (+1 dado y +2 mov. al grupo) |
+
+- **Cerraduras y sellos:** una sola acción, sin menú. Se tiran 3 dados y las calaveras se van sumando entre intentos hasta llegar a 2 (cerradura) o 3 (sello). La cerradura hace ruido (+1 Presagio); el sello muerde si no sale ninguna calavera (−1 PV).
+- **Trampas:** 2 dados, basta una calavera para desarmarla; sin ninguna, salta.
+- **Buscar:** una acción, una vez por sala y sin enemigos dentro. Revela las trampas y saca algo de una tabla al azar: nada (14 %), oro (32 %), oro y poción (18 %), un alijo con objeto (12 %), un dardo que quita 1 PV (14 %) o un ruido que trae un monstruo errante (10 %). Hace ruido (+1 Presagio).
+- **Sin ataques de oportunidad:** moverse es libre. Se mantiene el flanqueo (+1 dado).
+- **Moral:** cuando cae un líder enemigo (o la mitad de su grupo), cada criatura cercana huye con un 50 %; los cobardes siempre.
+- **Historia:** cada frase la dice el primer héroe del grupo que tenga una propia; si no, quien lleva el farol (el primero que eliges). Algunas opciones necesitan a un héroe concreto (Thráin habla con el Enano; descifrar el cuaderno de Osric pide al Hechicero). El final aterra a todos menos al Bárbaro, salvo que hayáis escuchado a Tomás.
+
+### 11.4 Grupo de 1 a 5
+
+- Se elige al empezar la campaña o el Descenso, y en cada campamento se puede cambiar quién baja. Quien entra nuevo elige sus talentos en ese momento.
+- Cada capítulo recomienda un grupo con su motivo (por ejemplo, criptas de no muertos: Hechicero, Amazona y Bárbaro), con un botón para usarlo.
+- Los mapas están pensados para 3. El número de criaturas de cada sala se multiplica por 0,45 · 0,6 · 1 · 1,2 · 1,4 según bajen 1 a 5 héroes (y la vida de los jefes por 0,55 · 0,8 · 1 · 1,2 · 1,4). Las criaturas extra aparecen junto a las del mapa, en su misma sala.
+- **En solitario:** +4 de vida, +1 dado de ataque y otro de defensa, una poción más, el Presagio tarda 3 rondas más y, una vez por capítulo, el héroe se levanta con media vida en vez de caer («Último en pie»). Con dos héroes, el Presagio tarda 1 ronda más.
+- La dificultad Héroe multiplica además las criaturas por 1,2 y Pesadilla por 1,05 (que ya suma un punto de vida a cada criatura y los campeones).
+
+### 11.5 Simulaciones y ajustes
+
+Se jugó la campaña completa con el jugador automático (elige objetivos por probabilidad, usa habilidades con criterio sencillo, levanta a los caídos y compra en la tienda) en distintas combinaciones de grupo y dificultad. «Derrotas» son las veces que hubo que repetir un capítulo; «caídas», las veces que un héroe llegó a 0 PV.
+
+Primera tanda, con las reglas nuevas tal cual: en Héroe, con 3 héroes, los capítulos I y II pasaban sin una sola caída, y en solitario era imposible pasar del capítulo I (7 derrotas seguidas). Ajustes que salieron de ahí:
+
+- Héroe ×1,2 criaturas y Pesadilla ×1,05 (que ya suma +1 de vida a cada criatura, campeones y criaturas más listas). Con ×1,35 un grupo frágil en Pesadilla se atascaba en el capítulo I.
+- Ayudas en solitario (vida, ataque, defensa, poción, Presagio más lento, «Último en pie»).
+- Dúo ×0,6 y grupos de 4 y 5 en ×1,2 y ×1,4: con ×1,5, cinco héroes en Pesadilla se atascaban en el capítulo II, porque con cinco hay más héroes que se pueden desangrar.
+- Una derrota solo puede contarse una vez por intento (dos avisos a la vez podían provocar una segunda derrota justo al reintentar).
+
+Resultados con los valores finales:
+
+| Grupo | Dificultad | Derrotas | Caídas | Resultado |
+| --- | --- | --- | --- | --- |
+| Bárbaro solo | Pesadilla | 0 | 0 | Campaña completa |
+| Elfa sola | Héroe | 3 | 0 | Campaña completa |
+| Amazona y Hechicero | Héroe | 1 | 3 | Campaña completa |
+| Enano, Elfa y Amazona | Héroe | 2 | 21 | Campaña completa |
+| Hechicero, Amazona y Bárbaro (recomendado) | Pesadilla | 0 | 22 | Campaña completa |
+| Amazona, Elfa y Hechicero (todos frágiles) | Pesadilla | 6 | 14 | Campaña completa |
+| Cuatro héroes | Pesadilla | 0 | 22 | Campaña completa |
+| Los cinco | Héroe | 0 | 2 | Campaña completa |
+| Los cinco | Pesadilla | 0 | 17 | Campaña completa |
+| Enano, Elfa y Amazona, Descenso | Héroe | — | — | Hasta el nivel 8 (segundo guardián) |
+| Amazona, Enano y Hechicero, Descenso | Pesadilla | — | — | Hasta el nivel 7 con su única vela |
+
+Lectura: el grupo recomendado se nota (en Pesadilla, 0 derrotas frente a 6 con un grupo sin nadie que aguante en primera fila), en solitario se puede terminar pero cuesta según el héroe, y bajar los cinco es la forma más cómoda de jugar. Hay bastante variación de una partida a otra con el mismo grupo (dados), así que estos números orientan, no son exactos.
+
+### 11.6 Verificación
+
+- Tutorial completo en ordenador y en móvil, con los pasos nuevos (Lyriel, Bola de fuego del Hechicero, cerradura por intentos, Buscar).
+- Pantallas en ordenador, móvil en vertical y móvil en horizontal: elección del grupo, barra de acciones, ficha, campamento con cuatro y cinco héroes, talentos, velada y tienda.
+- Partidas guardadas en mitad de una ronda (campaña y Descenso) que se reanudan igual. Las partidas guardadas con las reglas anteriores no se cargan (usaban virtudes); el juego las ignora sin fallar.
+- Tocar una puerta, cofre o escrito lejano ahora acerca al héroe todo lo que pueda, en lugar de decir «fuera de alcance».

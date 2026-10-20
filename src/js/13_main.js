@@ -4,7 +4,7 @@
 const SETTINGS = Object.assign({
   quality: (() => { const touch = U.isTouch(), cores = navigator.hardwareConcurrency || 4; if (touch && Math.min(screen.width, screen.height) < 820) return 'medio'; return cores <= 4 ? 'medio' : 'alto'; })(),
   autoQ: true, tilt: true, shake: true, flashes: true, music: 0.55, sfx: 0.85, amb: 0.6, voice: 'narrador', textSpeed: 'normal', autoText: false,
-  speed: 1, follow: true, confirmTouch: true, quickEnemyDice: true, detOffer: true, textSize: 'normal', contrast: false
+  speed: 1, follow: true, confirmTouch: true, quickEnemyDice: true, textSize: 'normal', contrast: false
 }, U.store.get('umbral.settings', {}));
 
 const INPUT = {
@@ -88,7 +88,6 @@ const INPUT = {
     if (e.target && /input|select|textarea/i.test(e.target.tagName)) return;
     this.keys[k] = down;
     if (!down) return;
-    if (UI.handoffOpen) { if (k === ' ' || k === 'enter') { e.preventDefault(); UI.handoffDone(); } return; }
     if (!UI.$('dlg').hidden && (k === ' ' || k === 'enter')) { e.preventDefault(); UI.advance(); return; }
     // los escritos también se cierran con el teclado
     if (!UI.$('note').hidden && (k === ' ' || k === 'enter' || k === 'escape')) { e.preventDefault(); UI.$('note').dispatchEvent(new PointerEvent('pointerup')); return; }
@@ -98,7 +97,7 @@ const INPUT = {
     if (GAME.state !== 'play') { if (k === 'escape' && GAME.state === 'camp') UI.pause(); return; }
     const map = { '1': 'attack', '2': 's0', '3': 's1' };
     if (map[k]) { GAME.action(map[k]); return; }
-    if (k === '4') { UI.togglePop('acts-pop'); return; }
+    if (k === '4') { GAME.action('search'); return; }
     if (k === '5') { UI.togglePop('items-pop'); return; }
     if (k === 'z') { GAME.action('undo'); return; }
     if (k === ' ') { e.preventDefault(); GAME.action('end'); return; }
@@ -137,8 +136,8 @@ const MAIN = {
       say('Tallando las miniaturas…');
       await U.nextFrame();
       UI.portraits = ENGINE.portraits([
-        { id: 'aldric', kind: 'aldric', bg: '#18202e' }, { id: 'sera', kind: 'sera', bg: '#16221c' }, { id: 'elian', kind: 'elian', bg: '#1e1830' },
-        { id: 'brunna', kind: 'brunna', bg: '#2a1a10' }, { id: 'nyra', kind: 'nyra', bg: '#2a1420' },
+        { id: 'barbaro', kind: 'barbaro', bg: '#2a1410' }, { id: 'enano', kind: 'enano', bg: '#2a1a10' }, { id: 'elfa', kind: 'cazadora', bg: '#14221a' },
+        { id: 'hechicero', kind: 'hechicero', bg: '#141a2e' }, { id: 'amazona', kind: 'amazona', bg: '#2a2210' },
         { id: 'isolde', kind: 'isolde', opts: { small: true }, bg: '#241f1a' }, { id: 'malakor', kind: 'malakor', bg: '#0c1a12' }, { id: 'ignis', kind: 'ignis', bg: '#2a0d06' },
         { id: 'aethelgard', kind: 'aethelgard', bg: '#0c1a2a' }, { id: 'thrain', kind: 'thrain', bg: '#0c1a22' }, { id: 'tomas', kind: 'tomas', bg: '#101a24' }
       ]);
@@ -183,9 +182,10 @@ const MAIN = {
   titleScene() {
     if (this.titleBuilt && WORLD.L && this.titleOrbit) return;
     WORLD.build(CHAPTERS[0], 'crypt');
-    GAME.heroes = ['aldric', 'sera', 'elian'].map((id) => GAME.makeHero(id));
+    GAME.heroes = ['barbaro', 'elfa', 'hechicero'].map((id) => GAME.makeHero(id));
     GAME.enemies = []; GAME.npcs = [];
-    GAME.heroes.forEach((h) => { const s = WORLD.L.starts[HERO_DEFS[h.id].start]; h.x = s.x; h.y = s.y; WORLD.addUnit(h, { face: Math.PI * 0.8 }); });
+    GAME.heroes.forEach((h, i) => { const s = WORLD.L.starts[String(i + 1)]; h.x = s.x; h.y = s.y; WORLD.addUnit(h, { face: Math.PI * 0.8 }); });
+    GAME.ch = CHAPTERS[0]; GAME.updateLantern();
     const L = WORLD.L;
     const start = L.rooms[L.T[L.starts['1'].y][L.starts['1'].x].room];
     WORLD.revealRoom(start.id, null, true);
@@ -221,5 +221,5 @@ const MAIN = {
   }
 };
 
-window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, VIRTUES, TALENTS, VIGILS, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, GEAR, SLOTS, STATUS, TUTOR, TUTORIAL, DESCENT };
+window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, TALENTS, BOONS, VIGILS, HERO_ROSTER, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, GEAR, SLOTS, STATUS, TUTOR, TUTORIAL, DESCENT };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => MAIN.boot()); else MAIN.boot();

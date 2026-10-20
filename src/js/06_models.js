@@ -138,6 +138,7 @@ const MODELS = (() => {
   }
 
   /* ----------------------------- HÉROES ----------------------------- */
+  /* Caballero de armadura (se usa para personajes de la historia) */
   function aldric(o = {}) {
     const steel = MAT.std('#a7b0ba', 0.32, 0.9), dark = MAT.std('#3d434b', 0.45, 0.8), gold = MAT.std('#c9a24a', 0.3, 0.95);
     const blue = MAT.std('#23407a', 0.85), leather = MAT.std('#4a3324', 0.8);
@@ -182,74 +183,41 @@ const MODELS = (() => {
     return root;
   }
 
-  function sera(o = {}) {
-    const cloak = MAT.std('#33413a', 0.9), leather = MAT.std('#3b2a20', 0.75), skin = MAT.std('#b98d6c', 0.7), steel = MAT.std('#c3c9d0', 0.25, 0.9), red = MAT.std('#6a1f22', 0.85);
+  /* Aldebrán, hechicero de la Torre de Ceniza: túnica azul noche, sombrero de ala ancha, barba blanca y báculo con cristal */
+  function hechicero(o = {}) {
+    const robe = MAT.std('#1f2f6a', 0.85), robe2 = MAT.std('#2a3d86', 0.8), trim = MAT.std('#c7a352', 0.35, 0.9), skin = MAT.std('#d2a684', 0.7), beard = MAT.std('#e8e4dc', 0.9), wood = MAT.std('#5a3a22', 0.8);
     const root = new THREE.Group(), fig = grp(root, [0, 0.12, 0]);
-    P(fig, G.cyl(0.07, 0.06, 0.42, 8), leather, [-0.1, 0.21, 0]); P(fig, G.cyl(0.07, 0.06, 0.42, 8), leather, [0.1, 0.21, 0]);
-    P(fig, G.box(0.11, 0.08, 0.2), leather, [-0.1, 0.04, 0.03]); P(fig, G.box(0.11, 0.08, 0.2), leather, [0.1, 0.04, 0.03]);
-    P(fig, G.lathe([[0.17, 0.42], [0.2, 0.62], [0.21, 0.82], [0.18, 1.0], [0.1, 1.1]]), leather);
-    const cl = P(fig, G.lathe([[0.33, 0.16], [0.3, 0.32], [0.25, 0.6], [0.22, 0.85], [0.2, 1.02], [0.12, 1.12]], 22), cloak);
-    cl.scale.set(1, 1, 0.92);
-    P(fig, G.tor(0.18, 0.025, 6, 20), leather, [0, 0.62, 0], [Math.PI / 2, 0, 0]);
-    P(fig, G.box(0.08, 0.1, 0.06), leather, [0.15, 0.58, 0.12]); P(fig, G.box(0.07, 0.08, 0.05), leather, [-0.16, 0.58, 0.1]);
-    P(fig, G.tor(0.11, 0.045, 8, 16), red, [0, 1.11, 0], [Math.PI / 2, 0, 0]);
-    const head = grp(fig, [0, 1.24, 0]);
-    P(head, G.sph(0.16, 18, 14), cloak, [0, 0.01, -0.02], [0, 0, 0], [1, 1.1, 1.12]);
-    P(head, G.cone(0.1, 0.22, 10), cloak, [0, 0.03, -0.17], [-1.9, 0, 0]);
-    P(head, G.sph(0.115, 14, 10), MAT.std('#060506', 1), [0, -0.01, 0.07]);
-    eyes(head, 0.0, 0.17, 0.042, '#ffc46b', 0.018, 3.2);
-    P(head, G.box(0.18, 0.06, 0.08), red, [0, -0.08, 0.12]);
-    const armL = grp(fig, [-0.27, 0.98, 0]); P(armL, G.cyl(0.055, 0.05, 0.42, 8), cloak, [0, -0.2, 0.05], [0.4, 0, 0.15]); P(armL, G.sph(0.05, 8, 6), skin, [-0.04, -0.4, 0.17]);
-    const armR = grp(fig, [0.27, 0.98, 0]); P(armR, G.cyl(0.055, 0.05, 0.42, 8), cloak, [0, -0.2, 0.05], [0.4, 0, -0.15]); P(armR, G.sph(0.05, 8, 6), skin, [0.04, -0.4, 0.17]);
-    const dagger = (g) => { P(g, G.box(0.035, 0.28, 0.01), o.fangs ? MAT.glow('#7dffb2', 1.2) : steel, [0, 0.16, 0]); P(g, G.box(0.1, 0.02, 0.03), leather, [0, 0.02, 0]); P(g, G.cyl(0.016, 0.016, 0.09, 6), leather, [0, -0.04, 0]); };
-    const dL = grp(fig, [-0.31, 0.58, 0.18], [1.2, 0, 0.3]); dagger(dL);
-    const dR = grp(fig, [0.31, 0.58, 0.18], [1.2, 0, -0.3]); dagger(dR);
-    const qv = grp(fig, [0.12, 0.85, -0.2], [0.2, 0, -0.4]);
-    P(qv, G.cyl(0.06, 0.05, 0.42, 10), leather);
-    for (let k = 0; k < 4; k++) P(qv, G.cone(0.025, 0.08, 4), MAT.std('#d8d0c0', 0.8), [Math.cos(k * 1.6) * 0.03, 0.26, Math.sin(k * 1.6) * 0.03]);
-    const bow = grp(fig, [-0.05, 0.85, -0.24], [0, 0, 0.5]);
-    P(bow, G.tor(0.48, 0.018, 6, 24, Math.PI * 0.9), MAT.std('#1d1612', 0.6, 0.1), [0, 0, 0], [0, 0, Math.PI * 0.55]);
-    bow.visible = !!o.bow;
-    root.userData = { fig, head, weapon: dR, weapon2: dL, bow, height: 1.55 };
-    return root;
-  }
-
-  function elian(o = {}) {
-    const robe = MAT.std('#38296a', 0.85), trim = MAT.std('#c7a352', 0.35, 0.9), skin = MAT.std('#c79a7c', 0.7), hair = MAT.std('#2b1d15', 0.9), wood = MAT.std('#5a3a22', 0.8);
-    const root = new THREE.Group(), fig = grp(root, [0, 0.12, 0]);
-    P(fig, G.lathe([[0.34, 0.02], [0.31, 0.2], [0.25, 0.5], [0.21, 0.8], [0.2, 0.98], [0.12, 1.1]], 24), o.mantle ? MAT.std('#1d2a4a', 0.75) : robe);
+    P(fig, G.lathe([[0.34, 0.02], [0.31, 0.2], [0.25, 0.5], [0.21, 0.8], [0.2, 0.98], [0.12, 1.1]], 24), o.mantle ? MAT.std('#141c3a', 0.75) : robe);
     P(fig, G.tor(0.335, 0.025, 6, 32), trim, [0, 0.03, 0], [Math.PI / 2, 0, 0]);
     P(fig, G.tor(0.215, 0.03, 6, 24), trim, [0, 0.72, 0], [Math.PI / 2, 0, 0]);
     P(fig, G.box(0.09, 0.42, 0.02), trim, [0, 0.48, 0.24], [-0.18, 0, 0]);
-    P(fig, G.tor(0.13, 0.06, 8, 18), o.mantle ? MAT.std('#d6dbe6', 0.5) : robe, [0, 1.1, 0], [Math.PI / 2, 0, 0]);
-    const sleeve = (sx) => { const a = grp(fig, [sx * 0.24, 1.0, 0]); P(a, G.cyl(0.05, 0.11, 0.42, 10), robe, [sx * 0.04, -0.2, 0.06], [0.35, 0, sx * 0.15]); P(a, G.sph(0.045, 8, 6), skin, [sx * 0.08, -0.42, 0.16]); return a; };
+    for (let k = 0; k < 5; k++) P(fig, G.oct(0.022), MAT.glow('#cfe0ff', 1.6), [Math.cos(k * 1.3) * 0.27, 0.22 + k * 0.13, Math.sin(k * 1.3) * 0.27 + 0.02], [0, k, 0], [1, 1, 1], false);
+    P(fig, G.tor(0.13, 0.06, 8, 18), robe2, [0, 1.1, 0], [Math.PI / 2, 0, 0]);
+    const sleeve = (sx) => { const a = grp(fig, [sx * 0.24, 1.0, 0]); P(a, G.cyl(0.05, 0.12, 0.42, 10), robe2, [sx * 0.04, -0.2, 0.06], [0.35, 0, sx * 0.15]); P(a, G.sph(0.045, 8, 6), skin, [sx * 0.08, -0.42, 0.16]); return a; };
     sleeve(-1); sleeve(1);
     const head = grp(fig, [0, 1.25, 0]);
-    P(head, G.sph(0.125, 16, 12), skin, [0, 0, 0.01]);
-    P(head, G.sph(0.135, 16, 12), hair, [0, 0.04, -0.03], [0, 0, 0], [1.02, 0.95, 1]);
-    P(head, G.tor(0.128, 0.012, 6, 24), trim, [0, 0.04, 0.0], [Math.PI / 2 - 0.15, 0, 0]);
-    P(head, G.oct(0.022), MAT.glow('#9bd7ff', 2.5), [0, 0.06, 0.13]);
-    P(head, G.sph(0.012, 6, 4), MAT.std('#111', 0.5), [-0.045, 0.0, 0.115]); P(head, G.sph(0.012, 6, 4), MAT.std('#111', 0.5), [0.045, 0.0, 0.115]);
+    P(head, G.sph(0.12, 16, 12), skin, [0, 0, 0.01]);
+    P(head, G.cone(0.13, 0.36, 12), beard, [0, -0.2, 0.07], [Math.PI + 0.15, 0, 0]);
+    P(head, G.box(0.16, 0.035, 0.05), beard, [0, -0.02, 0.1]);
+    P(head, G.sph(0.012, 6, 4), MAT.std('#111', 0.5), [-0.045, 0.03, 0.11]); P(head, G.sph(0.012, 6, 4), MAT.std('#111', 0.5), [0.045, 0.03, 0.11]);
+    // sombrero de ala ancha, punta doblada
+    P(head, G.cyl(0.28, 0.28, 0.025, 28), robe, [0, 0.1, 0]);
+    P(head, G.cone(0.15, 0.36, 18), robe, [0, 0.29, -0.02], [-0.12, 0, 0]);
+    P(head, G.cone(0.05, 0.16, 10), robe, [0.04, 0.5, -0.1], [-0.9, 0, -0.4]);
+    P(head, G.tor(0.15, 0.018, 6, 24), trim, [0, 0.13, 0], [Math.PI / 2, 0, 0]);
     const st = grp(fig, [0.36, -0.02, 0.18], [0.05, 0, -0.04]);
     staff(st, wood, 1.75);
-    const crystal = P(st, G.oct(0.085), MAT.glow(o.dawn ? '#ffd27a' : '#9bd7ff', 2.2), [0, 1.86, 0], [0, 0, 0], [0.8, 1.4, 0.8], false);
-    P(st, G.tor(0.06, 0.012, 6, 16), trim, [0, 1.76, 0], [Math.PI / 2, 0, 0]);
-    // el Farol de Isolde cuelga del báculo
-    const lan = grp(st, [0.12, 1.5, 0]);
-    P(lan, G.cyl(0.004, 0.004, 0.12, 4), trim, [0, 0.08, 0]);
-    P(lan, G.cone(0.06, 0.06, 6), trim, [0, 0.0, 0]);
-    for (let k = 0; k < 4; k++) P(lan, G.box(0.008, 0.12, 0.008), trim, [Math.cos(k * Math.PI / 2 + 0.78) * 0.045, -0.09, Math.sin(k * Math.PI / 2 + 0.78) * 0.045]);
-    P(lan, G.cyl(0.05, 0.05, 0.015, 8), trim, [0, -0.155, 0]);
-    const core = P(lan, G.sph(0.03, 10, 8), MAT.glow('#ffb45a', 3), [0, -0.09, 0], [0, 0, 0], [1, 1.3, 1], false);
-    P(fig, G.box(0.12, 0.15, 0.05), MAT.std('#5b2a1e', 0.8), [-0.2, 0.55, 0.12], [0, 0.4, 0.1]);
-    root.userData = { fig, head, weapon: st, crystal, lantern: lan, lanternCore: core, height: 1.6 };
+    const crystal = P(st, G.oct(0.09), MAT.glow(o.dawn ? '#ffd27a' : '#9bd7ff', 2.2), [0, 1.86, 0], [0, 0, 0], [0.8, 1.4, 0.8], false);
+    P(st, G.tor(0.065, 0.012, 6, 16), trim, [0, 1.76, 0], [Math.PI / 2, 0, 0]);
+    P(fig, G.box(0.13, 0.17, 0.06), MAT.std('#5b2a1e', 0.8), [-0.2, 0.55, 0.12], [0, 0.4, 0.1]);
+    root.userData = { fig, head, weapon: st, crystal, height: 1.75 };
     return root;
   }
 
-  /* Brunna, guardiana enana de la forja: baja, ancha, barba de cobre y martillo de dos manos */
-  function brunna(o = {}) {
+  /* Borin Yunquebarba, enano: bajo, ancho, barba trenzada y martillo de dos manos */
+  function enano(o = {}) {
     const iron = MAT.std('#6f747c', 0.38, 0.85), dark = MAT.std('#2f2a26', 0.6, 0.5), leather = MAT.std('#5a3a24', 0.8), copper = MAT.std('#c26a2e', 0.4, 0.75);
-    const beard = MAT.std('#b8582a', 0.9), skin = MAT.std('#c28a68', 0.7), wood = MAT.std('#4a3020', 0.8);
+    const beard = MAT.std('#7a3f1e', 0.9), skin = MAT.std('#c28a68', 0.7), wood = MAT.std('#4a3020', 0.8);
     const root = new THREE.Group(), fig = grp(root, [0, 0.12, 0]);
     P(fig, G.cyl(0.1, 0.09, 0.28, 10), dark, [-0.12, 0.14, 0]); P(fig, G.cyl(0.1, 0.09, 0.28, 10), dark, [0.12, 0.14, 0]);
     P(fig, G.box(0.16, 0.08, 0.22), iron, [-0.12, 0.03, 0.03]); P(fig, G.box(0.16, 0.08, 0.22), iron, [0.12, 0.03, 0.03]);
@@ -283,34 +251,163 @@ const MODELS = (() => {
     return root;
   }
 
-  /* Nyra, cantora de la Orden: túnica clara, cetro con campana y libro de himnos */
-  function nyra(o = {}) {
-    const ivory = MAT.std('#e8dcc4', 0.75), rose = MAT.std('#a8324e', 0.7), silver = MAT.std('#d2d6de', 0.25, 0.95), skin = MAT.std('#d0a080', 0.7), hair = MAT.std('#6a2e1a', 0.85);
+  /* Korvak, bárbaro del norte: torso desnudo, pieles, trenzas, casco con cuernos y hacha a dos manos */
+  function barbaro(o = {}) {
+    const skin = MAT.std('#c48a62', 0.62), fur = MAT.std('#5e4630', 0.95), furL = MAT.std('#a08a6a', 0.95), leather = MAT.std('#4a3020', 0.8), iron = MAT.std('#7c8088', 0.35, 0.85), hair = MAT.std('#c8763a', 0.85), wood = MAT.std('#4a3020', 0.85), paint = MAT.std('#2a4a8a', 0.8);
     const root = new THREE.Group(), fig = grp(root, [0, 0.12, 0]);
-    P(fig, G.lathe([[0.31, 0.02], [0.28, 0.25], [0.22, 0.55], [0.19, 0.8], [0.18, 0.98], [0.11, 1.1]], 24), ivory);
-    P(fig, G.tor(0.305, 0.022, 6, 32), rose, [0, 0.04, 0], [Math.PI / 2, 0, 0]);
-    P(fig, G.box(0.13, 0.86, 0.02), rose, [0, 0.5, 0.21], [-0.12, 0, 0]);
-    P(fig, G.sph(0.05, 10, 8), MAT.glow('#ff8fb0', 1.6), [0, 0.86, 0.2], [0, 0, 0], [1, 1, 0.4], false);
-    P(fig, G.tor(0.195, 0.026, 6, 24), silver, [0, 0.66, 0], [Math.PI / 2, 0, 0]);
-    P(fig, G.tor(0.12, 0.05, 8, 18), rose, [0, 1.09, 0], [Math.PI / 2, 0, 0]);
-    const sleeve = (sx) => { const a = grp(fig, [sx * 0.22, 0.98, 0]); P(a, G.cyl(0.045, 0.09, 0.4, 10), ivory, [sx * 0.04, -0.19, 0.06], [0.4, 0, sx * 0.12]); P(a, G.sph(0.042, 8, 6), skin, [sx * 0.07, -0.4, 0.16]); return a; };
+    [-1, 1].forEach((sx) => { P(fig, G.cyl(0.1, 0.085, 0.42, 10), leather, [sx * 0.13, 0.21, 0]); P(fig, G.cyl(0.12, 0.11, 0.17, 10), fur, [sx * 0.13, 0.08, 0.01]); });
+    P(fig, G.lathe([[0.31, 0.3], [0.28, 0.46], [0.25, 0.6]], 20), fur);
+    P(fig, G.tor(0.255, 0.04, 6, 24), leather, [0, 0.6, 0], [Math.PI / 2, 0, 0]);
+    P(fig, G.cyl(0.07, 0.07, 0.03, 14), iron, [0, 0.6, 0.27], [Math.PI / 2, 0, 0]);
+    P(fig, G.lathe([[0.25, 0.58], [0.31, 0.75], [0.35, 0.93], [0.28, 1.07], [0.13, 1.13]], 20), skin);
+    P(fig, G.box(0.07, 0.66, 0.02), leather, [0, 0.86, 0.31], [0, 0, 0.72]);
+    P(fig, G.box(0.04, 0.14, 0.01), paint, [-0.12, 0.92, 0.325], [0, 0, 0.2]); P(fig, G.box(0.04, 0.14, 0.01), paint, [0.12, 0.92, 0.325], [0, 0, -0.2]);
+    [-1, 1].forEach((sx) => P(fig, G.sph(0.18, 12, 10), furL, [sx * 0.3, 1.04, -0.02], [0, 0, sx * -0.3], [1, 0.72, 1.05]));
+    [-1, 1].forEach((sx) => {
+      const arm = grp(fig, [sx * 0.36, 1.0, 0]);
+      P(arm, G.cyl(0.085, 0.075, 0.42, 10), skin, [sx * 0.02, -0.2, 0.08], [0.6, 0, sx * -0.12]);
+      P(arm, G.cyl(0.08, 0.08, 0.12, 10), leather, [sx * 0.03, -0.32, 0.17], [0.6, 0, sx * -0.12]);
+      P(arm, G.sph(0.07, 8, 6), skin, [sx * 0.04, -0.4, 0.24]);
+    });
+    const head = grp(fig, [0, 1.28, 0]);
+    P(head, G.sph(0.14, 16, 12), skin, [0, 0, 0.01]);
+    P(head, G.sph(0.15, 14, 10), hair, [0, 0.0, -0.05], [0, 0, 0], [1.02, 1, 0.95]);
+    P(head, G.cone(0.13, 0.3, 10), hair, [0, -0.17, 0.08], [Math.PI + 0.25, 0, 0]);
+    [-1, 1].forEach((sx) => P(head, G.cyl(0.03, 0.02, 0.32, 6), hair, [sx * 0.12, -0.18, -0.02], [0.1, 0, sx * 0.1]));
+    P(head, G.k('helmHalf', [], () => new THREE.SphereGeometry(0.152, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2)), iron, [0, 0.03, 0], [0, 0, 0], [1, 0.8, 1]);
+    P(head, G.tor(0.15, 0.016, 6, 24), iron, [0, 0.03, 0], [Math.PI / 2, 0, 0]);
+    [-1, 1].forEach((sx) => { const hn = grp(head, [sx * 0.14, 0.08, 0], [0, 0, sx * -0.9]); P(hn, G.cone(0.04, 0.22, 8), furL, [0, 0.1, 0]); });
+    P(head, G.sph(0.015, 6, 4), MAT.std('#111', 0.5), [-0.05, 0.02, 0.13]); P(head, G.sph(0.015, 6, 4), MAT.std('#111', 0.5), [0.05, 0.02, 0.13]);
+    // hacha de dos filos a dos manos
+    const blade = o.axe ? MAT.std('#cfe6ff', 0.2, 1, { emissive: '#7fc8ff', emissiveIntensity: 0.6 }) : iron;
+    const ax = grp(fig, [0.24, 0.5, 0.34], [0.25, 0, -0.42]);
+    axe(ax, wood, blade, 1.25);
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0); shape.quadraticCurveTo(0.22, 0.05, 0.28, 0.2); shape.quadraticCurveTo(0.2, 0.18, 0.18, 0.12); shape.lineTo(0.18, -0.12); shape.quadraticCurveTo(0.2, -0.18, 0.28, -0.2); shape.quadraticCurveTo(0.22, -0.05, 0, 0);
+    const hg = G.k('axeHead', [], () => new THREE.ExtrudeGeometry(shape, { depth: 0.03, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 1 }));
+    P(ax, hg, blade, [-0.02, 0.875, 0.02], [0, Math.PI, 0], [1.25, 1.25, 1.25]);
+    root.userData = { fig, head, weapon: ax, height: 1.72 };
+    return root;
+  }
+
+  /* Lyriel, cazadora elfa: cabello claro, orejas largas, capa verde, arco largo y carcaj */
+  function cazadora(o = {}) {
+    const green = MAT.std('#2e5a3a', 0.85), leaf = MAT.std('#5a8a4a', 0.8), leather = MAT.std('#5a3b24', 0.75), skin = MAT.std('#e6c4a4', 0.62), hair = MAT.std('#ece0b4', 0.75);
+    const bowMat = o.bow ? MAT.std('#d8e6ff', 0.3, 0.6, { emissive: '#9fd0ff', emissiveIntensity: 0.55 }) : MAT.std('#3a2416', 0.6, 0.1), str = MAT.std('#e8e0c8', 0.6);
+    const root = new THREE.Group(), fig = grp(root, [0, 0.12, 0]);
+    [-1, 1].forEach((sx) => { P(fig, G.cyl(0.065, 0.055, 0.44, 8), leather, [sx * 0.09, 0.22, 0]); P(fig, G.box(0.1, 0.08, 0.19), leather, [sx * 0.09, 0.04, 0.03]); });
+    P(fig, G.lathe([[0.22, 0.4], [0.19, 0.6], [0.2, 0.8], [0.17, 1.0], [0.1, 1.1]], 18), green);
+    P(fig, G.lathe([[0.25, 0.38], [0.23, 0.48], [0.2, 0.56]], 18), leaf);
+    P(fig, G.tor(0.18, 0.022, 6, 20), leather, [0, 0.6, 0], [Math.PI / 2, 0, 0]);
+    P(fig, G.box(0.06, 0.5, 0.02), leather, [0, 0.82, 0.19], [0, 0, -0.6]);
+    cape(fig, '#24482e', 0.5, 0.82, 1.06, -0.17);
+    [-1, 1].forEach((sx) => P(fig, G.sph(0.09, 10, 8), leaf, [sx * 0.21, 1.03, 0], [0, 0, sx * -0.3], [1, 0.6, 1]));
+    const armL = grp(fig, [-0.24, 0.99, 0]); P(armL, G.cyl(0.05, 0.045, 0.42, 8), green, [-0.05, -0.12, 0.12], [1.1, 0, 0.2]); P(armL, G.sph(0.045, 8, 6), skin, [-0.1, -0.2, 0.34]);
+    const armR = grp(fig, [0.24, 0.99, 0]); P(armR, G.cyl(0.05, 0.045, 0.4, 8), green, [0.02, -0.12, 0.05], [1.3, 0, -0.5]); P(armR, G.sph(0.045, 8, 6), skin, [-0.04, -0.15, 0.25]);
+    const head = grp(fig, [0, 1.24, 0]);
+    P(head, G.sph(0.115, 16, 12), skin, [0, 0, 0.01], [0, 0, 0], [0.95, 1.05, 1]);
+    P(head, G.sph(0.125, 16, 12), hair, [0, 0.03, -0.03], [0, 0, 0], [1, 1, 1]);
+    P(head, G.cone(0.11, 0.5, 12), hair, [0, -0.22, -0.09], [0.12, 0, 0]);
+    [-1, 1].forEach((sx) => P(head, G.cone(0.03, 0.17, 6), skin, [sx * 0.13, 0.04, -0.01], [0, 0, sx * -1.15]));
+    P(head, G.tor(0.12, 0.01, 6, 24), MAT.std('#d6c06a', 0.3, 0.9), [0, 0.05, 0], [Math.PI / 2 - 0.15, 0, 0]);
+    P(head, G.oct(0.018), MAT.glow('#7dffb0', 2.4), [0, 0.08, 0.118]);
+    P(head, G.sph(0.012, 6, 4), MAT.std('#1a3a2a', 0.5), [-0.04, 0.0, 0.105]); P(head, G.sph(0.012, 6, 4), MAT.std('#1a3a2a', 0.5), [0.04, 0.0, 0.105]);
+    // arco largo en la mano izquierda
+    const L = Math.PI * 0.78, R = 0.66;
+    const bow = grp(fig, [-0.36, 0.85, 0.32], [0, Math.PI / 2, 0.08]);
+    P(bow, G.tor(R, 0.018, 6, 30, L), bowMat, [0, 0, 0], [0, 0, Math.PI - L / 2]);
+    P(bow, G.cyl(0.005, 0.005, 2 * R * Math.sin(L / 2), 4), str, [-R * Math.cos(L / 2), 0, 0]);
+    // carcaj a la espalda
+    const qv = grp(fig, [0.12, 0.88, -0.2], [0.2, 0, -0.4]);
+    P(qv, G.cyl(0.06, 0.05, 0.44, 10), leather);
+    for (let k = 0; k < 5; k++) P(qv, G.cone(0.025, 0.09, 4), MAT.std('#e8e8e0', 0.8), [Math.cos(k * 1.3) * 0.03, 0.27, Math.sin(k * 1.3) * 0.03]);
+    root.userData = { fig, head, weapon: bow, height: 1.58 };
+    return root;
+  }
+
+  /* Vesh, brujo del pacto: túnica raída, piel ceniza, cuernos, ojos verdes, grimorio y llama verde en la mano */
+  /* Thalia, amazona de las Islas del Sol: peto de bronce, falda de tiras, casco con cresta roja, escudo redondo y lanza larga */
+  function amazona(o = {}) {
+    const skin = MAT.std('#c99872', 0.62), bronze = MAT.std('#c9963a', 0.32, 0.85), red = MAT.std('#8a2a20', 0.8), leather = MAT.std('#5a3a24', 0.8), hair = MAT.std('#2a1a10', 0.85), wood = MAT.std('#5a3a22', 0.8);
+    const tip = o.spear ? MAT.std('#fff0c0', 0.2, 1, { emissive: '#ffcc55', emissiveIntensity: 0.7 }) : MAT.std('#d8dce2', 0.25, 0.9);
+    const root = new THREE.Group(), fig = grp(root, [0, 0.12, 0]);
+    [-1, 1].forEach((sx) => {
+      P(fig, G.cyl(0.065, 0.055, 0.44, 8), skin, [sx * 0.1, 0.22, 0]);
+      P(fig, G.cyl(0.072, 0.062, 0.22, 8), bronze, [sx * 0.1, 0.14, 0.015]);
+      P(fig, G.box(0.1, 0.05, 0.19), leather, [sx * 0.1, 0.025, 0.03]);
+    });
+    // falda de tiras de cuero rojo
+    for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2; P(fig, G.box(0.075, 0.2, 0.025), k % 2 ? red : leather, [Math.sin(a) * 0.2, 0.48, Math.cos(a) * 0.2], [0, a, 0]); }
+    P(fig, G.tor(0.2, 0.03, 6, 22), leather, [0, 0.59, 0], [Math.PI / 2, 0, 0]);
+    // peto de bronce
+    P(fig, G.lathe([[0.2, 0.58], [0.24, 0.72], [0.27, 0.9], [0.23, 1.04], [0.12, 1.11]], 20), bronze);
+    P(fig, G.box(0.02, 0.24, 0.02), MAT.std('#7a5a22', 0.4, 0.8), [0, 0.86, 0.262]);
+    [-1, 1].forEach((sx) => P(fig, G.sph(0.11, 12, 8), bronze, [sx * 0.25, 1.02, 0], [0, 0, sx * -0.35], [1, 0.62, 1]));
+    // brazo derecho con la lanza, izquierdo con el escudo
+    const armR = grp(fig, [0.29, 0.99, 0]);
+    P(armR, G.cyl(0.055, 0.05, 0.42, 8), skin, [0.02, -0.15, 0.1], [0.9, 0, -0.15]);
+    P(armR, G.sph(0.05, 8, 6), skin, [0.04, -0.26, 0.28]);
+    const armL = grp(fig, [-0.29, 0.99, 0]);
+    P(armL, G.cyl(0.055, 0.05, 0.42, 8), skin, [-0.04, -0.18, 0.1], [0.7, 0, 0.25]);
+    const head = grp(fig, [0, 1.25, 0]);
+    P(head, G.sph(0.12, 16, 12), skin, [0, 0, 0.01]);
+    P(head, G.cone(0.07, 0.5, 8), hair, [0, -0.2, -0.13], [0.35, 0, 0]);
+    P(head, G.k('helmHalf', [], () => new THREE.SphereGeometry(0.152, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2)), bronze, [0, 0.0, -0.005], [0, 0, 0], [0.88, 0.9, 0.92]);
+    P(head, G.box(0.03, 0.09, 0.05), bronze, [0, -0.03, 0.125]);
+    [-1, 1].forEach((sx) => P(head, G.box(0.025, 0.1, 0.07), bronze, [sx * 0.11, -0.05, 0.07]));
+    P(head, G.tor(0.15, 0.035, 6, 16, Math.PI), red, [0, 0.1, -0.01], [0, Math.PI / 2, 0], [1, 1, 0.5]);
+    P(head, G.sph(0.012, 6, 4), MAT.std('#111', 0.5), [-0.042, 0.0, 0.11]); P(head, G.sph(0.012, 6, 4), MAT.std('#111', 0.5), [0.042, 0.0, 0.11]);
+    // lanza larga
+    const sp = grp(fig, [0.34, 0.1, 0.3], [0.05, 0, -0.06]);
+    P(sp, G.cyl(0.02, 0.024, 1.9, 8), wood, [0, 0.95, 0]);
+    P(sp, G.cone(0.045, 0.22, 6), tip, [0, 2.0, 0]);
+    P(sp, G.cyl(0.03, 0.03, 0.05, 8), bronze, [0, 1.88, 0]);
+    // escudo redondo con un sol
+    const sh = grp(fig, [-0.42, 0.72, 0.14], [0, -0.5, 0]);
+    P(sh, G.cyl(0.3, 0.3, 0.05, 28), bronze, [0, 0, 0], [Math.PI / 2, 0, 0]);
+    P(sh, G.tor(0.29, 0.02, 6, 32), MAT.std('#7a5a22', 0.4, 0.8), [0, 0, 0.026]);
+    P(sh, G.cyl(0.08, 0.08, 0.02, 16), red, [0, 0, 0.032], [Math.PI / 2, 0, 0]);
+    for (let k = 0; k < 8; k++) P(sh, G.box(0.02, 0.09, 0.012), red, [Math.cos(k * Math.PI / 4) * 0.15, Math.sin(k * Math.PI / 4) * 0.15, 0.03], [0, 0, k * Math.PI / 4 - Math.PI / 2]);
+    root.userData = { fig, head, weapon: sp, shield: sh, height: 1.68 };
+    return root;
+  }
+  /* El farol de Isolde: lo lleva al cinto quien encabeza el grupo */
+  function lanternProp(color = '#ffb45a') {
+    const trim = MAT.std('#c7a352', 0.35, 0.9), lan = new THREE.Group();
+    P(lan, G.cyl(0.006, 0.006, 0.16, 4), trim, [0, 0.12, 0]);
+    P(lan, G.cone(0.085, 0.08, 6), trim, [0, 0.02, 0]);
+    for (let k = 0; k < 4; k++) P(lan, G.box(0.012, 0.17, 0.012), trim, [Math.cos(k * Math.PI / 2 + 0.78) * 0.065, -0.11, Math.sin(k * Math.PI / 2 + 0.78) * 0.065]);
+    P(lan, G.cyl(0.07, 0.07, 0.02, 8), trim, [0, -0.2, 0]);
+    const core = P(lan, G.sph(0.045, 10, 8), MAT.glow(color, 3), [0, -0.11, 0], [0, 0, 0], [1, 1.3, 1], false);
+    lan.userData = { core };
+    return lan;
+  }
+
+  function brujo(o = {}) {
+    const robe = MAT.std('#231a2e', 0.9), trim = MAT.std('#5a2f7a', 0.6, 0.3), skin = MAT.std('#8c8996', 0.7), horn = MAT.std('#d6ccbc', 0.55), chain = MAT.std('#5a5660', 0.4, 0.8);
+    const root = new THREE.Group(), fig = grp(root, [0, 0.12, 0]);
+    P(fig, tatter(0.32, 1.08, 7), robe);
+    P(fig, G.tor(0.2, 0.03, 6, 24), trim, [0, 0.66, 0], [Math.PI / 2, 0, 0]);
+    for (let k = 0; k < 3; k++) P(fig, G.tor(0.04, 0.01, 5, 10), chain, [-0.1 + k * 0.1, 0.6 - k * 0.04, 0.2], [0, 0, 0]);
+    P(fig, G.tor(0.13, 0.06, 8, 18), trim, [0, 1.08, 0], [Math.PI / 2, 0, 0]);
+    [-1, 1].forEach((sx) => P(fig, G.cone(0.07, 0.22, 6), trim, [sx * 0.22, 1.08, -0.02], [0, 0, sx * -1.1]));
+    const sleeve = (sx) => { const a = grp(fig, [sx * 0.23, 1.0, 0]); P(a, G.cyl(0.05, 0.11, 0.4, 10), robe, [sx * 0.04, -0.19, 0.08], [0.6, 0, sx * 0.2]); P(a, G.sph(0.042, 8, 6), skin, [sx * 0.09, -0.36, 0.24]); return a; };
     sleeve(-1); sleeve(1);
     const head = grp(fig, [0, 1.24, 0]);
-    P(head, G.sph(0.12, 16, 12), skin, [0, 0, 0.01]);
-    P(head, G.sph(0.13, 16, 12), hair, [0, 0.03, -0.03], [0, 0, 0], [1.02, 0.98, 1]);
-    P(head, G.cone(0.12, 0.42, 12), hair, [0, -0.2, -0.08], [0.15, 0, 0]);
-    P(head, G.tor(0.125, 0.012, 6, 24), silver, [0, 0.05, 0.0], [Math.PI / 2 - 0.2, 0, 0]);
-    P(head, G.oct(0.02), MAT.glow('#ff9ab8', 2.4), [0, 0.08, 0.125]);
-    P(head, G.sph(0.011, 6, 4), MAT.std('#111', 0.5), [-0.042, 0.0, 0.11]); P(head, G.sph(0.011, 6, 4), MAT.std('#111', 0.5), [0.042, 0.0, 0.11]);
-    // cetro con campana
-    const sc = grp(fig, [0.32, 0.2, 0.18], [0.05, 0, -0.06]);
-    P(sc, G.cyl(0.022, 0.026, 1.25, 8), silver, [0, 0.62, 0]);
-    P(sc, G.lathe([[0.0, 0.0], [0.07, 0.02], [0.075, 0.1], [0.045, 0.16], [0.0, 0.17]], 14), MAT.std('#d6b25a', 0.3, 0.95), [0, 1.18, 0], [Math.PI, 0, 0]);
-    P(sc, G.sph(0.03, 8, 6), MAT.glow('#ffe0a0', 2), [0, 1.27, 0], [0, 0, 0], [1, 1, 1], false);
-    // libro de himnos al costado (con el Salterio de plata, brilla)
-    const book = grp(fig, [-0.22, 0.6, 0.14], [0, 0.5, 0.15]);
-    P(book, G.box(0.16, 0.2, 0.06), o.hymnal ? MAT.std('#c9ccd6', 0.2, 1, { emissive: '#ff9ab8', emissiveIntensity: 0.35 }) : MAT.std('#5a1e2c', 0.7));
-    root.userData = { fig, head, weapon: sc, height: 1.55 };
+    P(head, G.sph(0.17, 16, 12), robe, [0, 0.02, -0.03], [0, 0, 0], [1, 1.1, 1.1]);
+    P(head, G.cone(0.11, 0.24, 10), robe, [0, 0.05, -0.18], [-1.9, 0, 0]);
+    P(head, G.sph(0.11, 14, 10), skin, [0, -0.01, 0.06]);
+    P(head, G.sph(0.105, 12, 10), MAT.std('#09070c', 1), [0, -0.01, 0.075], [0, 0, 0], [1, 1, 0.9]);
+    eyes(head, 0.0, 0.17, 0.04, '#9dff7a', 0.02, 3.6);
+    [-1, 1].forEach((sx) => { const hn = grp(head, [sx * 0.1, 0.16, 0.0], [-0.5, 0, sx * -0.5]); P(hn, G.cone(0.035, 0.22, 8), horn, [0, 0.1, 0]); P(hn, G.cone(0.02, 0.12, 6), horn, [0, 0.24, -0.04], [-0.6, 0, 0]); });
+    // grimorio en la izquierda y llama verde en la derecha
+    const book = grp(fig, [-0.3, 0.68, 0.24], [0.3, 0.5, 0.1]);
+    P(book, G.box(0.17, 0.22, 0.06), o.grimoire ? MAT.std('#3a2a4a', 0.4, 0.4, { emissive: '#9dff7a', emissiveIntensity: 0.45 }) : MAT.std('#3a1f2a', 0.7));
+    P(book, G.oct(0.03), MAT.glow('#9dff7a', 2), [0, 0, 0.035], [0, 0, 0], [1, 1, 0.3], false);
+    const orbs = grp(fig, [0.32, 0.78, 0.26]);
+    P(orbs, G.sph(0.06, 10, 8), MAT.glow('#9dff7a', 2.6), [0, 0, 0], [0, 0, 0], [1, 1.3, 1], false);
+    for (let k = 0; k < 3; k++) P(orbs, G.sph(0.018, 6, 4), MAT.glow('#d0ffa0', 3), [Math.cos(k * 2.1) * 0.1, 0.04, Math.sin(k * 2.1) * 0.1], [0, 0, 0], [1, 1, 1], false);
+    root.userData = { fig, head, weapon: orbs, orbs, height: 1.6 };
     return root;
   }
 
@@ -879,7 +976,7 @@ const MODELS = (() => {
   }
 
   const builders = {
-    aldric, sera, elian, brunna, nyra, skeleton, ghoul, cultist, orc, wraith, golem, malakor, ignis, aethelgard, isolde,
+    aldric, barbaro, enano, cazadora, hechicero, amazona, brujo, skeleton, ghoul, cultist, orc, wraith, golem, malakor, ignis, aethelgard, isolde,
     thrain: dwarfGhost, tomas: humanGhost,
     archer: (o) => skeleton(Object.assign({ bow: true }, o)),
     goblin: (o) => orc(Object.assign({ scale: 0.72, skin: '#6a7a2a', spear: true, helm: false, eye: '#ffd23a' }, o)),
@@ -887,7 +984,7 @@ const MODELS = (() => {
     berserker: (o) => orc(Object.assign({ berserk: true, skin: '#56702e' }, o)),
     acolyte: (o) => cultist(o),
     voidAcolyte: (o) => cultist(Object.assign({ color: '#2c1748', color2: '#0c0614', eye: '#c08bff' }, o)),
-    reflection: () => mirrorOf(U.pick(['aldric', 'sera', 'elian'])),
+    reflection: () => mirrorOf(U.pick(['barbaro', 'enano', 'cazadora', 'hechicero', 'amazona'])),
   };
   /* Fusiona las piezas estáticas de cada figura por material (menos llamadas de dibujo) */
   function mergeGeos(list) {
@@ -930,5 +1027,5 @@ const MODELS = (() => {
     if (kind !== 'reflection') mergeStatic(m);
     return m;
   }
-  return { build, base, door, chest, pillar, sconce, merged, banner, chains, skullShelf, weaponRack, pipes, wallCrystals, runePanel, lightShaft, sarcophagus, anvil, brazier, crystals, mirror, bones, rubble, crate, altar, lectern, stairs, candles, campfire, bedroll, mirrorOf };
+  return { build, base, door, chest, pillar, sconce, lanternProp, merged, banner, chains, skullShelf, weaponRack, pipes, wallCrystals, runePanel, lightShaft, sarcophagus, anvil, brazier, crystals, mirror, bones, rubble, crate, altar, lectern, stairs, candles, campfire, bedroll, mirrorOf };
 })();

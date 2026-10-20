@@ -3,70 +3,69 @@
    ========================================================================== */
 const DIRS4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const DIRS8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-const HERO_IDS = ['aldric', 'sera', 'elian'];
+const HERO_IDS = HERO_ROSTER;
+const DEFAULT_PARTY = ['barbaro', 'elfa', 'hechicero'];
+const SAVE_KEY = 'umbral.save.v3', DESCENT_KEY = 'umbral.descent.v2';
 
 const GAME = {
   state: 'title', chIdx: 0, ch: null, L: null,
   heroes: [], enemies: [], npcs: [],
   round: 0, phase: 'idle', active: null, busy: 0, mode: null, pending: null,
   gold: 60, items: { potion: 2, elixir: 0, bomb: 1 }, gear: {}, stash: [], flags: {}, difficulty: 'heroe', D: DIFFICULTY.heroe,
-  party: ['aldric', 'sera', 'elian'], talents: { aldric: [], sera: [], elian: [] }, build: null,
+  party: DEFAULT_PARTY.slice(), talents: {}, build: {},
   stats: null, boss: null, eruptions: [], uid: 0, doom: 0, undo: null,
 
   newStats() { return { kills: 0, rounds: 0, gold: 0, dealt: 0, taken: 0, chests: 0, notes: 0, falls: 0, checks: 0, checksOk: 0, start: Date.now() }; },
 
   /* ------------------------------------------------------------ partida */
   setDifficulty(d) { this.difficulty = DIFFICULTY[d] ? d : 'heroe'; this.D = DIFFICULTY[this.difficulty]; window.GAME_DIFF = this.difficulty; },
+  /* Un grupo válido: de 1 a 5 héroes distintos del plantel */
+  validParty(p) { const ok = Array.isArray(p) ? p.filter((id, i) => HERO_DEFS[id] && p.indexOf(id) === i).slice(0, 5) : []; return ok.length ? ok : DEFAULT_PARTY.slice(); },
   newGame(difficulty, build, party) {
-    this.setDifficulty(difficulty); this.descent = null; this.players = [{ name: 'Jugador 1' }]; this.owner = {}; this.curPlayer = -1;
-    this.party = party && party.length === 3 ? party.slice() : HERO_IDS.slice();
-    this.gold = 60; this.items = { potion: this.D.potions, elixir: 0, bomb: 1 }; this.flags = {};
-    this.gear = {}; this.stash = []; this.talents = {};
-    this.party.forEach((id) => { this.gear[id] = []; this.talents[id] = []; });
-    this.build = build || null;
+    this.setDifficulty(difficulty); this.descent = null;
+    this.party = this.validParty(party);
+    this.gold = 60; this.items = { potion: this.D.potions + PARTY_SCALE.of(this.party.length, 'potions'), elixir: 0, bomb: 1 }; this.flags = {};
+    this.gear = {}; this.stash = []; this.talents = {}; this.build = {};
+    HERO_ROSTER.forEach((id) => { this.gear[id] = []; this.talents[id] = []; });
     this.stats = this.newStats();
   },
   snapshot(stage) {
-    return { v: 2, stage, chIdx: this.chIdx, gold: this.gold, items: Object.assign({}, this.items), party: this.party.slice(), gear: JSON.parse(JSON.stringify(this.gear || {})), stash: (this.stash || []).slice(), flags: JSON.parse(JSON.stringify(this.flags)), difficulty: this.difficulty, stats: Object.assign({}, this.stats), talents: JSON.parse(JSON.stringify(this.talents)), build: this.build ? JSON.parse(JSON.stringify(this.build)) : null, descent: this.descent ? JSON.parse(JSON.stringify(this.descent)) : null, players: (this.players || []).map((p) => ({ name: p.name })), owner: Object.assign({}, this.owner || {}) };
+    return { v: 3, stage, chIdx: this.chIdx, gold: this.gold, items: Object.assign({}, this.items), party: this.party.slice(), gear: JSON.parse(JSON.stringify(this.gear || {})), stash: (this.stash || []).slice(), flags: JSON.parse(JSON.stringify(this.flags)), difficulty: this.difficulty, stats: Object.assign({}, this.stats), talents: JSON.parse(JSON.stringify(this.talents)), build: JSON.parse(JSON.stringify(this.build || {})), descent: this.descent ? JSON.parse(JSON.stringify(this.descent)) : null };
   },
   restore(s) {
     this.chIdx = s.chIdx; this.gold = s.gold; this.items = Object.assign({}, s.items);
     this.flags = Object.assign({}, s.flags); this.setDifficulty(s.difficulty); this.stats = Object.assign(this.newStats(), s.stats || {});
-    this.party = s.party && s.party.length === 3 ? s.party.slice() : HERO_IDS.slice();
+    this.party = this.validParty(s.party);
     this.talents = {}; this.gear = {};
-    this.party.forEach((id) => { this.talents[id] = ((s.talents || {})[id] || []).slice(); this.gear[id] = ((s.gear || {})[id] || []).slice(); });
-    this.stash = (s.stash || []).slice(); this.build = s.build ? JSON.parse(JSON.stringify(s.build)) : null;
+    HERO_ROSTER.forEach((id) => { this.talents[id] = ((s.talents || {})[id] || []).slice(); this.gear[id] = ((s.gear || {})[id] || []).slice(); });
+    this.stash = (s.stash || []).slice(); this.build = s.build ? JSON.parse(JSON.stringify(s.build)) : {};
     this.descent = s.descent ? JSON.parse(JSON.stringify(s.descent)) : null;
-    this.setPlayers(s.players, s.owner);
-    // partidas guardadas antes del equipo con requisitos: las reliquias pasan a su héroe y las ganzúas a Sera
-    if (!s.gear) {
-      GEAR.forEach((it) => { if (s.upgrades && s.upgrades[it.id] && it.hero && this.gear[it.hero]) this.gear[it.hero].push(it.id); });
-      if (s.kit) { if (this.gear.sera && !this.gearOf('sera').some((g) => g.slot === 'extra')) this.gear.sera.push('kit'); else this.stash.push('kit'); }
-    }
   },
   save(stage) { const s = this.snapshot(stage); this.checkpoint = s; U.store.set(this.saveKey(), s); },
 
-  /* ------------------------------------------------------------ virtudes y héroes */
-  baseVirt(id) { return Object.assign({}, HERO_DEFS[id].virt, (this.build && this.build[id]) || {}); },
-  virtOf(id) {
-    const v = this.baseVirt(id);
-    (this.talents[id] || []).forEach((tid) => { const t = this.talentDef(id, tid); if (t && t.virt) Object.entries(t.virt).forEach(([k, n]) => (v[k] = Math.min(VMAX, v[k] + n))); });
-    return v;
+  /* ------------------------------------------------------------ héroes: vida, ataque, defensa y movimiento */
+
+  talentDef(id, tid) { for (const tier of TALENTS[id] || []) for (const t of tier) if (t.id === tid) return t; return null; },
+  /* Lo que suman equipo, talentos y mejoras del Descenso a un número */
+  modOf(id, key) {
+    let n = 0;
+    const add = (m) => { if (!m) return; const v = m[key]; if (v === true) n = Math.max(n, 1); else if (key === 'range' && v) n = Math.max(n, v); else if (v) n += v; };
+    this.gearOf(id).forEach((it) => add(it.mods));
+    (this.talents[id] || []).forEach((tid) => { const t = this.talentDef(id, tid); if (t) add(t.mods); });
+    add(this.build && this.build[id]);
+    return n;
   },
-  talentDef(id, tid) { for (const tier of TALENTS[id]) for (const t of tier) if (t.id === tid) return t; return null; },
-  /* Estadísticas derivadas de las virtudes: cada número de la ficha sale de aquí */
-  derive(id, v) {
-    const d = HERO_DEFS[id], f = this.flags, tal = this.talents[id] || [], D = this.D, g = (k) => this.gearMod(id, k);
+  /* Los números del héroe: base + equipo + talentos + dificultad */
+  derive(id, size = this.party.length) {
+    const d = HERO_DEFS[id], S = d.stats, D = this.D, m = (k) => this.modOf(id, k), f = this.flags;
     const out = {
-      hp: 3 + v.FUE + d.vigor + D.heroHp + g('hp'),
-      mv: Math.max(2, 3 + v.AGI + g('mv')),
-      atk: d.weapon.base + VBONUS(v[d.weapon.attr]) + g('atk') + (d.weapon.ranged ? 0 : g('melee')) + (id === 'sera' && f.tomasDagger ? 1 : 0),
-      def: d.armor.base + VBONUS(v.AGI) + g('def'),
-      det: v.VOL + D.det + g('det') + (f.detAllCh === this.chIdx ? 1 : 0),
-      range: Math.max(g('range'), d.weapon.range + (id === 'elian' && tal.includes('fuente') ? 1 : 0)),
-      eter: id === 'elian' ? v.ING + (f.eterBonus || 0) + (tal.includes('fuente') ? 2 : 0) + g('eter') : 0
+      hp: S.hp + D.heroHp + m('hp') + (f.vigorCh === this.chIdx ? 2 : 0) + PARTY_SCALE.of(size, 'hp'),
+      mv: Math.max(2, S.mv + m('mv')),
+      def: Math.max(1, S.def + m('def') + PARTY_SCALE.of(size, 'def')),
+      atk: S.atk + m('atk') + (d.ranged ? m('shoot') + (d.magic ? m('spell') : 0) : m('melee')) + PARTY_SCALE.of(size, 'atk'),
+      range: Math.max(S.range || 1, m('range'))
     };
-    out.melee = d.melee ? d.melee.base + VBONUS(v[d.melee.attr]) + g('melee') : out.atk;
+    out.melee = d.ranged ? (S.melee || 1) + m('melee') + PARTY_SCALE.of(size, 'atk') : out.atk;
     return out;
   },
   /* ------------------------------------------------------------ equipo con requisitos */
@@ -74,24 +73,18 @@ const GAME = {
   gearOf(id) { return ((this.gear && this.gear[id]) || []).map((k) => this.gearDef(k)).filter(Boolean); },
   gearMod(id, key) { let n = 0; this.gearOf(id).forEach((it) => { const v = it.mods && it.mods[key]; if (v === true) n = Math.max(n, 1); else if (key === 'range' && v) n = Math.max(n, v); else if (v) n += v; }); return n; },
   hasGear(id, itemId) { return !!(this.gear && this.gear[id] && this.gear[id].includes(itemId)); },
-  ownerOf(itemId) { return this.party.find((id) => this.hasGear(id, itemId)) || (this.stash.includes(itemId) ? 'stash' : null); },
+  ownerOf(itemId) { return HERO_ROSTER.find((id) => this.hasGear(id, itemId)) || (this.stash.includes(itemId) ? 'stash' : null); },
   /* ¿Puede llevarlo? Devuelve el motivo si no */
   gearBlock(id, it) {
-    if (it.hero && it.hero !== id) return `Solo ${HERO_DEFS[it.hero].name}`;
-    const v = this.virtOf(id);
-    const miss = Object.entries(it.req || {}).filter(([k, n]) => v[k] < n);
-    return miss.length ? `${HERO_DEFS[id].name} necesita ${miss.map(([k, n]) => `${VIRTUES[k].name} ${n}`).join(' y ')}` : null;
+    if (it.who && !it.who.includes(id)) return `${HERO_DEFS[id].role}: no puede llevarlo`;
+    return null;
   },
-  gearDiscount() {
-    const best = Math.max(...this.party.map((id) => this.virtOf(id).PRE));
-    const sig = this.party.some((id) => this.gearMod(id, 'haggle')) ? 0.05 : 0;
-    return Math.max(0, best - 2) * 0.05 + sig;
-  },
+  gearDiscount() { return this.party.some((id) => this.modOf(id, 'haggle')) ? 0.1 : 0; },
   gearPrice(it) { return Math.round(it.cost * (1 - this.gearDiscount())); },
   /* Pone el objeto a un héroe; lo que llevaba en ese hueco vuelve al arcón */
   equip(itemId, id) {
     const it = this.gearDef(itemId); if (!it || this.gearBlock(id, it)) return false;
-    this.party.forEach((h) => { if (this.gear[h]) this.gear[h] = this.gear[h].filter((k) => k !== itemId); });
+    HERO_ROSTER.forEach((h) => { if (this.gear[h]) this.gear[h] = this.gear[h].filter((k) => k !== itemId); });
     this.stash = this.stash.filter((k) => k !== itemId);
     const prev = this.gearOf(id).find((g) => g.slot === it.slot);
     if (prev) { this.gear[id] = this.gear[id].filter((k) => k !== prev.id); this.stash.push(prev.id); }
@@ -100,59 +93,55 @@ const GAME = {
   },
   /* Si un héroe ya no cumple los requisitos de algo que lleva, vuelve al arcón */
   checkGear() {
-    this.party.forEach((id) => { (this.gear[id] || []).slice().forEach((k) => { const it = this.gearDef(k); if (!it || this.gearBlock(id, it)) { this.gear[id] = this.gear[id].filter((q) => q !== k); if (it) this.stash.push(k); } }); });
+    HERO_ROSTER.forEach((id) => { (this.gear[id] || []).slice().forEach((k) => { const it = this.gearDef(k); if (!it || this.gearBlock(id, it)) { this.gear[id] = this.gear[id].filter((q) => q !== k); if (it) this.stash.push(k); } }); });
   },
   buyGear(itemId, id) {
     const it = this.gearDef(itemId); if (!it || this.ownerOf(itemId)) return false;
     const price = this.gearPrice(it); if (this.gold < price || this.gearBlock(id, it)) return false;
     this.gold -= price; this.equip(itemId, id); return true;
   },
-  rallyDice(h) { return h.virt.PRE + (RULES.perk(h, 'PRE') ? 1 : 0) + this.gearMod(h.id, 'rally') + (h.id === 'nyra' ? 1 : 0); },
+
   makeHero(id) {
-    const d = HERO_DEFS[id], v = this.virtOf(id), s = this.derive(id, v), tal = this.talents[id] || [];
+    const d = HERO_DEFS[id], s = this.derive(id), tal = this.talents[id] || [];
     const h = {
       id, side: 'hero', kind: id, name: d.name, full: d.full, role: d.role, model: d.model, color: d.color,
-      virt: v, tal: new Set(tal), hp: s.hp, maxHp: s.hp, atk: s.atk, meleeAtk: s.melee, def: s.def, mv: s.mv, range: s.range,
-      ranged: !!d.weapon.ranged || !!this.gearMod(id, 'ranged'), dtype: d.weapon.dtype,
-      magic: id === 'elian' || !!this.gearMod(id, 'magic'),
-      det: s.det, detMax: s.det, eter: s.eter, eterMax: s.eter, wounds: 0,
-      skills: d.skills.map((sk) => Object.assign({}, sk, { cd: 0 })), basic: d.basic,
+      tal: new Set(tal), traits: d.traits || {}, hp: s.hp, maxHp: s.hp, atk: s.atk, meleeAtk: s.melee, def: s.def, mv: s.mv, range: s.range,
+      ranged: !!d.ranged, dtype: d.dtype || 'phys', proj: d.proj, magic: !!d.magic || !!this.modOf(id, 'magic'),
+      wounds: 0, skills: d.skills.map((sk) => Object.assign({}, sk, { cd: 0 })), basic: d.basic,
       mvLeft: 0, actions: 0, ended: false, ko: false, alive: true, status: {}, potionUsed: false, modelOpts: {}
     };
     this.gearOf(id).forEach((it) => { if (it.look) h.modelOpts[it.look] = true; });
-    if (tal.includes('mandato')) { const c = h.skills.find((q) => q.id === 'command'); if (c) c.range = 5; }
-    if (id === 'sera' && this.flags.seraCutCh === this.chIdx) h.hp = Math.max(1, h.hp - 1);
     return h;
   },
   skillInfo(h, s) {
-    const v = h.virt, t = h.tal, spell = this.gearMod(h.id, 'spell');
+    const t = h.tal, spell = this.modOf(h.id, 'spell');
     switch (s.id) {
-      case 'wall': return { text: '+2 dados de defensa para Aldric y +1 para los aliados adyacentes hasta su próximo turno. Los enemigos cercanos irán a por él.' };
-      case 'smite': return { dice: h.meleeAtk + 2, text: `Golpe sagrado: ${h.meleeAtk + 2} dados de daño radiante (los no muertos tiran 1 dado más en contra).` };
-      case 'throw': { const n = 2 + VBONUS(v.AGI) + (this.hasGear(h.id, 'fangs') ? 1 : 0); return { dice: n, text: `Lanza una daga a 4 casillas: ${n} dados (Agilidad) que ignoran 1 escudo.` }; }
-      case 'step': return { cd: t.has('piesSombra') ? 2 : 3, text: `Reaparece a hasta 4 casillas, atravesando enemigos. No gasta la acción${t.has('piesSombra') ? ' ni el movimiento' : ', pero sí el movimiento restante'}.` };
-      case 'starfire': { const n = 2 + VBONUS(v.ING) + spell, sp = t.has('cadena') ? 3 : 2; return { dice: n, splash: sp, cost: 3, text: `${n} dados de fuego al objetivo (Ingenio) y ${sp} a cada enemigo junto a él. Cuesta 3 de Éter.` }; }
-      case 'dawn': { const n = 1 + VBONUS(v.ING) + spell, c = t.has('manoAlba') ? 1 : 2; return { heal: n, cost: c, text: `Cura ${n} PV (Ingenio) a un aliado a 4 casillas o lo levanta si ha caído.${t.has('manoAlba') ? ' Cura 2 PV al aliado más herido junto a él.' : ''} Cuesta ${c} de Éter.` }; }
-      case 'quake': { const r = t.has('terremoto') ? 2 : 1; return { dice: h.meleeAtk, radius: r, text: `Martillazo de ${h.meleeAtk} dados que ignora 1 escudo. Los demás enemigos a ${r} casilla${r > 1 ? 's' : ''} de Brunna superan una prueba de Fuerza (media) o quedan Aturdidos.` }; }
-      case 'anvil': { const k = t.has('forjada') ? 3 : 2; return { absorb: k, text: `Hasta su próximo turno, el primer golpe que reciba le hace ${k} de daño menos, y los enemigos cercanos irán a por ella.` }; }
-      case 'hymn': { const r = 2 + (t.has('coro') ? 1 : 0) + this.gearMod(h.id, 'hymn'), heal = t.has('salmo') ? 2 : 1; return { radius: r, heal, text: `Nyra y los aliados a ${r} casillas quedan Inspirados (+1 dado), pierden el miedo y recuperan ${heal} PV.` }; }
-      case 'command': { const dif = Math.max(1, v.PRE - 3) + (t.has('mandato') ? 1 : 0); return { dif, text: `El enemigo supera una prueba de Voluntad de dificultad ${RULES.difName(dif)} o huye 2 turnos (si no conoce el miedo, queda Aturdido). No afecta a los guardianes.` }; }
+      case 'torbellino': return { dice: h.atk, text: `Golpea a todos los enemigos que tenga al lado: ${h.atk} dados a cada uno.` };
+      case 'grito': return { radius: 2, heal: 2, text: 'Los enemigos a 2 casillas quedan aterrados 2 turnos (−1 dado de ataque) y Korvak recupera 2 PV. Los guardianes no se asustan.' };
+      case 'sismico': { const r = t.has('terremoto') ? 2 : 1; return { dice: h.meleeAtk, radius: r, text: `Martillazo de ${h.meleeAtk} dados que ignora 1 escudo. Los enemigos a ${r} casilla${r > 1 ? 's' : ''} de Borin quedan aturdidos y pierden su turno (los guardianes no).` }; }
+      case 'muralla': return { text: `+2 dados de defensa hasta su próximo turno y los enemigos cercanos irán a por él.${t.has('murallaHierro') ? ' Los aliados de al lado, +1.' : ''}` };
+      case 'lluvia': { const n = (t.has('tormenta') ? 3 : 2) + this.modOf(h.id, 'shoot'); return { dice: n, text: `${n} dados a cada enemigo de una zona de 3×3, a hasta 6 casillas. No daña a los aliados.` }; }
+      case 'salto': return { text: `Salta a una casilla libre a 5 casillas, por encima de enemigos y obstáculos. No gasta la acción.${t.has('viento') ? ' Queda Inspirada.' : ''}` };
+      case 'bola': { const n = (t.has('meteoro') ? 4 : 3) + spell, sp = (t.has('meteoro') ? 3 : 2) + spell; return { dice: n, splash: sp, text: `${n} dados de fuego al objetivo y ${sp} a cada enemigo junto a él.${t.has('llama') ? ' Deja ardiendo a quien hiere.' : ''}` }; }
+      case 'luz': { const n = 3 + spell + (t.has('aurora') ? 1 : 0); return { heal: n, text: `Cura ${n} PV a un aliado a 4 casillas (o a sí mismo) o levanta a un caído.${t.has('aurora') ? ' También cura 2 PV a los aliados junto al objetivo.' : ''}` }; }
+      case 'carga': { const n = h.atk + (t.has('imparable') ? 2 : 1); return { dice: n, text: `Corre hasta un enemigo a 5 casillas sin gastar movimiento y le golpea con ${n} dados.` }; }
+      case 'tribu': return { radius: 3, text: `Ella y sus aliados a 3 casillas: +1 dado en su próximo ataque y +2 de movimiento este turno.${t.has('cancion') ? ' Además recuperan 2 PV.' : ''}` };
     }
     return { text: '' };
   },
-  skillCd(h, s) { if (s.id === 'step' && h.tal.has('piesSombra')) return 2; return HERO_DEFS[h.id].skills.find((q) => q.id === s.id).cd || 0; },
-
+  skillCd(h, s) { if (s.id === 'torbellino' && h.tal.has('torbellinoVeloz')) return 2; if (s.id === 'salto' && h.tal.has('viento')) return 2; return (HERO_DEFS[h.id].skills.find((q) => q.id === s.id) || s).cd || 0; },
   makeEnemy(type, x, y, o = {}) {
     const T = ENEMY_TYPES[type], D = this.D;
     const e = { id: 'e' + (++this.uid), side: 'enemy', kind: type, name: T.name, model: T.model, hp: T.hp, maxHp: T.hp, atk: T.atk, def: T.def, mv: T.mv, range: T.range || 1, ranged: !!T.ranged, proj: T.proj,
-      boss: !!T.boss, undead: !!T.undead, flies: !!T.flies, gold: T.gold, x, y, alive: true, active: false, status: {}, T, virt: Object.assign({}, T.virt), role: T.role, dtype: 'phys', magic: true };
+      boss: !!T.boss, undead: !!T.undead, flies: !!T.flies, gold: T.gold, x, y, alive: true, active: false, status: {}, T, role: T.role, dtype: 'phys', magic: true };
     const S = (this.ch && this.ch.scale) || null;
-    if (e.boss) { e.hp += D.bossHp + (S ? S.bossHp : 0); e.atk += D.bossAtk; }
+    let iq = T.iq || 2;
+    if (e.boss) { e.hp += D.bossHp + (S ? S.bossHp : 0); e.atk += D.bossAtk; e.hp = Math.round(e.hp * PARTY_SCALE.of(this.party.length, 'boss')); }
     else if (type !== 'risen') { e.hp += D.enemyHp + (S ? S.hp : 0); e.atk = Math.max(1, e.atk + D.enemyAtk + (S ? S.atk : 0)); }
-    if (o.champion) { e.champion = true; e.hp += 1; e.atk += 1; e.gold *= 2; e.name = 'Campeón · ' + e.name; e.virt.ING = Math.min(5, e.virt.ING + 1); }
+    if (o.champion) { e.champion = true; e.hp += 1; e.atk += 1; e.gold *= 2; e.name = 'Campeón · ' + e.name; iq += 1; }
     if (type === 'ignis' && this.flags.ignisWeak) e.def = Math.max(1, e.def - 1);
     e.maxHp = e.hp = Math.max(1, e.hp);
-    e.iq = U.clamp(e.virt.ING + D.iq, 1, 5);
+    e.iq = U.clamp(iq + D.iq, 1, 5);
     return e;
   },
   iqLabel(e) { return e.iq <= 2 ? 'Bestial' : e.iq === 3 ? 'Táctico' : 'Astuto'; },
@@ -178,20 +167,9 @@ const GAME = {
     return true;
   },
   /* ¿Quién puede reaccionar con un ataque de oportunidad contra «u»? */
-  reactorsFor(u) {
-    return this.foesOf(u).filter((r) => this.canReact(r));
-  },
-  canReact(r) {
-    if (!this.up(r) || (r.side === 'enemy' && !r.active)) return false;
-    if (r.status.huyendo || r.status.aturdido) return false;
-    return r.reactRound !== this.round;
-  },
-  slippery(u) { return !!(u.virt && u.virt.AGI >= PERK_AT); },
-  provokes(mover, r, ax, ay, bx, by) {
-    if (!this.meleeOK(r.x, r.y, ax, ay) || this.meleeOK(r.x, r.y, bx, by)) return false;
-    if (this.slippery(mover) && !(r.tal && r.tal.has('centinela'))) return false;
-    return true;
-  },
+  reactorsFor() { return []; },
+
+  provokes() { return false; },
   reach(u, maxSteps, opts = {}) {
     const dist = new Map(), prev = new Map(), stand = new Set(), prov = new Map();
     const reactors = opts.ignoreUnits || opts.noProv ? [] : this.reactorsFor(u);
@@ -291,12 +269,17 @@ const GAME = {
       UI.buildParty();
       this.enemies = []; this.npcs = []; this.boss = null; this.eruptions = []; this.round = 0; this.mode = null; this.pending = null;
       this.doom = 0; this.wanderers = 0; this.pendingWanderer = false; this.undo = null; this.brokenGroups = {}; this.willFail = []; this.lightsMode = 'on';
-      this.summonsLeft = this.D.summons;
-      this.heroes.forEach((h, i) => { const s = this.L.starts[String(i + 1)] || this.L.starts['1']; h.x = s.x; h.y = s.y; WORLD.addUnit(h, { face: Math.PI }); });
+      this.summonsLeft = Math.max(1, Math.round(this.D.summons * PARTY_SCALE.of(this.party.length, 'foes')));
+      this.heroes.forEach((h, i) => {
+        let s = this.L.starts[String(i + 1)];
+        if (!s || this.heroes.some((o) => o !== h && o.x === s.x && o.y === s.y)) s = this.spareStart(h);
+        h.x = s.x; h.y = s.y; WORLD.addUnit(h, { face: Math.PI });
+      });
+      if (!R && this.flags.sharpCh === idx) this.heroes.forEach((h) => (h.status.inspirado = 9));
       this.updateLantern();
       if (R) { await this.applyRun(R); this.busy = 0; this.beginHeroPhase(true); return; }
       let nCh = 0;
-      this.L.enemies.forEach((p) => {
+      this.scaledSpawns(this.L.enemies).forEach((p) => {
         const type = ch.legend[p.key]; if (!type) return;
         nCh++;
         const champ = (this.D.champions && nCh % this.D.champions === 0) || (ch.champChance && Math.random() < ch.champChance);
@@ -306,7 +289,7 @@ const GAME = {
       if (this.L.boss) { const b = this.makeEnemy(ch.bossType, this.L.boss.x, this.L.boss.y); this.enemies.push(b); WORLD.addUnit(b, { face: 0 }); b.mesh.visible = false; }
       // cerraduras y sellos
       this.L.doors.forEach((d) => { d.lock = (ch.locks && ch.locks[U.key(d.x, d.y)]) || null; if (d.lock) WORLD.addLock(d); });
-      // trampas señaladas por Sera en la velada
+      // trampas señaladas en la velada
       if (this.flags.trapsKnownCh === idx) this.L.traps.forEach((t) => (t.revealed = true));
       const startRoom = this.roomOf(this.heroes[0]);
       const sp = this.L.starts['1'];
@@ -321,10 +304,41 @@ const GAME = {
       startRoom.visited = true;
       UI.refresh();
       await this.run(ch.intro, { room: startRoom });
-      if (this.flags.trapsKnownCh === idx) UI.log('Las marcas de tiza de Sera señalan las trampas de este nivel.', 'good');
+      if (this.flags.trapsKnownCh === idx) UI.log('Las marcas de tiza de la exploración señalan las trampas de este nivel.', 'good');
     } catch (e) { console.error(e); }
     this.busy = 0;
     await this.startRound();
+  },
+  /* Más o menos criaturas según cuántos héroes bajan (los mapas están pensados para 3) */
+  scaledSpawns(list) {
+    const f = PARTY_SCALE.of(this.party.length, 'foes') * (this.D.foes || 1);
+    if (Math.abs(f - 1) < 0.01) return list;
+    const byRoom = new Map();
+    list.forEach((p) => { const r = this.T(p.x, p.y).room; if (!byRoom.has(r)) byRoom.set(r, []); byRoom.get(r).push(p); });
+    const out = [], used = new Set(list.map((p) => U.key(p.x, p.y)));
+    Object.values(this.L.starts).forEach((s) => used.add(U.key(s.x, s.y)));
+    byRoom.forEach((g) => {
+      if (f < 1) { const keep = Math.max(g.length >= 2 ? 1 : 0, Math.round(g.length * f)); g.slice(0, keep).forEach((p) => out.push(p)); return; }
+      g.forEach((p) => out.push(p));
+      let extra = Math.round(g.length * (f - 1));
+      for (let i = 0; i < g.length && extra > 0; i++) {
+        const p = g[i];
+        for (const [dx, dy] of DIRS8) {
+          const x = p.x + dx, y = p.y + dy, t = this.T(x, y);
+          if (!t || !t.floor || t.block || t.hazard || t.trap || t.room !== this.T(p.x, p.y).room || used.has(U.key(x, y)) || 'XC?*'.includes(t.ch)) continue;
+          used.add(U.key(x, y)); out.push({ key: p.key, x, y }); extra--; break;
+        }
+      }
+    });
+    return out;
+  },
+  /* Casilla libre en la sala de entrada para el 4.º y 5.º héroe */
+  spareStart(h) {
+    const s1 = this.L.starts['1'], room = this.T(s1.x, s1.y).room;
+    const taken = (x, y) => this.heroes.some((o) => o !== h && o.x === x && o.y === y) || this.L.enemies.some((e) => e.x === x && e.y === y);
+    const free = this.L.rooms[room].tiles.filter((t) => !t.block && !t.hazard && !t.trap && !taken(t.x, t.y));
+    free.sort((a, b) => U.cheb(a.x, a.y, s1.x, s1.y) - U.cheb(b.x, b.y, s1.x, s1.y));
+    return free[0] || s1;
   },
   /* ------------------------------------------------------------ partida en curso: se guarda al empezar cada ronda */
   runState() {
@@ -334,8 +348,8 @@ const GAME = {
       v: 1, round: this.round, doom: this.doom, wanderers: this.wanderers || 0, pendingWanderer: !!this.pendingWanderer, summonsLeft: this.summonsLeft, uid: this.uid,
       brokenGroups: J(this.brokenGroups || {}), willFail: (this.willFail || []).map((h) => h.id), eruptions: (this.eruptions || []).map((t) => ({ x: t.x, y: t.y })),
       objective: UI.$('q-obj').textContent, lights: this.lightsMode || 'on', bossBar: !!(UI.bossU && UI.bossU.alive), boss: this.boss && this.boss.alive ? this.boss.id : null,
-      heroes: this.heroes.map((h) => Object.assign(pick(h, ['id', 'x', 'y', 'hp', 'maxHp', 'atk', 'meleeAtk', 'def', 'mv', 'range', 'det', 'detMax', 'eter', 'eterMax', 'wounds', 'ko', 'status', 'mvLeft', 'actions', 'ended', 'martirUsed', 'potionUsed']), { cds: h.skills.map((q) => q.cd), rot: h.mesh ? h.mesh.rotation.y : 0 })),
-      enemies: this.enemies.filter((e) => e.alive).map((e) => Object.assign(pick(e, ['id', 'kind', 'name', 'x', 'y', 'hp', 'maxHp', 'atk', 'def', 'mv', 'range', 'gold', 'iq', 'virt', 'status', 'active', 'group', 'champion', 'summoned', 'wanderer', 'phase2', 'doubted', 'boss']), { rot: e.mesh ? e.mesh.rotation.y : 0 })),
+      heroes: this.heroes.map((h) => Object.assign(pick(h, ['id', 'x', 'y', 'hp', 'maxHp', 'atk', 'meleeAtk', 'def', 'mv', 'range', 'wounds', 'ko', 'status', 'mvLeft', 'actions', 'ended', 'indomUsed', 'potionUsed']), { cds: h.skills.map((q) => q.cd), rot: h.mesh ? h.mesh.rotation.y : 0 })),
+      enemies: this.enemies.filter((e) => e.alive).map((e) => Object.assign(pick(e, ['id', 'kind', 'name', 'x', 'y', 'hp', 'maxHp', 'atk', 'def', 'mv', 'range', 'gold', 'iq', 'status', 'active', 'group', 'champion', 'summoned', 'wanderer', 'phase2', 'doubted', 'boss']), { rot: e.mesh ? e.mesh.rotation.y : 0 })),
       npcs: this.npcs.map((n) => ({ kind: n.kind, x: n.x, y: n.y })),
       doors: L.doors.map((d) => ({ open: !!d.open, lock: d.lock || null, swing: d.swing || 1 })),
       rooms: L.rooms.map((r) => (r.revealed ? 1 : 0) | (r.visited ? 2 : 0) | (r.searched ? 4 : 0)),
@@ -411,20 +425,29 @@ const GAME = {
   },
   /* Tutorial guiado: sala de prácticas con reglas de Relato; no toca la partida guardada */
   async startTutorial() {
-    this.newGame('relato');
+    this.newGame('relato', null, TUTORIAL.party);
     TUTOR.prepare();
     await this.startChapter(-1, { def: TUTORIAL, tutorial: true });
     if (this.tutorial && this.state === 'play') TUTOR.begin();
   },
+  /* El farol lo lleva quien encabeza el grupo */
+  lanternHolder() { return this.heroes[0] || null; },
   updateLantern() {
-    const el = this.heroes.find((h) => h.id === 'elian');
-    if (!el || !el.mesh) return;
-    const md = el.mesh.userData.model.userData;
-    const col = this.flags.lantern || this.ch.lantern || '#ffb45a';
-    if (md.lanternCore) md.lanternCore.material = MAT.glow(col, 3);
-    if (md.lantern) md.lantern.visible = !this.flags.lanternGone;
+    const col = this.flags.lantern || (this.ch && this.ch.lantern) || '#ffb45a';
+    this.heroes.forEach((h, i) => {
+      if (!h.mesh) return;
+      const md = h.mesh.userData.model; if (!md) return;
+      let lp = md.userData.lanternProp;
+      const want = i === 0 && !this.flags.lanternGone;
+      if (want && !lp) {
+        lp = MODELS.lanternProp(col);
+        const ht = md.userData.height || 1.5;
+        lp.position.set(-0.34, ht * 0.5, 0.16);
+        md.add(lp); md.userData.lanternProp = lp;
+      }
+      if (lp) { lp.visible = want; lp.userData.core.material = MAT.glow(col, 3); }
+    });
   },
-
   /* ------------------------------------------------------------ rondas */
   async startRound() {
     if (this.state !== 'play') return;
@@ -444,12 +467,10 @@ const GAME = {
         }
         h.ended = false; h.mvLeft = h.mv; h.actions = 1; h.potionUsed = false;
         h.skills.forEach((s) => (s.cd = Math.max(0, s.cd - 1)));
-        delete h.status.wall; delete h.status.guard; delete h.status.taunt; delete h.status.yunque;
-        if (h.eterMax) h.eter = Math.min(h.eterMax, h.eter + 1);
+        delete h.status.muralla; delete h.status.guard; delete h.status.taunt;
         await this.tickStart(h);
         if (h.ko) continue;
         if (h.status.aturdido) { h.actions = 0; FX.text(this.headPos(h), 'Aturdido', 'warn'); UI.log(`${h.name} está aturdido y pierde su acción.`, 'bad'); }
-        if (h.status.aterrado) h.mvLeft = Math.max(0, h.mvLeft - 2);
       }
     } finally { this.busy = Math.max(0, this.busy - 1); }
     await this.beginHeroPhase();
@@ -462,7 +483,7 @@ const GAME = {
     if (!resumed && (!this.boss || !this.boss.alive)) audio.setMusic(anyHostile ? 'combat' : 'explore');
     UI.banner(resumed ? `Ronda ${this.round}` : this.round === 1 ? 'Vuestro turno' : `Ronda ${this.round}`, resumed ? 'Seguís donde lo dejasteis' : anyHostile ? 'La Sombra os observa' : 'Explorad con cautela', 'hero');
     audio.sfx('turnHero');
-    const first = this.isMulti() ? this.firstHeroForRound() : this.heroes.find((h) => !h.ended && !h.ko);
+    const first = this.heroes.find((h) => !h.ended && !h.ko);
     if (!first) { await this.shadowPhase(); return; }
     this.selectHero(first, true);
     UI.refresh();
@@ -471,8 +492,6 @@ const GAME = {
   selectHero(h, auto) {
     if (!h || h.ko || h.ended || this.state !== 'play') return;
     if (this.active !== h) this.undo = null;
-    // mismo aparato: si el héroe es de otro jugador, se pide pasar el aparato
-    if (this.isMulti() && !this.tutorial && this.heroOwner(h.id) !== this.curPlayer) { this.curPlayer = this.heroOwner(h.id); UI.handoff(this.curPlayer, h); }
     this.active = h; this.mode = null; this.pending = null;
     WORLD.setSelection(h);
     if (SETTINGS.follow || !auto) ENGINE.focusTile(h.x, h.y);
@@ -489,7 +508,7 @@ const GAME = {
   async endTurn(h = this.active) {
     if (!h || this.busy || this.phase !== 'hero') return;
     h.ended = true; this.mode = null; this.undo = null;
-    const nxt = (this.isMulti() && this.heroFor(this.curPlayer)) || this.heroes.find((x) => !x.ended && !x.ko);
+    const nxt = this.nextHero() || this.heroes.find((x) => !x.ended && !x.ko);
     if (nxt) { this.selectHero(nxt); return; }
     await this.shadowPhase();
   },
@@ -501,26 +520,20 @@ const GAME = {
   headPos(u) { return new THREE.Vector3(u.mesh ? u.mesh.position.x : u.x * TILE, ((u.mesh && u.mesh.userData.height) || 1.5) + 0.3, u.mesh ? u.mesh.position.z : u.y * TILE); },
 
   /* ------------------------------------------------------------ estados alterados */
-  auraNear(h) { return this.heroes.some((a) => !a.ko && RULES.perk(a, 'PRE') && U.cheb(a.x, a.y, h.x, h.y) <= 1); },
+
   immuneTo(u, key) {
-    if (u.side === 'enemy') return (u.T.immune || []).includes(key) || (key === 'aterrado' && u.virt.VOL >= 5);
-    if (key === 'aterrado' && RULES.perk(u, 'VOL')) return 'Temple';
-    if (key === 'aterrado' && this.auraNear(u)) return 'Aura de mando';
-    if (key === 'aturdido' && RULES.perk(u, 'FUE')) return 'Brazo firme';
+    if (u.side === 'enemy') return (u.T.immune || []).includes(key) || (key === 'aterrado' && (u.T.traits || []).includes('sinMiedo'));
+    if (key === 'aterrado' && u.traits && u.traits.fearless) return 'Sin miedo';
     return false;
   },
   async addStatus(u, key, dur, o = {}) {
     if (!this.up(u)) return false;
     const imm = this.immuneTo(u, key);
     if (imm) { if (u.side === 'hero' && !o.quiet) FX.text(this.headPos(u), typeof imm === 'string' ? imm : 'Inmune', 'block'); return false; }
-    if (o.resist) {
-      const r = await this.check(u, o.resist, o.dif || 1, { label: `Resistir: ${STATUS[key].name}`, quick: true, noDet: true });
-      if (r.ok) { FX.text(this.headPos(u), 'Resiste', 'block'); return false; }
-    }
     const was = u.status[key] || 0;
     u.status[key] = Math.max(was, dur);
     FX.text(this.headPos(u), STATUS[key].name, STATUS[key].bad ? 'warn' : 'heal');
-    if (key === 'aterrado' && u.side === 'hero') { audio.sfx('whisper', { dur: 0.8, vol: 0.6 }); UI.hintOnce('fear'); if (this.phase === 'hero' && this.active === u) u.mvLeft = Math.max(0, u.mvLeft - 2); }
+    if (key === 'aterrado' && u.side === 'hero') { audio.sfx('whisper', { dur: 0.8, vol: 0.6 }); UI.hintOnce('fear'); }
     if (key === 'aturdido' && u.side === 'hero' && this.phase === 'hero' && this.active === u) u.actions = 0;
     if (u.side === 'hero') UI.log(`${u.name}: <b>${STATUS[key].name}</b>.`, STATUS[key].bad ? 'bad' : 'good');
     UI.refresh();
@@ -540,38 +553,19 @@ const GAME = {
     ['aterrado', 'envenenado', 'ardiendo', 'aturdido', 'huyendo', 'inspirado'].forEach((k) => { if (u.status[k] > 0) { u.status[k]--; if (u.status[k] <= 0) delete u.status[k]; } });
   },
 
-  /* ------------------------------------------------------------ pruebas de virtud */
+  /* ------------------------------------------------------------ dados */
   rollDie() { const r = Math.floor(Math.random() * 6); return r < 3 ? 'skull' : r < 5 ? 'white' : 'black'; },
-  checkDice(u, attr, bonus = 0) { return Math.max(0, (u.virt[attr] || 0) + bonus + (u.side === 'hero' && u.status.inspirado ? 1 : 0) + (u.side === 'hero' && attr === 'ING' ? this.gearMod(u.id, 'ing') : 0)); },
-  effDif(u, dif) { return Math.max(1, dif + (u.side === 'hero' ? this.D.checkMod : 0)); },
-  async check(u, attr, dif, o = {}) {
-    dif = this.effDif(u, dif);
-    let n = this.checkDice(u, attr, o.bonus || 0);
-    const inspired = u.side === 'hero' && u.status.inspirado;
-    if (inspired) delete u.status.inspirado;
-    const dice = []; for (let i = 0; i < n; i++) dice.push(this.rollDie());
-    let skulls = dice.filter((f) => f === 'skull').length, ok = skulls >= dif;
-    if (u.side === 'hero') {
-      this.stats.checks++;
-      const info = { u, attr, dif, dice, skulls, ok, label: o.label, quick: o.quick, bonus: (o.bonus || 0) + (inspired ? 1 : 0) };
-      await UI.checkTray(info);
-      if (!ok && !o.noDet && u.det > 0 && dice.some((f) => f !== 'skull') && SETTINGS.detOffer) {
-        if (await UI.offerDet(u, `Repetir ${dice.filter((f) => f !== 'skull').length} dado${dice.filter((f) => f !== 'skull').length > 1 ? 's' : ''} fallado${dice.filter((f) => f !== 'skull').length > 1 ? 's' : ''}`)) {
-          u.det--;
-          for (let i = 0; i < dice.length; i++) if (dice[i] !== 'skull') dice[i] = this.rollDie();
-          skulls = dice.filter((f) => f === 'skull').length; ok = skulls >= dif;
-          FX.text(this.headPos(u), 'Determinación', 'heal'); audio.sfx('levelUp', { vol: 0.5 });
-          await UI.checkTray(Object.assign(info, { dice, skulls, ok, reroll: true }));
-        }
-      }
-      if (ok) this.stats.checksOk++;
-      UI.refresh();
-    } else if (o.show) {
-      FX.text(this.headPos(u), ok ? (o.okText || 'Supera') : (o.koText || 'Falla'), ok ? 'block' : 'warn');
-    }
-    return { ok, skulls, n, dif };
-  },
 
+  async rollCheck(u, n, need, o = {}) {
+    const dice = []; for (let i = 0; i < n; i++) dice.push(this.rollDie());
+    const skulls = dice.filter((f) => f === 'skull').length;
+    if (u && u.side === 'hero') {
+      this.stats.checks++;
+      await UI.checkTray({ u, dice, skulls, need, label: o.label, quick: o.quick, have: o.have || 0 });
+      if (skulls + (o.have || 0) >= need) this.stats.checksOk++;
+    }
+    return { skulls, ok: skulls + (o.have || 0) >= need };
+  },
   /* ------------------------------------------------------------ plan / resaltados */
   refreshPlan() {
     this.threatOf = null;
@@ -639,30 +633,60 @@ const GAME = {
   validTargets() {
     const h = this.active, m = this.mode; if (!h || !m) return [];
     const out = [];
+    const areaTiles = (r, needLos) => {
+      for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        const x = h.x + dx, y = h.y + dy, t = this.T(x, y);
+        if (!t || !t.floor || (!dx && !dy)) continue;
+        const room = this.L.rooms[t.room]; if (!room || !room.revealed) continue;
+        if (!needLos || this.los(h.x, h.y, x, y)) out.push({ x, y });
+      }
+    };
     if (m.type === 'attack') this.visibleEnemies().forEach((e) => { if (this.canHit(h, h.x, h.y, e, this.heroRange(h))) out.push(e); });
     else if (m.type === 'skill') {
       const s = m.skill;
-      if (s.target === 'enemy') this.visibleEnemies().forEach((e) => { if (this.canHit(h, h.x, h.y, e, s.range || 1, s.los !== false)) out.push(e); });
+      if (s.id === 'carga') this.visibleEnemies().forEach((e) => { if (this.chargeSpot(h, e)) out.push(e); });
+      else if (s.target === 'enemy') this.visibleEnemies().forEach((e) => { if (this.canHit(h, h.x, h.y, e, s.range || 1, s.los !== false)) out.push(e); });
       else if (s.target === 'ally') this.heroes.forEach((a) => { if (U.cheb(h.x, h.y, a.x, a.y) <= s.range && (a.ko || a.hp < a.maxHp)) out.push(a); });
+      else if (s.target === 'area') areaTiles(s.range, true);
       else if (s.target === 'tile') {
         for (let dy = -s.range; dy <= s.range; dy++) for (let dx = -s.range; dx <= s.range; dx++) {
           const x = h.x + dx, y = h.y + dy; if (!dx && !dy) continue;
           if (this.passable(x, y, h) && !this.unitAt(x, y)) out.push({ x, y });
         }
       }
-    } else if (m.type === 'bomb') {
-      for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
-        const x = h.x + dx, y = h.y + dy, t = this.T(x, y);
-        if (!t || !t.floor || (!dx && !dy)) continue;
-        const room = this.L.rooms[t.room]; if (!room || !room.revealed) continue;
-        if (this.los(h.x, h.y, x, y)) out.push({ x, y });
-      }
-    }
+    } else if (m.type === 'bomb') areaTiles(4, true);
     return out;
   },
-
+  /* Tocar algo lejano (puerta, cofre, escrito): el héroe camina hacia allí todo lo que pueda */
+  approachMove(h, x, y, diag, label) {
+    if (!h || h.mvLeft <= 0 || !this.R) return null;
+    const full = this.reach(h, 60);
+    let best = null;
+    (diag ? DIRS8 : DIRS4).forEach(([dx, dy]) => { const k = U.key(x + dx, y + dy); if (full.stand.has(k)) { const d = full.dist.get(k); if (!best || d < best.d) best = { x: x + dx, y: y + dy, d }; } });
+    if (!best) return null;
+    const path = this.pathTo(full, best.x, best.y);
+    for (let i = Math.min(h.mvLeft, path.length - 1); i >= 1; i--) {
+      const p = path[i];
+      if (!this.R.stand.has(U.key(p.x, p.y))) continue;
+      const sub = this.pathTo(this.R, p.x, p.y); if (!sub) continue;
+      const left = best.d - (sub.length - 1);
+      return { kind: 'move', x: p.x, y: p.y, path: sub, prov: 0, text: label, sub: `Avanza ${sub.length - 1} casilla${sub.length > 2 ? 's' : ''} hacia allí${left > 0 ? `; faltarán ${left}` : ''}.` };
+    }
+    return null;
+  },
+  /* Carga: casilla libre junto al enemigo a la que llega en 5 pasos (sin contar su movimiento) */
+  chargeSpot(h, e) {
+    const R = this.reach(h, 5);
+    let best = null;
+    R.stand.forEach((k) => {
+      const [x, y] = k.split(',').map(Number); const d = R.dist.get(k);
+      if (!this.meleeOK(x, y, e.x, e.y)) return;
+      if (!best || d < best.d) best = { x, y, d };
+    });
+    return best;
+  },
   /* ------------------------------------------------------------ entrada */
-  provText(p) { return p ? ` · ⚠ provoca ${p} ataque${p > 1 ? 's' : ''} de oportunidad` : ''; },
+  provText() { return ''; },
   describe(x, y) {
     const h = this.active; if (!h || this.phase !== 'hero' || this.busy) return null;
     const t = this.T(x, y); if (!t) return null;
@@ -673,14 +697,10 @@ const GAME = {
       if (this.mode.type === 'attack') return this.attackPreview(h, u, null);
       if (this.mode.type === 'bomb') return { kind: 'bomb', x, y, text: 'Lanzar bomba alquímica', sub: '3 dados de fuego a cada criatura del área 3×3, y prende fuego. ¡Cuidado con los aliados!', area: true };
       const s = this.mode.skill, si = this.skillInfo(h, s);
-      if (s.id === 'command') {
-        if (u.boss) return { kind: 'skill', x, y, unit: u, text: `${s.name} → ${u.name}`, sub: 'Los guardianes no obedecen órdenes.' };
-        const p = 1 - RULES.pCheck(this.checkDice(u, 'VOL'), si.dif);
-        return { kind: 'skill', x, y, unit: u, text: `${s.name} → ${u.name}`, sub: `Voluntad ${u.virt.VOL} contra dificultad ${RULES.difName(si.dif)} · ${RULES.pct(p)} de que ${this.immuneTo(u, 'aterrado') ? 'quede aturdido' : 'huya'}` };
-      }
       if (s.target === 'enemy') return this.attackPreview(h, u, s);
       if (s.target === 'ally') return { kind: 'skill', x, y, unit: u, text: `${s.name} → ${u.name}`, sub: u.ko ? `Lo levanta con ${si.heal} PV.` : `Cura ${si.heal} PV.` };
-      if (s.target === 'tile') return { kind: 'skill', x, y, text: s.name, sub: h.tal.has('piesSombra') ? 'Reaparecerás aquí sin perder movimiento.' : 'Reaparecerás aquí. Pierdes el movimiento restante.' };
+      if (s.target === 'area') { const n = this.visibleEnemies().filter((e) => U.cheb(e.x, e.y, x, y) <= 1).length; return { kind: 'skill', x, y, text: s.name, sub: `${si.dice} dados a cada enemigo de la zona · ${n ? `${n} enemigo${n > 1 ? 's' : ''} dentro` : 'ahora mismo no hay nadie dentro'}.`, area: true }; }
+      if (s.target === 'tile') return { kind: 'skill', x, y, text: s.name, sub: 'Saltarás aquí. Conservas el movimiento y la acción.' };
     }
     if (u && u.side === 'hero') {
       if (u === h) return { kind: 'self', unit: u, text: `${h.full}`, sub: `${h.mvLeft} de movimiento · ${h.actions > 0 ? 'acción disponible' : 'sin acción'}` };
@@ -700,30 +720,30 @@ const GAME = {
       const ap = this.doorApproach(h, t.doorRef);
       const L = t.doorRef.lock;
       if (L) {
-        if (!ap) return { kind: 'none', text: L === 'sello' ? 'Sello rúnico' : 'Cerradura de hierro', sub: 'Acércate para intentar abrirla.' };
-        if (h.actions <= 0) return { kind: 'none', text: L === 'sello' ? 'Sello rúnico' : 'Cerradura de hierro', sub: 'Abrirla gasta la acción, y ya no te queda.' };
-        return { kind: 'lock', x, y, door: t.doorRef, via: ap, text: L === 'sello' ? 'Sello rúnico' : 'Cerradura de hierro', sub: `Elige cómo abrirla (gasta la acción).${this.provText(ap.p)}` };
+        const name = L === 'sello' ? 'Sello rúnico' : 'Cerradura de hierro';
+        if (!ap) return this.approachMove(h, x, y, false, `Ir hacia la ${L === 'sello' ? 'puerta sellada' : 'cerradura'}`) || { kind: 'none', text: name, sub: 'Acércate para intentar abrirla.' };
+        if (h.actions <= 0) return { kind: 'none', text: name, sub: 'Abrirla gasta la acción, y ya no te queda.' };
+        return { kind: 'lock', x, y, door: t.doorRef, via: ap, text: this.lockAuto(h, t.doorRef) ? `${name}: abrir` : `${name}: forzar`, sub: this.lockText(h, t.doorRef) };
       }
       if (ap) return { kind: 'door', x, y, door: t.doorRef, via: ap, text: 'Abrir puerta', sub: (ap.d ? `Avanzar ${ap.d} y abrir` : 'Sin coste') + this.provText(ap.p) };
-      return { kind: 'none', text: 'Puerta cerrada', sub: 'Demasiado lejos para alcanzarla este turno.' };
+      return this.approachMove(h, x, y, false, 'Ir hacia la puerta') || { kind: 'none', text: 'Puerta cerrada', sub: 'Demasiado lejos para alcanzarla este turno.' };
     }
     if (t.ch === 'C') {
       const c = this.L.chests.find((q) => q.x === x && q.y === y);
-      if (c && !c.looted) { const ap = h.actions > 0 && this.adjApproach(h, x, y); return ap ? { kind: 'chest', x, y, chest: c, via: ap, text: 'Abrir cofre', sub: 'Gasta tu acción.' + this.provText(ap.p) } : { kind: 'none', text: 'Cofre', sub: h.actions > 0 ? 'Fuera de alcance.' : 'Necesitas una acción.' }; }
+      if (c && !c.looted) { const ap = h.actions > 0 && this.adjApproach(h, x, y); return ap ? { kind: 'chest', x, y, chest: c, via: ap, text: 'Abrir cofre', sub: 'Gasta tu acción.' + this.provText(ap.p) } : (U.cheb(h.x, h.y, x, y) > 1 && this.approachMove(h, x, y, true, 'Ir hacia el cofre')) || { kind: 'none', text: 'Cofre', sub: h.actions > 0 ? 'Fuera de alcance.' : 'Abrirlo necesita una acción.' }; }
       return { kind: 'none', text: 'Cofre vacío', sub: '' };
     }
     if (t.ch === '?') {
       const n = this.L.notes.find((q) => q.x === x && q.y === y);
       const ap = this.adjApproach(h, x, y);
-      return ap ? { kind: 'note', x, y, note: n, via: ap, text: n.read ? 'Releer' : 'Leer', sub: 'Sin coste.' + this.provText(ap.p) } : { kind: 'none', text: 'Un escrito', sub: 'Acércate para leerlo.' };
+      return ap ? { kind: 'note', x, y, note: n, via: ap, text: n.read ? 'Releer' : 'Leer', sub: 'Sin coste.' + this.provText(ap.p) } : this.approachMove(h, x, y, true, 'Ir hacia el escrito') || { kind: 'none', text: 'Un escrito', sub: 'Acércate para leerlo.' };
     }
     if (t.ch === 'X' && this.descent && this.ch.exit && this.ch.exit.x === x && this.ch.exit.y === y) return this.stairsInfo(h, x, y);
     if (t.ch === '*') return { kind: 'none', text: 'El sello', sub: this.boss && this.boss.alive ? 'Su guardián lo protege.' : 'Late con una luz antigua.' };
     if (t.trap && t.trap.revealed && !t.trap.disarmed && !t.trap.sprung) {
       const ap = h.actions > 0 && this.adjApproach(h, x, y);
-      const n = this.checkDice(h, 'AGI', this.gearMod(h.id, 'kit'));
-      const p = RULES.pCheck(n, this.effDif(h, 2));
-      return ap ? { kind: 'disarm', x, y, trap: t.trap, via: ap, text: 'Desarmar trampa', sub: `Agilidad ${n} dados contra dificultad 2 · ${RULES.pct(p)} · gasta tu acción.${this.provText(ap.p)}` } : { kind: 'none', text: 'Trampa', sub: 'Acércate para desarmarla.' };
+      const sure = h.traits && h.traits.locksmith;
+      return ap ? { kind: 'disarm', x, y, trap: t.trap, via: ap, text: 'Desarmar trampa', sub: sure ? 'El Enano la desarma sin fallar · gasta tu acción.' : `Tira 2 dados: con una calavera la desarma (${RULES.pct(RULES.pAtLeast(2, 1))}); sin ninguna, salta · gasta tu acción.` } : { kind: 'none', text: 'Trampa', sub: 'Acércate para desarmarla.' };
     }
     const k = U.key(x, y);
     if (this.R && this.R.stand.has(k) && (x !== h.x || y !== h.y)) {
@@ -738,13 +758,13 @@ const GAME = {
     const melee = !o.ranged && U.cheb(att.x, att.y, tgt.x, tgt.y) === 1;
     let n = o.atk != null ? o.atk : (melee && att.meleeAtk != null && att.ranged ? att.meleeAtk : att.atk);
     if (att.status && att.status.aterrado) mods.push(['Aterrado', -1]);
-    if (att.status && att.status.inspirado && !o.reaction) mods.push(['Inspirado', 1]);
+    if (att.status && att.status.inspirado) mods.push(['Inspirado', 1]);
     if (melee && !o.noFlank) {
       const friends = att.side === 'hero' ? this.heroesUp() : this.visibleEnemies();
-      if (friends.some((a) => a !== att && !a.status.huyendo && U.cheb(a.x, a.y, tgt.x, tgt.y) === 1)) mods.push(['Flanqueo', att.id === 'sera' ? 2 : 1]);
+      if (friends.some((a) => a !== att && !(a.status && a.status.huyendo) && U.cheb(a.x, a.y, tgt.x, tgt.y) === 1)) mods.push(['Flanqueo', 1]);
     }
     if (att.T && att.T.fury && att.hp < att.maxHp) mods.push(['Furia', 1]);
-    if (att.tal && att.tal.has('ejecucion') && tgt.hp < tgt.maxHp) mods.push(['Ejecución', 2]);
+    if (att.traits && att.traits.rage && att.hp <= att.maxHp / 2) mods.push(['Sangre caliente', 1]);
     const dt = o.dtype || att.dtype || 'phys';
     if (tgt.T) {
       if ((tgt.T.weak || []).includes(dt)) mods.push([`Vulnerable (${DTYPES[dt]})`, 1]);
@@ -754,9 +774,16 @@ const GAME = {
     mods.forEach(([, v]) => (n += v));
     return { n: Math.max(1, n), mods, dtype: dt };
   },
+  /* Escudos que ignora un golpe (Enano cuerpo a cuerpo, flechas certeras) */
+  ignoreFor(att, ranged, o = {}) {
+    let n = o.ignore || 0;
+    if (att.traits && att.traits.shieldbreaker && !ranged) n += att.traits.shieldbreaker;
+    if (att.tal && att.tal.has('certera') && ranged) n += 1;
+    return n;
+  },
   defDice(u) {
     let d = u.def;
-    if (u.status.wall) d += 2;
+    if (u.status.muralla) d += 2;
     if (u.status.guard) d += 1;
     return Math.max(0, d);
   },
@@ -764,21 +791,21 @@ const GAME = {
     if (!e) return null;
     let o = {}, name = h.basic.name;
     const fx = from ? from.x : h.x, fy = from ? from.y : h.y;
-    const ranged = U.cheb(fx, fy, e.x, e.y) > 1;
+    let ranged = h.ranged && U.cheb(fx, fy, e.x, e.y) > 1;
     if (skill) {
       const si = this.skillInfo(h, skill); name = skill.name;
-      if (skill.id === 'smite') o = { atk: si.dice, dtype: 'radiant' };
-      if (skill.id === 'throw') o = { atk: si.dice, ignore: 1, ranged: true, dtype: 'pierce' };
-      if (skill.id === 'starfire') o = { atk: si.dice, ranged: true, dtype: 'fire' };
+      if (skill.id === 'bola') { o = { atk: si.dice, ranged: true, dtype: 'fire' }; ranged = true; }
+      if (skill.id === 'sismico') o = { atk: si.dice };
+      if (skill.id === 'carga') o = { atk: si.dice };
     } else o = { ranged };
-    if (skill && skill.id === 'quake') o = { atk: this.skillInfo(h, skill).dice };
-    if (h.id === 'brunna' && !ranged && !o.ranged) o.ignore = (o.ignore || 0) + 1;
+    o.ignore = this.ignoreFor(h, ranged, o);
     const ghost = Object.assign({}, h, { x: fx, y: fy });
+    if (skill && skill.id === 'carga') { const sp = this.chargeSpot(h, e); if (sp) { ghost.x = sp.x; ghost.y = sp.y; } }
     const ad = this.atkDice(ghost, e, o);
     const def = this.defDice(e);
     const odds = U.combatOdds(ad.n, def, 1 / 6, o.ignore || 0);
     const modTxt = ad.mods.length ? ' (' + ad.mods.map(([t, v]) => `${v > 0 ? '+' : ''}${v} ${t.toLowerCase()}`).join(', ') + ')' : '';
-    return { kind: skill ? 'skill' : 'attack', x: e.x, y: e.y, unit: e, via: from, skill, text: `${name} → ${e.name}`, sub: `${ad.n} dados${modTxt} contra ${def} · ${Math.round(odds.pHit * 100)}% de herir · daño medio ${odds.exp.toFixed(1)}${from ? this.provText(from.p) : ''}`, atk: ad.n, def, odds, mods: ad.mods };
+    return { kind: skill ? 'skill' : 'attack', x: e.x, y: e.y, unit: e, via: from, skill, text: `${name} → ${e.name}`, sub: `${ad.n} dados${modTxt} contra ${def} · ${Math.round(odds.pHit * 100)}% de herir · daño medio ${odds.exp.toFixed(1)}`, atk: ad.n, def, odds, mods: ad.mods };
   },
   async click(x, y, touch) {
     if (this.busy || this.phase !== 'hero' || this.state !== 'play') return;
@@ -859,10 +886,9 @@ const GAME = {
     if (m && !this.validTargets().length) { UI.toast(m.empty || 'No hay objetivos válidos al alcance.'); this.mode = null; this.refreshPlan(); UI.refresh(); }
   },
   skillBlock(h, s) {
-    if (s.eter) { const si = this.skillInfo(h, s); if (h.eter < si.cost) return `Te falta Éter: ${s.name} cuesta ${si.cost} y tienes ${h.eter}.`; }
-    else if (s.cd > 0) return `${s.name} estará lista en ${s.cd} ronda${s.cd > 1 ? 's' : ''}.`;
+    if (s.cd > 0) return `${s.name} estará lista en ${s.cd} ronda${s.cd > 1 ? 's' : ''}.`;
     if (!s.free && h.actions <= 0) return 'Ya has usado tu acción este turno.';
-    if (s.id === 'step' && h.mvLeft <= 0 && !h.tal.has('piesSombra')) return 'Paso Sombrío necesita movimiento restante.';
+    if (s.id === 'torbellino' && !this.visibleEnemies().some((e) => this.meleeOK(h.x, h.y, e.x, e.y))) return 'Torbellino necesita enemigos a tu lado.';
     return null;
   },
   action(id) {
@@ -873,12 +899,10 @@ const GAME = {
     else if (id === 's0' || id === 's1') {
       const s = h.skills[+id[1]], why = this.skillBlock(h, s);
       if (why) return UI.toast(why);
-      this.setMode({ key: id, type: 'skill', skill: s, instant: s.target === 'self', color: s.target === 'ally' ? 'heal' : 'skill' });
+      const empty = { carga: 'Ningún enemigo al alcance de la carga.', lluvia: 'No hay ningún sitio a la vista donde disparar.', luz: 'Nadie está herido ni caído a tu alcance.', salto: 'No hay sitio libre para saltar.' }[s.id];
+      this.setMode({ key: id, type: 'skill', skill: s, instant: s.target === 'self', color: s.target === 'ally' ? 'heal' : 'skill', empty });
     }
     else if (id === 'search') run(() => this.search(h));
-    else if (id === 'dash') run(() => this.dash(h));
-    else if (id === 'guard') run(() => this.guard(h));
-    else if (id === 'rally') run(() => this.rally(h));
     else if (id === 'potion') run(() => this.drink(h));
     else if (id === 'elixir') run(() => this.elixir(h));
     else if (id === 'bomb') { if (h.actions <= 0) return UI.toast('Lanzar una bomba gasta tu acción.'); if (this.items.bomb <= 0) return UI.toast('No os quedan bombas.'); this.setMode({ key: 'bomb', type: 'bomb', color: 'item' }); }
@@ -887,7 +911,6 @@ const GAME = {
     else if (id === 'next') { const n = this.nextHero(); if (n && n !== h) this.selectHero(n); }
     else if (id === 'cancel') { this.mode = null; this.pending = null; UI.preview(null); this.refreshPlan(); UI.refresh(); }
   },
-
   /* ------------------------------------------------------------ movimiento */
   async hop(u, x, y, opts = {}) {
     const m = u.mesh; if (!m) { u.x = x; u.y = y; return; }
@@ -910,21 +933,7 @@ const GAME = {
     if (u.side === 'hero' && u === this.active) ENGINE.keyPos.set(tx, 0, tz);
   },
   faceTo(u, x, y) { if (!u.mesh) return; u.mesh.rotation.y = Math.atan2(x * TILE - u.mesh.position.x, y * TILE - u.mesh.position.z); },
-  /* Ataques de oportunidad al abandonar la zona de un enemigo */
-  async reactions(mover, ax, ay, bx, by) {
-    const rs = this.reactorsFor(mover).filter((r) => this.provokes(mover, r, ax, ay, bx, by));
-    for (const r of rs) {
-      if (!this.up(mover) || !this.up(r)) break;
-      r.reactRound = this.round;
-      this.eventful = true;
-      UI.hintOnce('zoc');
-      FX.text(this.headPos(r), '¡Oportunidad!', 'warn');
-      const base = r.side === 'hero' ? (r.ranged ? r.meleeAtk : r.atk) : (r.ranged ? 1 : r.atk);
-      const n = r.id === 'aldric' || (r.tal && r.tal.has('centinela')) ? base : Math.max(1, base - 1);
-      await this.attack(r, mover, { atk: n, label: 'Ataque de oportunidad', reaction: true, noDet: true, noFlank: true, quick: true });
-    }
-    return this.up(mover);
-  },
+  async reactions(mover) { return this.up(mover); },
   async moveHero(h, path) {
     if (!path || path.length < 2) return true;
     if (SETTINGS.follow) ENGINE.cam.lambda = 3.5;
@@ -937,7 +946,7 @@ const GAME = {
       if (SETTINGS.follow) ENGINE.focusTile(p.x, p.y);
       const t = this.T(p.x, p.y);
       if (t.trap && !t.trap.revealed && !t.trap.disarmed && !t.trap.sprung) { await this.springTrap(t.trap, h); h.mvLeft = 0; ENGINE.cam.lambda = 6; return false; }
-      if (h.id === 'sera' && !h.ko) this.detectTraps(h, h.tal.has('ojo') ? 3 : 2);
+      if (h.traits.trapSense && !h.ko) this.detectTraps(h, h.traits.trapSense);
       const room = this.L.rooms[t.room];
       if (room && !room.visited) {
         room.visited = true; this.eventful = true;
@@ -956,7 +965,7 @@ const GAME = {
       const t = this.T(tr.x, tr.y); const room = this.L.rooms[t.room];
       if (!room.revealed || U.cheb(h.x, h.y, tr.x, tr.y) > r) return;
       this.revealTrap(tr);
-      FX.bubble(h, U.pick(BARKS.sera.trap));
+      if (BARKS[h.id] && BARKS[h.id].trap) FX.bubble(h, U.pick(BARKS[h.id].trap));
     });
   },
   revealTrap(tr) {
@@ -976,10 +985,10 @@ const GAME = {
     await this.damage(h, 2, { source: 'trap' });
     UI.log(`${h.name} activa una trampa y pierde 2 PV.`, 'bad');
     if (!h.ko) {
-      FX.bubble(h, h.id === 'sera' ? '¿Cómo no la he visto?' : '¡Una trampa!');
+      FX.bubble(h, h.traits.trapSense ? '¿Cómo no la he visto?' : '¡Una trampa!');
       if (theme === 'forge') await this.addStatus(h, 'ardiendo', 1);
-      else if (theme === 'crypt') await this.addStatus(h, 'envenenado', 2, { resist: 'FUE', dif: 1 });
-      else await this.addStatus(h, 'aterrado', 1, { resist: 'VOL', dif: 1 });
+      else if (theme === 'crypt') await this.addStatus(h, 'envenenado', 2);
+      else await this.addStatus(h, 'aterrado', 1);
     }
   },
 
@@ -1000,36 +1009,38 @@ const GAME = {
     WORLD.updateDoorLeaks();
     UI.hintOnce('turn');
   },
-  lockOptions(door) {
-    if (door.lock === 'sello') return [
-      { id: 'descifrar', attr: 'ING', dif: 2, auto: 'ING', label: 'Descifrar el sello', desc: 'Silencioso. Saber arcano (Ingenio 4+) lo descifra sin tirada.' },
-      { id: 'quebrar', attr: 'VOL', dif: 3, hurt: 1, label: 'Quebrarlo a fuerza de voluntad', desc: 'Difícil. Si falla, el sello muerde: −1 PV.' }
-    ];
-    return [
-      { id: 'ganzua', attr: 'AGI', dif: 2, kit: true, label: 'Forzar la cerradura', desc: `Silencioso.${this.party.some((id) => this.hasGear(id, 'kit')) ? ' Las ganzúas enanas dan +2 dados a quien las lleve.' : ''}` },
-      { id: 'romper', attr: 'FUE', dif: 3, auto: 'FUE', noise: 2, label: 'Echar la puerta abajo', desc: 'Hace ruido: +2 Presagio. Brazo firme (Fuerza 4+) la tira sin tirada.' }
-    ];
+  /* Cerraduras: el Enano abre las de hierro y el Hechicero los sellos sin tirar.
+     Los demás tiran 3 dados; las calaveras se suman hasta llegar a las necesarias */
+  lockNeed(door) { return door.lock === 'sello' ? 3 : 2; },
+  lockAuto(h, door) { return door.lock === 'sello' ? !!(h.traits && h.traits.sealbreaker) : !!(h.traits && h.traits.locksmith); },
+  lockText(h, door) {
+    if (this.lockAuto(h, door)) return door.lock === 'sello' ? `${h.name} conoce estas runas: lo abre sin tirar · gasta la acción.` : `${h.name} la abre sin tirar · gasta la acción.`;
+    const need = this.lockNeed(door), have = door.progress || 0;
+    return `Tira 3 dados; hacen falta ${need} calaveras en total${have ? ` (lleváis ${have})` : ''} · gasta la acción.${door.lock === 'sello' ? ' Si no sale ninguna, el sello muerde: −1 PV.' : ' Hace ruido: +1 Presagio.'}`;
   },
   async tryLock(h, door) {
     if (h.actions <= 0 || !door.lock) return;
     UI.hintOnce('lock');
-    const opt = await UI.lockChoice(h, door, this.lockOptions(door));
-    if (!opt) return;
     h.actions--; this.eventful = true;
     this.faceTo(h, door.x, door.y);
     let ok;
-    if (opt.auto && RULES.perk(h, opt.auto)) { ok = true; FX.text(this.headPos(h), VIRTUES[opt.auto].perk.name, 'heal'); await U.sleep(300); }
-    else ok = (await this.check(h, opt.attr, opt.dif, { label: opt.label, bonus: opt.kit ? this.gearMod(h.id, 'kit') : (opt.bonus || 0) })).ok;
-    if (opt.noise) { audio.sfx('doorSlam'); ENGINE.shake(0.5); this.addDoom(opt.noise, 'ruido'); UI.log('El estruendo resuena por la Hondura. (+2 Presagio)', 'bad'); }
+    if (this.lockAuto(h, door)) { ok = true; FX.text(this.headPos(h), door.lock === 'sello' ? 'Runas descifradas' : 'Abierta', 'heal'); await U.sleep(300); }
+    else {
+      const need = this.lockNeed(door), have = door.progress || 0;
+      const r = await this.rollCheck(h, 3, need, { label: door.lock === 'sello' ? 'Romper el sello' : 'Forzar la cerradura', have });
+      door.progress = have + r.skulls; ok = door.progress >= need;
+      if (door.lock === 'cerradura') { audio.sfx('doorSlam', { vol: 0.5 }); this.addDoom(1); }
+      if (!ok) {
+        UI.log(`${h.name} no consigue abrirla del todo (${door.progress} de ${need}).`, 'neutral');
+        FX.text(this.headPos(h), `${door.progress} de ${need}`, 'block'); audio.sfx('deny');
+        if (door.lock === 'sello' && r.skulls === 0) { FX.burst('magic', h.mesh.position, { color: '#c08bff' }); await this.damage(h, 1, { source: 'seal' }); }
+      }
+    }
     if (ok) {
-      UI.log(`${h.name}: ${opt.label.toLowerCase()} — lo consigue.`, 'good');
-      WORLD.removeLock(door); door.lock = null;
-      audio.sfx(opt.attr === 'ING' || opt.attr === 'VOL' ? 'magic' : 'block');
+      UI.log(`${h.name} abre la puerta.`, 'good');
+      audio.sfx(door.lock === 'sello' ? 'magic' : 'block');
+      WORLD.removeLock(door); door.lock = null; door.progress = 0;
       await this.openDoor(door, h);
-    } else {
-      UI.log(`${h.name} no consigue abrirla. Puede volver a intentarlo.`, 'bad');
-      FX.text(this.headPos(h), 'Falla', 'warn'); audio.sfx('deny');
-      if (opt.hurt) { FX.burst('magic', h.mesh.position, { color: '#c08bff' }); await this.damage(h, opt.hurt, { source: 'seal' }); }
     }
   },
   async revealRoom(room, origin, hero) {
@@ -1072,13 +1083,14 @@ const GAME = {
   },
 
   /* ------------------------------------------------------------ Presagio */
+  doomMax() { return this.D.doom + PARTY_SCALE.of(this.party.length, 'doom'); },
   addDoom(n) {
     if (this.state !== 'play') return;
     if (this.boss && this.boss.alive && this.boss.active) return;
     this.doom += n;
     UI.hintOnce('doom');
-    if (this.tutorial) this.doom = Math.min(this.doom, this.D.doom - 1);
-    if (this.doom >= this.D.doom) { this.doom = 0; this.pendingWanderer = true; }
+    if (this.tutorial) this.doom = Math.min(this.doom, this.doomMax() - 1);
+    if (this.doom >= this.doomMax()) { this.doom = 0; this.pendingWanderer = true; }
     UI.refresh();
   },
   async spawnWanderer() {
@@ -1109,28 +1121,25 @@ const GAME = {
   /* ------------------------------------------------------------ combate */
   async attack(att, tgt, o = {}) {
     if (!tgt || !this.up(tgt)) return 0;
-    const ad = this.atkDice(att, tgt, o), atkN = ad.n;
-    if (att.status && att.status.inspirado && !o.reaction) delete att.status.inspirado;
-    let defN = this.defDice(tgt);
-    // Escudo de éter de Elian: gasta 1 de Éter para defenderse con un dado más
-    if (tgt.side === 'hero' && tgt.eterMax && tgt.eter >= 1 && !o.noAegis) { tgt.eter--; defN++; FX.text(this.headPos(tgt), 'Escudo de éter', 'heal'); }
     const ranged = o.ranged != null ? o.ranged : (att.ranged && U.cheb(att.x, att.y, tgt.x, tgt.y) > 1);
-    if (att.id === 'brunna' && !ranged) o = Object.assign({}, o, { ignore: (o.ignore || 0) + 1 });
+    const ad = this.atkDice(att, tgt, Object.assign({}, o, { ranged })), atkN = ad.n;
+    if (att.status && att.status.inspirado) delete att.status.inspirado;
+    const defN = this.defDice(tgt), ignore = this.ignoreFor(att, ranged, o);
     this.faceTo(att, tgt.x, tgt.y);
     const m = att.mesh, from = m.position.clone(), dir = new THREE.Vector3(tgt.x * TILE - from.x, 0, tgt.y * TILE - from.z).normalize();
     const pan = (ENGINE.project(tgt.mesh.position).x / ENGINE.w - 0.5) * 1.2;
     const A = []; for (let i = 0; i < atkN; i++) A.push(this.rollDie());
     const D = []; for (let i = 0; i < defN; i++) D.push(this.rollDie());
     const shieldFace = tgt.side === 'hero' ? 'white' : 'black';
-    const tally = () => { const sk = A.filter((f) => f === 'skull').length, sh = D.filter((f) => f === shieldFace).length, ef = Math.max(0, sh - (o.ignore || 0)); return { skulls: sk, shields: ef, dmg: Math.max(0, sk - ef) }; };
-    let R = tally();
+    const sk = A.filter((f) => f === 'skull').length, sh = Math.max(0, D.filter((f) => f === shieldFace).length - ignore);
+    const R = { skulls: sk, shields: sh, dmg: Math.max(0, sk - sh) };
     const quick = o.quick || (att.side === 'enemy' && SETTINGS.quickEnemyDice);
-    const diceP = UI.dice({ att, tgt, A, D, shieldFace, skulls: R.skulls, shields: R.shields, dmg: R.dmg, label: o.label, quick, mods: ad.mods });
+    const diceP = UI.dice({ att, tgt, A, D, shieldFace, skulls: R.skulls, shields: R.shields, dmg: R.dmg, label: o.label, quick, mods: ad.mods, ignore });
     if (ranged || o.proj) {
-      const proj = o.proj || att.proj || (att.id === 'elian' ? 'bolt' : 'arrow');
+      const proj = o.proj || att.proj || 'arrow';
       audio.sfx(proj === 'arrow' ? 'arrow' : proj === 'fire' ? 'fire' : proj === 'dagger' ? 'swing' : 'magic', { pan, vol: 0.8 });
       U.tween(160, (k) => { m.userData.model.rotation.x = -Math.sin(k * Math.PI) * 0.15; });
-      await FX.projectile(new THREE.Vector3(from.x, 1.2, from.z), new THREE.Vector3(tgt.x * TILE, 1.0, tgt.y * TILE), proj);
+      await FX.projectile(o.projFrom || new THREE.Vector3(from.x, 1.2, from.z), new THREE.Vector3(tgt.x * TILE, 1.0, tgt.y * TILE), proj);
     } else {
       audio.sfx('swing', { pan });
       const md = m.userData.model;
@@ -1138,38 +1147,7 @@ const GAME = {
       FX.slash(m.position, dir, att.side === 'hero' ? (att.color || '#fff2d0') : att.boss ? '#ff6a4a' : '#ffb0a0');
     }
     await diceP;
-    // Determinación del atacante (héroe): repetir los dados fallados
-    if (att.side === 'hero' && !o.noDet && att.det > 0 && SETTINGS.detOffer && A.some((f) => f !== 'skull') && R.dmg < tgt.hp) {
-      const miss = A.filter((f) => f !== 'skull').length;
-      UI.hintOnce('det');
-      if (await UI.offerDet(att, `Repetir ${miss} dado${miss > 1 ? 's' : ''} de ataque fallado${miss > 1 ? 's' : ''}`, R)) {
-        att.det--;
-        for (let i = 0; i < A.length; i++) if (A[i] !== 'skull') A[i] = this.rollDie();
-        R = tally();
-        FX.text(this.headPos(att), 'Determinación', 'heal'); audio.sfx('dice');
-        await UI.dice({ att, tgt, A, D, shieldFace, skulls: R.skulls, shields: R.shields, dmg: R.dmg, label: (o.label || att.name) + ' · repetida', quick: true, mods: ad.mods, reroll: true });
-      }
-    }
-    // Último aliento: el defensor gasta Determinación si el golpe le derribaría
-    if (tgt.side === 'hero' && tgt.det > 0 && R.dmg >= tgt.hp && D.some((f) => f !== shieldFace)) {
-      tgt.det--;
-      for (let i = 0; i < D.length; i++) if (D[i] !== shieldFace) D[i] = this.rollDie();
-      R = tally();
-      FX.text(this.headPos(tgt), 'Último aliento', 'heal'); audio.sfx('shield', { vol: 0.6 });
-      UI.log(`${tgt.name} gasta Determinación para no caer.`, 'good');
-      await UI.dice({ att, tgt, A, D, shieldFace, skulls: R.skulls, shields: R.shields, dmg: R.dmg, label: 'Último aliento', quick: true, mods: ad.mods, reroll: true });
-    }
-    let victim = tgt;
-    // Mártir: Aldric recibe el golpe letal destinado a un aliado adyacente
-    if (tgt.side === 'hero' && R.dmg >= tgt.hp) {
-      const mart = this.heroes.find((a) => a !== tgt && !a.ko && a.tal.has('martir') && !a.martirUsed && U.cheb(a.x, a.y, tgt.x, tgt.y) === 1 && a.hp > R.dmg);
-      if (mart) { mart.martirUsed = true; victim = mart; FX.text(this.headPos(mart), 'Mártir', 'heal'); UI.log(`${mart.name} se interpone y recibe el golpe destinado a ${tgt.name}.`, 'good'); }
-    }
-    if (R.dmg > 0 && victim.status && victim.status.yunque) {
-      const k = Math.min(R.dmg, victim.tal && victim.tal.has('forjada') ? 3 : 2);
-      R.dmg -= k; delete victim.status.yunque;
-      FX.text(this.headPos(victim), `Yunque −${k}`, 'block'); audio.sfx('block');
-    }
+    const victim = tgt;
     const tp = new THREE.Vector3(victim.mesh.position.x, 1.1, victim.mesh.position.z);
     if (R.dmg > 0) {
       const fxk = victim.T && victim.T.sfx === 'bone' ? 'bone' : victim.T && victim.T.sfx === 'glass' ? 'glass' : victim.side === 'hero' ? 'blood' : 'hit';
@@ -1187,10 +1165,9 @@ const GAME = {
     UI.log(`${att.name} → ${victim.name}${o.label && o.label !== att.name ? ` (${o.label.toLowerCase()})` : ''}: ${R.skulls} calavera${R.skulls === 1 ? '' : 's'} contra ${R.shields} escudo${R.shields === 1 ? '' : 's'}${R.dmg ? `, <b>${R.dmg} de daño</b>` : ', sin daño'}.`, att.side === 'hero' ? 'good' : 'bad');
     if (R.dmg > 0) {
       await this.damage(victim, R.dmg, { by: att });
-      // efectos al herir
       if (this.up(victim)) {
-        const oh = o.onHit || (att.T && att.T.onHit) || (att.tal && att.tal.has('venenoSombra') && (o.dtype || att.dtype) === 'pierce' ? { st: 'envenenado', dur: 2, resist: 'FUE', dif: 1 } : null);
-        if (oh && (!oh.minDmg || R.dmg >= oh.minDmg)) await this.addStatus(victim, oh.st, oh.dur, oh.resist ? { resist: oh.resist, dif: oh.dif } : {});
+        const oh = o.onHit || (att.T && att.T.onHit);
+        if (oh && (!oh.minDmg || R.dmg >= oh.minDmg)) await this.addStatus(victim, oh.st, oh.dur);
       }
     }
     await U.sleep(140);
@@ -1241,8 +1218,15 @@ const GAME = {
   async kill(u, by) {
     if (u.side === 'hero') {
       if (u.ko) return;
+      const solo = this.party.length === 1;
+      if (((u.tal && u.tal.has('indomable')) || solo) && !u.indomUsed) {
+        u.indomUsed = true; u.hp = solo ? Math.ceil(u.maxHp / 2) : Math.min(3, u.maxHp);
+        FX.text(this.headPos(u), solo ? 'Último en pie' : 'Indomable', 'heal'); audio.sfx('levelUp', { vol: 0.6 }); FX.burst('heal', u.mesh.position);
+        FX.bubble(u, '¡Todavía no!', 1.6); UI.log(`${u.name} se niega a caer y sigue en pie con ${u.hp} PV.${solo ? ' (En solitario, una vez por capítulo.)' : ''}`, 'good'); UI.refresh();
+        return;
+      }
       u.ko = true; u.ended = true; u.mvLeft = 0; u.actions = 0; this.stats.falls++;
-      ['aterrado', 'envenenado', 'ardiendo', 'aturdido', 'inspirado', 'guard', 'wall', 'taunt'].forEach((k) => delete u.status[k]);
+      ['aterrado', 'envenenado', 'ardiendo', 'aturdido', 'inspirado', 'guard', 'muralla', 'taunt'].forEach((k) => delete u.status[k]);
       if (this.D.fall === 'bleed') u.status.desangrando = this.D.bleed;
       audio.sfx('heroDown'); ENGINE.fx.desat = 0.6; ENGINE.fx.desatT = 0;
       const ud = u.mesh.userData; ud.lockAnim = true;
@@ -1269,7 +1253,7 @@ const GAME = {
     if (u.boss) { await U.sleep(500); await this.bossDefeated(u); UI.refresh(); return; }
     // moral: cae un líder o el grupo queda a la mitad
     if (this.state === 'play') {
-      if (u.virt.PRE >= PERK_AT && !u.summoned) {
+      if ((T.traits || []).includes('lider') && !u.summoned) {
         const near = this.visibleEnemies().filter((e) => U.cheb(e.x, e.y, u.x, u.y) <= 6);
         if (near.length) { UI.log(`Ha caído ${u.name}. Sus aliados vacilan.`, 'good'); await this.moraleCheck(near); }
       } else if (u.group != null && this.brokenGroups[u.group] && !this.brokenGroups[u.group].broken) {
@@ -1280,13 +1264,13 @@ const GAME = {
     }
     UI.refresh();
   },
-  leaderNear(e) { return this.visibleEnemies().some((o) => o !== e && o.virt.PRE >= PERK_AT && U.cheb(o.x, o.y, e.x, e.y) <= 3); },
+
+  /* Moral: al caer un líder (o la mitad del grupo), cada uno puede huir; los cobardes siempre */
   async moraleCheck(list) {
     for (const e of list) {
       if (!e.alive || e.boss || e.status.huyendo || this.immuneTo(e, 'aterrado')) continue;
-      const nyra = this.heroes.some((h) => h.id === 'nyra' && !h.ko && U.cheb(h.x, h.y, e.x, e.y) <= 2);
-      const r = await this.check(e, 'VOL', 2, { bonus: (this.leaderNear(e) ? 1 : 0) - (nyra ? 1 : 0) });
-      if (!r.ok) { e.status.huyendo = 2; FX.text(this.headPos(e), '¡Huye!', 'heal'); UI.log(`${e.name} pierde los nervios y huye.`, 'good'); if (e.T.barks && Math.random() < 0.5) FX.bubble(e, '¡No, no, no!', 1.6); }
+      const coward = (e.T.traits || []).includes('cobarde');
+      if (coward || Math.random() < 0.5) { e.status.huyendo = 2; FX.text(this.headPos(e), '¡Huye!', 'heal'); UI.log(`${e.name} pierde los nervios y huye.`, 'good'); if (e.T.barks && Math.random() < 0.5) FX.bubble(e, '¡No, no, no!', 1.6); }
       else FX.text(this.headPos(e), 'Aguanta', 'block');
       await U.sleep(120);
     }
@@ -1302,118 +1286,119 @@ const GAME = {
     if (h.actions <= 0) return;
     h.actions--;
     const ranged = h.ranged && U.cheb(h.x, h.y, e.x, e.y) > 1;
-    await this.attack(h, e, { ranged, proj: ranged ? (h.id === 'elian' ? 'bolt' : 'arrow') : null, label: h.basic.name, atk: !ranged && h.ranged ? h.meleeAtk : undefined });
+    await this.attack(h, e, { ranged, proj: ranged ? h.proj : null, label: h.basic.name });
   },
-
   /* ------------------------------------------------------------ habilidades y acciones */
   async useSkill(h, s, d) {
     if (!s) return;
-    const si = this.skillInfo(h, s);
+    const si = this.skillInfo(h, s), at = (u) => new THREE.Vector3(u.x * TILE, 1.5, u.y * TILE);
     if (!s.free) { if (h.actions <= 0) return; h.actions--; }
-    if (s.eter) { if (h.eter < si.cost) return; h.eter -= si.cost; } else s.cd = this.skillCd(h, s);
-    if (Math.random() < 0.5) FX.bubble(h, U.pick(BARKS[h.id].skill));
-    if (s.id === 'wall') {
-      h.status.wall = 1; h.status.taunt = 1;
-      audio.sfx('shield'); FX.burst('shield', h.mesh.position);
-      ENGINE.flashLight(new THREE.Vector3(h.x * TILE, 1.5, h.y * TILE), '#bfe0ff', 3, 0.8);
-      this.heroes.forEach((a) => { if (a !== h && !a.ko && U.cheb(a.x, a.y, h.x, h.y) === 1) { a.status.guard = 1; FX.burst('shield', a.mesh.position); } });
-      UI.log('Aldric levanta el Muro de Escudos. Los enemigos cercanos le buscarán a él.', 'good');
-    } else if (s.id === 'smite') {
-      const e = d.unit;
-      ENGINE.flashLight(new THREE.Vector3(h.x * TILE, 1.5, h.y * TILE), '#ffe6a0', 3.5, 0.6);
-      FX.burst('magic', h.mesh.position, { color: '#fff2c0', color2: '#ffb000' });
-      await this.attack(h, e, { atk: si.dice, label: s.name, dtype: 'radiant' });
-    } else if (s.id === 'throw') {
-      await this.attack(h, d.unit, { atk: si.dice, ignore: 1, ranged: true, proj: 'dagger', label: s.name, dtype: 'pierce' });
-    } else if (s.id === 'step') {
-      audio.sfx('dark', { vol: 0.6 });
-      FX.burst('death', h.mesh.position, { color: '#3a4a40', color2: '#0a0a0a' });
-      const m = h.mesh; await U.tween(180, (k) => m.scale.setScalar(1 - k * 0.9));
-      h.x = d.x; h.y = d.y; m.position.set(d.x * TILE, 0, d.y * TILE);
-      FX.burst('death', m.position, { color: '#3a4a40', color2: '#0a0a0a' });
-      await U.tween(220, (k) => m.scale.setScalar(0.1 + k * 0.9));
-      if (!h.tal.has('piesSombra')) h.mvLeft = 0;
-      ENGINE.keyPos.set(d.x * TILE, 0, d.y * TILE);
-      if (SETTINGS.follow) ENGINE.focusTile(d.x, d.y);
-      this.detectTraps(h, h.tal.has('ojo') ? 3 : 2);
-      const t = this.T(d.x, d.y), room = this.L.rooms[t.room];
-      if (room && !room.visited) { room.visited = true; UI.setLocation(this.ch, room); const meta = this.ch.rooms[room.marker]; if (meta && meta.enter) await this.run(meta.enter, { hero: h, room }); }
-    } else if (s.id === 'starfire') {
-      const e = d.unit;
-      await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'fire', label: s.name, dtype: 'fire' });
-      audio.sfx('fire'); FX.burst('fire', { x: e.x * TILE, y: 1, z: e.y * TILE });
-      ENGINE.flashLight(new THREE.Vector3(e.x * TILE, 1.4, e.y * TILE), '#ff9a4a', 4, 0.6);
-      const splash = this.visibleEnemies().filter((o) => o !== e && U.cheb(o.x, o.y, e.x, e.y) === 1);
-      for (const o of splash) await this.attack(h, o, { atk: si.splash, ranged: true, proj: 'fire', label: 'Salpicadura astral', light: false, dtype: 'fire', noDet: true, quick: true });
-    } else if (s.id === 'dawn') {
-      const a = d.unit;
-      await FX.projectile(new THREE.Vector3(h.x * TILE, 1.6, h.y * TILE), new THREE.Vector3(a.x * TILE, 1.2, a.y * TILE), 'dawn');
-      if (a.ko) { a.ko = false; a.ended = true; a.hp = 0; this.standUp(a); await this.heal(a, si.heal); this.woundOnRise(a); UI.log(`${a.name} vuelve a ponerse en pie.`, 'good'); }
-      else await this.heal(a, si.heal);
-      if (h.tal.has('manoAlba')) {
-        const b = this.heroes.filter((x) => x !== a && !x.ko && x.hp < x.maxHp && U.cheb(x.x, x.y, a.x, a.y) <= 1).sort((p, q) => p.hp / p.maxHp - q.hp / q.maxHp)[0];
-        if (b) await this.heal(b, 2);
-      }
-      FX.bubble(h, U.pick(BARKS.elian.heal));
-    } else if (s.id === 'quake') {
+    s.cd = this.skillCd(h, s);
+    this.eventful = true;
+    if (Math.random() < 0.55 && BARKS[h.id].skill) FX.bubble(h, U.pick(BARKS[h.id].skill));
+    UI.hintOnce('skill');
+    if (s.id === 'torbellino') {
+      const foes = this.visibleEnemies().filter((e) => this.meleeOK(h.x, h.y, e.x, e.y));
+      const md = h.mesh.userData.model;
+      audio.sfx('swing'); FX.ring({ x: h.x * TILE, z: h.y * TILE }, h.color, TILE * 1.6, 500);
+      await U.tween(380, (k) => (md.rotation.y = U.easeOut(k) * Math.PI * 2));
+      md.rotation.y = 0;
+      let first = true;
+      for (const e of foes) { await this.attack(h, e, { atk: si.dice, label: s.name, quick: !first, noFlank: true }); first = false; }
+      UI.log(`${h.name} gira con el hacha: ${foes.length} enemigo${foes.length === 1 ? '' : 's'} alcanzado${foes.length === 1 ? '' : 's'}.`, 'good');
+    } else if (s.id === 'grito') {
+      audio.sfx('reveal', { vol: 0.9 }); ENGINE.shake(0.4);
+      FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#ff7a50', si.radius * TILE + 1, 700);
+      ENGINE.flashLight(at(h), '#ff9a6a', 3.5, 0.6);
+      const near = this.visibleEnemies().filter((e) => !e.boss && U.cheb(e.x, e.y, h.x, h.y) <= si.radius);
+      let n = 0;
+      for (const e of near) { if (await this.addStatus(e, 'aterrado', 2)) n++; else FX.text(this.headPos(e), 'No se asusta', 'block'); }
+      if (h.hp < h.maxHp) await this.heal(h, si.heal);
+      UI.log(`${h.name} ruge: ${n} enemigo${n === 1 ? '' : 's'} aterrado${n === 1 ? '' : 's'}.`, 'good');
+    } else if (s.id === 'sismico') {
       const e = d.unit;
       ENGINE.shake(0.7); audio.sfx('quake', { vol: 0.8 });
       await this.attack(h, e, { atk: si.dice, label: s.name });
       FX.burst('dust', h.mesh.position); FX.burst('explode', { x: h.x * TILE, y: 0.2, z: h.y * TILE });
-      const near = this.visibleEnemies().filter((o) => o !== e && !o.boss && U.cheb(o.x, o.y, h.x, h.y) <= si.radius);
-      for (const o of near) await this.addStatus(o, 'aturdido', 1, { resist: 'FUE', dif: 2 });
-    } else if (s.id === 'anvil') {
-      h.status.yunque = 1; h.status.taunt = 1;
+      FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#f0b070', si.radius * TILE + 0.8, 600);
+      const near = this.visibleEnemies().filter((o) => !o.boss && U.cheb(o.x, o.y, h.x, h.y) <= si.radius);
+      for (const o of near) await this.addStatus(o, 'aturdido', 1);
+    } else if (s.id === 'muralla') {
+      h.status.muralla = 1; h.status.taunt = 1;
       audio.sfx('shield'); FX.burst('shield', h.mesh.position);
-      ENGINE.flashLight(new THREE.Vector3(h.x * TILE, 1.4, h.y * TILE), '#ffb070', 3, 0.7);
-      FX.text(this.headPos(h), 'Piel de yunque', 'heal');
-      UI.log(`${h.name} aprieta los dientes: el próximo golpe le hará ${si.absorb} de daño menos.`, 'good');
-    } else if (s.id === 'hymn') {
-      audio.sfx('levelUp', { vol: 0.7 }); ENGINE.flashLight(new THREE.Vector3(h.x * TILE, 1.6, h.y * TILE), '#ffd0e0', 3.5, 0.8);
-      FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#ffd0e0', si.radius * TILE + 1, 800);
-      const allies = this.heroes.filter((a) => !a.ko && U.cheb(a.x, a.y, h.x, h.y) <= si.radius);
-      for (const a of allies) { a.status.inspirado = 2; delete a.status.aterrado; FX.burst('heal', a.mesh.position); if (a.hp < a.maxHp) await this.heal(a, si.heal); FX.text(this.headPos(a), 'Inspirado', 'heal'); }
-      UI.log(`${h.name} canta el Himno de batalla: ${allies.length} héroe${allies.length === 1 ? '' : 's'} inspirado${allies.length === 1 ? '' : 's'}.`, 'good');
-    } else if (s.id === 'command') {
-      const e = d.unit;
-      FX.bubble(h, '¡Atrás, criatura!', 1.6); audio.sfx('reveal', { vol: 0.7 });
-      await FX.projectile(new THREE.Vector3(h.x * TILE, 1.6, h.y * TILE), new THREE.Vector3(e.x * TILE, 1.2, e.y * TILE), 'dawn');
-      if (e.boss) { FX.text(this.headPos(e), 'No le afecta', 'block'); UI.log(`${e.name} ni se inmuta ante la orden.`, 'neutral'); }
-      else {
-        const r = await this.check(e, 'VOL', si.dif, { show: true, okText: 'Resiste', koText: 'Cede' });
-        if (r.ok) UI.log(`${e.name} resiste la orden de ${h.name}.`, 'neutral');
-        else if (this.immuneTo(e, 'aterrado')) { e.status.aturdido = 1; FX.text(this.headPos(e), 'Aturdido', 'heal'); UI.log(`${e.name} no conoce el miedo, pero la orden lo deja aturdido.`, 'good'); }
-        else { e.status.huyendo = 2; FX.text(this.headPos(e), '¡Huye!', 'heal'); UI.log(`${e.name} obedece y huye.`, 'good'); }
+      ENGINE.flashLight(at(h), '#ffd0a0', 3, 0.8);
+      FX.text(this.headPos(h), 'Muralla', 'heal');
+      if (h.tal.has('murallaHierro')) this.heroes.forEach((a) => { if (a !== h && !a.ko && U.cheb(a.x, a.y, h.x, h.y) === 1) { a.status.guard = 1; FX.burst('shield', a.mesh.position); FX.text(this.headPos(a), 'Protegido', 'heal'); } });
+      UI.log(`${h.name} se planta: +2 dados de defensa y los enemigos cercanos irán a por él.`, 'good');
+    } else if (s.id === 'lluvia') {
+      const cx = d.x, cy = d.y;
+      this.faceTo(h, cx, cy);
+      audio.sfx('arrow', { vol: 0.9 });
+      FX.ring({ x: cx * TILE, z: cy * TILE }, '#86e0a0', TILE * 1.6, 600);
+      const md = h.mesh.userData.model; U.tween(220, (k) => (md.rotation.x = -Math.sin(k * Math.PI) * 0.3));
+      for (let i = 0; i < 4; i++) FX.projectile(new THREE.Vector3(h.x * TILE, 1.6, h.y * TILE), new THREE.Vector3((cx + U.rand(-1, 1)) * TILE, 0.2, (cy + U.rand(-1, 1)) * TILE), 'arrow');
+      await U.sleep(260);
+      const foes = this.visibleEnemies().filter((e) => U.cheb(e.x, e.y, cx, cy) <= 1);
+      let first = true;
+      for (const e of foes) { await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'arrow', projFrom: new THREE.Vector3(e.x * TILE, 7, e.y * TILE), label: s.name, quick: !first, light: false }); first = false; }
+      if (!foes.length) UI.log('Las flechas se clavan en el suelo vacío.', 'neutral');
+    } else if (s.id === 'salto') {
+      const m = h.mesh, fx0 = m.position.x, fz0 = m.position.z, tx = d.x * TILE, tz = d.y * TILE;
+      this.faceTo(h, d.x, d.y); audio.sfx('hop');
+      FX.burst('dust', m.position);
+      await U.tween(420, (k) => { m.position.x = U.lerp(fx0, tx, k); m.position.z = U.lerp(fz0, tz, k); m.position.y = Math.sin(k * Math.PI) * 2.2; });
+      m.position.y = 0; h.x = d.x; h.y = d.y;
+      FX.burst('dust', m.position); audio.sfx('step');
+      ENGINE.keyPos.set(tx, 0, tz);
+      if (SETTINGS.follow) ENGINE.focusTile(d.x, d.y);
+      if (h.tal.has('viento')) { h.status.inspirado = 1; FX.text(this.headPos(h), 'Inspirada', 'heal'); }
+      const t = this.T(d.x, d.y);
+      if (t.trap && !t.trap.revealed && !t.trap.disarmed && !t.trap.sprung) { await this.springTrap(t.trap, h); h.mvLeft = 0; }
+      if (!h.ko && h.traits.trapSense) this.detectTraps(h, h.traits.trapSense);
+      const room = this.L.rooms[t.room];
+      if (!h.ko && room && !room.visited) { room.visited = true; UI.setLocation(this.ch, room); const meta = this.ch.rooms[room.marker]; if (meta && meta.enter) await this.run(meta.enter, { hero: h, room }); }
+    } else if (s.id === 'bola') {
+      const e = d.unit, oh = h.tal.has('llama') ? { st: 'ardiendo', dur: 2 } : null;
+      await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'fire', label: s.name, dtype: 'fire', onHit: oh });
+      audio.sfx('fire'); FX.burst('fire', { x: e.x * TILE, y: 1, z: e.y * TILE }); FX.burst('explode', { x: e.x * TILE, y: 0.5, z: e.y * TILE });
+      ENGINE.flashLight(new THREE.Vector3(e.x * TILE, 1.4, e.y * TILE), '#ff9a4a', 4, 0.6); ENGINE.shake(0.4);
+      const splash = this.visibleEnemies().filter((o) => o !== e && U.cheb(o.x, o.y, e.x, e.y) === 1);
+      for (const o of splash) await this.attack(h, o, { atk: si.splash, ranged: true, proj: 'fire', projFrom: new THREE.Vector3(e.x * TILE, 1.2, e.y * TILE), label: 'Llamas', light: false, dtype: 'fire', quick: true, onHit: oh });
+    } else if (s.id === 'luz') {
+      const a = d.unit;
+      if (a !== h) await FX.projectile(new THREE.Vector3(h.x * TILE, 1.6, h.y * TILE), new THREE.Vector3(a.x * TILE, 1.2, a.y * TILE), 'dawn');
+      ENGINE.flashLight(at(a), '#fff0c0', 3, 0.6);
+      if (a.ko) { a.ko = false; a.ended = true; a.hp = 0; this.standUp(a); await this.heal(a, si.heal); this.woundOnRise(a); UI.log(`${a.name} vuelve a ponerse en pie.`, 'good'); }
+      else await this.heal(a, si.heal);
+      if (h.tal.has('aurora')) for (const b of this.heroes.filter((x) => x !== a && !x.ko && x.hp < x.maxHp && U.cheb(x.x, x.y, a.x, a.y) <= 1)) await this.heal(b, 2);
+      FX.bubble(h, U.pick(BARKS.hechicero.heal));
+    } else if (s.id === 'carga') {
+      const e = d.unit, sp = this.chargeSpot(h, e);
+      if (sp) {
+        const R = this.reach(h, 5), path = this.pathTo(R, sp.x, sp.y) || [];
+        audio.sfx('swing', { vol: 0.5 });
+        for (let i = 1; i < path.length; i++) {
+          await this.hop(h, path[i].x, path[i].y, { dur: 95, h: 0.15 });
+          const t = this.T(path[i].x, path[i].y);
+          if (t.trap && !t.trap.revealed && !t.trap.disarmed && !t.trap.sprung) { await this.springTrap(t.trap, h); h.mvLeft = 0; break; }
+        }
+        if (SETTINGS.follow) ENGINE.focusTile(h.x, h.y);
       }
+      if (!h.ko && this.meleeOK(h.x, h.y, e.x, e.y)) { ENGINE.shake(0.3); await this.attack(h, e, { atk: si.dice, label: s.name }); }
+    } else if (s.id === 'tribu') {
+      audio.sfx('levelUp', { vol: 0.7 }); ENGINE.flashLight(at(h), '#ffe0a0', 3.5, 0.8);
+      FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#ffd27a', si.radius * TILE + 1, 800);
+      const allies = this.heroes.filter((a) => !a.ko && U.cheb(a.x, a.y, h.x, h.y) <= si.radius);
+      for (const a of allies) {
+        a.status.inspirado = 2; if (!a.ended) a.mvLeft += 2;
+        FX.burst('heal', a.mesh.position); FX.text(this.headPos(a), 'Inspirado · +2 mov.', 'heal');
+        if (h.tal.has('cancion') && a.hp < a.maxHp) await this.heal(a, 2);
+      }
+      UI.log(`${h.name} lanza el grito de su tribu: ${allies.length} héroe${allies.length === 1 ? '' : 's'} inspirado${allies.length === 1 ? '' : 's'}.`, 'good');
     }
     UI.refresh();
   },
-  async dash(h) {
-    if (h.actions <= 0) return UI.toast('Correr gasta tu acción.');
-    h.actions--; h.mvLeft += 3;
-    FX.text(this.headPos(h), '+3 movimiento', 'heal'); audio.sfx('hop');
-    UI.log(`${h.name} corre.`, 'neutral');
-  },
-  async guard(h) {
-    if (h.actions <= 0) return UI.toast('Ponerse en guardia gasta tu acción.');
-    h.actions--; h.status.guard = 1;
-    FX.burst('shield', h.mesh.position); audio.sfx('shield', { vol: 0.6 });
-    FX.text(this.headPos(h), 'En guardia', 'block');
-  },
-  /* Arenga: cada calavera de Presencia inspira a un aliado */
-  async rally(h) {
-    if (h.actions <= 0) return UI.toast('Arengar gasta tu acción.');
-    h.actions--;
-    const r = await this.check(h, 'PRE', 1, { label: 'Arenga', bonus: this.rallyDice(h) - h.virt.PRE });
-    const allies = this.heroes.filter((a) => a !== h && !a.ko && U.cheb(a.x, a.y, h.x, h.y) <= 4).sort((a, b) => (b.status.aterrado ? 1 : 0) - (a.status.aterrado ? 1 : 0) || U.cheb(a.x, a.y, h.x, h.y) - U.cheb(b.x, b.y, h.x, h.y));
-    let left = r.skulls;
-    FX.bubble(h, { aldric: '¡Conmigo! ¡Nadie cae hoy!', sera: '¡Vamos, que no tengo todo el día!', elian: '¡Podemos! ¡Lo he leído!', brunna: '¡En pie, que esto no ha hecho más que empezar!', nyra: '¡Cantad conmigo!' }[h.id] || '¡Adelante!', 2);
-    for (const a of allies) { if (left <= 0) break; left--; a.status.inspirado = 2; delete a.status.aterrado; FX.burst('shield', a.mesh.position); FX.text(this.headPos(a), 'Inspirado', 'heal'); }
-    if (left > 0) { h.status.inspirado = 2; FX.text(this.headPos(h), 'Inspirado', 'heal'); }
-    audio.sfx('levelUp', { vol: 0.6 });
-    UI.log(`${h.name} arenga al grupo: ${r.skulls} inspirado${r.skulls === 1 ? '' : 's'}.`, r.skulls ? 'good' : 'neutral');
-    if (h.tal.has('mando')) { const near = this.visibleEnemies().filter((e) => U.cheb(e.x, e.y, h.x, h.y) <= 2); if (near.length) await this.moraleCheck(near); }
-  },
+
   async throwBomb(h, x, y) {
     if (this.items.bomb <= 0 || h.actions <= 0) return;
     this.items.bomb--; h.actions--;
@@ -1456,39 +1441,62 @@ const GAME = {
   async elixir(h) {
     if (this.items.elixir <= 0) return UI.toast('No os quedan elixires.');
     this.items.elixir--; h.actions++;
-    if (h.eterMax) h.eter = Math.min(h.eterMax, h.eter + 2);
     audio.sfx('levelUp'); FX.burst('magic', h.mesh.position, { color: '#9fe8ff', color2: '#3a8aff' });
-    FX.text(new THREE.Vector3(h.mesh.position.x, 1.9, h.mesh.position.z), h.eterMax ? '+1 acción · +2 Éter' : '+1 acción', 'heal');
+    FX.text(new THREE.Vector3(h.mesh.position.x, 1.9, h.mesh.position.z), '+1 acción', 'heal');
   },
-
   /* ------------------------------------------------------------ interacción */
+  /* Buscar: una vez por sala. Revela sus trampas y saca algo de una tabla al azar,
+     como las cartas de tesoro de siempre: casi siempre bueno, a veces un susto */
+  searchBlock(h) {
+    if (!h || h.actions <= 0) return 'Buscar gasta la acción, y ya no te queda.';
+    const room = this.roomOf(h); if (!room) return 'Aquí no hay nada que buscar.';
+    if (this.visibleEnemies().some((e) => this.T(e.x, e.y).room === room.id)) return 'No podéis buscar con enemigos en la sala.';
+    const meta = this.ch.rooms[room.marker];
+    if (room.searched && !(meta && meta.search && !room.searchEvent)) return 'Esta sala ya está registrada.';
+    return null;
+  },
   async search(h) {
-    if (h.actions <= 0) return UI.toast('Registrar gasta tu acción.');
+    const why = this.searchBlock(h); if (why) return UI.toast(why);
     const room = this.roomOf(h);
-    const foes = this.visibleEnemies().filter((e) => this.T(e.x, e.y).room === room.id);
-    if (foes.length) return UI.toast('No podéis registrar con enemigos en la sala.');
+    const meta = this.ch.rooms[room.marker];
+    const special = meta && meta.search && !room.searchEvent;
     h.actions--; this.eventful = true;
     audio.sfx('page', { vol: 0.5 });
     FX.bubble(h, 'Veamos…', 1.4);
     const fig = h.mesh.userData.model;
-    U.tween(500, (k) => (fig.rotation.x = Math.sin(k * Math.PI) * 0.35));
+    await U.tween(500, (k) => (fig.rotation.x = Math.sin(k * Math.PI) * 0.35));
+    UI.hintOnce('search');
     this.addDoom(1);
-    const r = await this.check(h, 'ING', 1, { label: 'Registrar la sala' });
-    let s = r.skulls;
-    if (RULES.perk(h, 'ING') && s === 0) { s = 1; FX.text(this.headPos(h), 'Saber arcano', 'heal'); }
     let found = 0;
-    if (s >= 1) this.L.traps.forEach((tr) => { if (!tr.revealed && !tr.disarmed && this.T(tr.x, tr.y).room === room.id) { this.revealTrap(tr); found++; } });
+    this.L.traps.forEach((tr) => { if (!tr.revealed && !tr.disarmed && !tr.sprung && this.T(tr.x, tr.y).room === room.id) { this.revealTrap(tr); found++; } });
     if (found) UI.log(`${h.name} descubre ${found} trampa${found > 1 ? 's' : ''}.`, 'good');
-    const meta = this.ch.rooms[room.marker];
-    if (meta && meta.search && !room.searchEvent) { room.searchEvent = true; await this.run(meta.search, { hero: h, room }); return; }
-    if (room.searched) { if (!found) UI.toast('Aquí ya no queda nada que encontrar.'); return; }
-    if (s === 0) { UI.log(`${h.name} no encuentra nada. Quizá otro con más Ingenio…`, 'neutral'); FX.text(this.headPos(h), 'Nada', 'block'); return; }
+    if (special) { room.searchEvent = true; room.searched = true; await this.run(meta.search, { hero: h, room }); UI.refresh(); return; }
     room.searched = true;
     const at = new THREE.Vector3(h.mesh.position.x, 1.6, h.mesh.position.z);
-    if (s === 1) { const g = U.randi(8, 16); this.addGold(g, at); UI.log(`Bajo una losa suelta: ${g} monedas.`, 'good'); }
-    else if (s === 2) { const g = U.randi(14, 26); this.addGold(g, at); if (Math.random() < 0.5) { this.items.potion++; UI.log(`${g} monedas y un vial de poción intacto.`, 'good'); } else UI.log(`Un alijo escondido: ${g} monedas.`, 'good'); }
-    else { const g = U.randi(18, 32); this.addGold(g, at); const it = U.pick(['elixir', 'bomb', 'potion']); this.items[it]++; FX.text(new THREE.Vector3(at.x, 2, at.z), '+1 ' + { elixir: 'elixir', bomb: 'bomba', potion: 'poción' }[it], 'heal'); UI.log(`Registro minucioso: ${g} monedas y ${{ elixir: 'un elixir', bomb: 'una bomba', potion: 'una poción' }[it]}.`, 'good'); }
-    if (h.id === 'sera' && Math.random() < 0.6) FX.bubble(h, U.pick(BARKS.sera.gold));
+    const r = Math.random(), safe = this.tutorial;
+    const itemName = { elixir: 'un elixir', bomb: 'una bomba', potion: 'una poción' };
+    if (r < 0.14 && !safe) {
+      UI.log(`${h.name} levanta una losa… y un dardo sale disparado de la pared.`, 'bad');
+      FX.burst('trap', { x: h.x * TILE, y: 0.8, z: h.y * TILE }); audio.sfx('trap');
+      await this.damage(h, 1, { source: 'trap' });
+    } else if (r < 0.24 && !safe && this.state === 'play') {
+      UI.log(`El ruido despierta algo en la Hondura. <b>Viene hacia aquí.</b>`, 'bad');
+      FX.text(at, '¡Algo se acerca!', 'warn'); audio.sfx('whisper', { dur: 1.2 });
+      this.pendingWanderer = true;
+    } else if (r < 0.38) {
+      UI.log(`${h.name} no encuentra más que polvo y huesos.`, 'neutral'); FX.text(this.headPos(h), 'Nada', 'block');
+    } else if (r < 0.7) {
+      const g = U.randi(10, 20); this.addGold(g, at); UI.log(`Bajo una losa suelta: ${g} monedas.`, 'good');
+      if (BARKS[h.id].gold && Math.random() < 0.6) FX.bubble(h, U.pick(BARKS[h.id].gold));
+    } else if (r < 0.88) {
+      const g = U.randi(14, 26); this.addGold(g, at); this.items.potion++;
+      FX.text(new THREE.Vector3(at.x, 2, at.z), '+1 poción', 'heal'); UI.log(`${g} monedas y una poción intacta.`, 'good');
+    } else {
+      const it = U.pick(['elixir', 'bomb', 'potion', 'bomb']); this.items[it]++;
+      const g = U.randi(18, 32); this.addGold(g, at);
+      FX.text(new THREE.Vector3(at.x, 2, at.z), '+1 ' + { elixir: 'elixir', bomb: 'bomba', potion: 'poción' }[it], 'heal');
+      UI.log(`¡Un alijo escondido! ${g} monedas y ${itemName[it]}.`, 'good');
+    }
     UI.refresh();
   },
   async spawn(type, x, y, fx = 'summon') {
@@ -1531,25 +1539,27 @@ const GAME = {
     this.standUp(a);
     await this.heal(a, 2);
     this.woundOnRise(a);
-    FX.bubble(a, { aldric: 'Gracias. No volverá a pasar.', sera: 'Uf. Te debo una.', elian: 'Estoy… estoy bien.', brunna: 'Ni una palabra de esto.', nyra: 'La luz no me suelta tan fácil.' }[a.id] || 'Gracias.');
+    FX.bubble(a, { barbaro: 'Aún no ha nacido quien me tumbe.', enano: 'Ni una palabra de esto.', elfa: 'Gracias. Te debo una.', hechicero: 'Estoy… estoy bien.', amazona: 'En pie. Seguimos.' }[a.id] || 'Gracias.');
     UI.log(`${h.name} levanta a ${a.name}.`, 'good');
   },
+  /* Desarmar: 2 dados, basta una calavera. Sin ninguna, salta. El Enano no falla */
   async disarm(h, tr) {
     if (h.actions <= 0) return;
     h.actions--; this.eventful = true;
     this.faceTo(h, tr.x, tr.y);
-    const r = await this.check(h, 'AGI', 2, { label: 'Desarmar la trampa', bonus: this.gearMod(h.id, 'kit') });
+    const sure = h.traits && h.traits.locksmith;
+    const r = sure ? { ok: true, skulls: 1 } : await this.rollCheck(h, 2, 1, { label: 'Desarmar la trampa' });
     if (r.ok) {
       tr.disarmed = true; audio.sfx('block');
       tr.mesh.userData.spikes.visible = false;
       this.addGold(8, new THREE.Vector3(tr.x * TILE, 1, tr.y * TILE));
+      FX.text(new THREE.Vector3(tr.x * TILE, 1.2, tr.y * TILE), 'Desarmada', 'heal');
       UI.log(`${h.name} desarma la trampa.`, 'good');
-    } else if (r.skulls === 0) {
+    } else {
       UI.log(`${h.name} falla al desarmar la trampa y la dispara.`, 'bad');
       await this.springTrap(tr, h);
-    } else { UI.log(`${h.name} no consigue desarmarla, pero tampoco la dispara.`, 'neutral'); FX.text(this.headPos(h), 'Casi', 'block'); }
+    }
   },
-
   /* ------------------------------------------------------------ turno de la Sombra */
   async shadowPhase() {
     if (this.state !== 'play') return;
@@ -1606,7 +1616,7 @@ const GAME = {
     if (exp >= h.hp) s += 18;
     if (!e.ranged && U.cheb(x, y, h.x, h.y) === 1 && this.visibleEnemies().some((o) => o !== e && U.cheb(o.x, o.y, h.x, h.y) === 1)) s += 7;
     if (e.ranged) { s += Math.min(U.cheb(x, y, h.x, h.y), e.range) * 3; if (this.heroesUp().some((q) => U.cheb(q.x, q.y, x, y) === 1)) s -= iq >= 4 ? 20 : 8; }
-    if (iq >= 4) { if (h.hitThisRound === this.round) s += 10; if (h.id === 'elian') s += 6; if (e.role === 'hostigador' && this.heroesUp().filter((q) => q !== h && U.cheb(q.x, q.y, h.x, h.y) <= 2).length === 0) s += 8; }
+    if (iq >= 4) { if (h.hitThisRound === this.round) s += 10; if (h.id === 'hechicero') s += 6; if (e.role === 'hostigador' && this.heroesUp().filter((q) => q !== h && U.cheb(q.x, q.y, h.x, h.y) <= 2).length === 0) s += 8; }
     return s + Math.random() * 2;
   },
   async enemyAct(e) {
@@ -1720,7 +1730,7 @@ const GAME = {
       if (adj.length >= 2) {
         FX.bubble(b, '¡Aplastaros a todos!', 1.8);
         audio.sfx('bossRoar'); ENGINE.shake(1);
-        for (const h of adj) await this.attack(b, h, { label: 'Golpe de magma', onHit: { st: 'aturdido', dur: 1, resist: 'FUE', dif: 2 } });
+        for (const h of adj) await this.attack(b, h, { label: 'Golpe de magma', onHit: { st: 'aturdido', dur: 1, minDmg: 2 } });
         await this.markEruptions(b);
         return true;
       }
@@ -1807,11 +1817,11 @@ const GAME = {
   },
   async seal() {
     const a = this.L.altars[0]; if (!a) return;
-    const el = this.heroes.find((h) => h.id === 'elian');
+    const el = this.lanternHolder();
     ENGINE.focusTile(a.x, a.y, { dist: 16 });
     await U.sleep(500);
     const from = new THREE.Vector3(a.x * TILE, 1.5, a.y * TILE);
-    const to = el.mesh ? new THREE.Vector3(el.mesh.position.x, 1.8, el.mesh.position.z) : from;
+    const to = el && el.mesh ? new THREE.Vector3(el.mesh.position.x, 1.8, el.mesh.position.z) : from;
     audio.sfx('summon');
     for (let i = 0; i < 4; i++) { FX.projectile(from, to, 'dawn'); await U.sleep(140); }
     await U.sleep(400);
@@ -1829,6 +1839,33 @@ const GAME = {
     await UI.victoryCard(this.ch, this.stats);
     await this.camp(this.chIdx);
   },
+  /* Puestos alrededor del fuego del campamento (hasta 5) */
+  campSpots() { return [[3.4, 2.6], [6.6, 2.4], [5, 4.3], [2.7, 4.1], [7.3, 4.0]]; },
+  placeCampHeroes() {
+    (this.heroes || []).forEach((h) => { if (h.mesh) WORLD.removeUnit(h); });
+    this.heroes = this.party.map((id) => this.makeHero(id));
+    const spots = this.campSpots();
+    this.heroes.forEach((h, i) => { h.x = 0; h.y = 0; WORLD.addUnit(h, { face: 0 }); const m = h.mesh; m.position.set(spots[i][0] * TILE, 0, spots[i][1] * TILE); m.lookAt(5 * TILE, 0, 3 * TILE); });
+    this.updateLantern();
+  },
+  /* Talentos que le faltan a cada héroe del grupo hasta el rango «upTo» */
+  async campTalents(upTo) {
+    for (let tier = 0; tier <= upTo; tier++) {
+      const need = this.party.filter((id) => (this.talents[id] || []).length <= tier);
+      if (!need.length) continue;
+      const picks = await UI.talents(tier, need);
+      need.forEach((id) => { const t = (this.talents[id] = this.talents[id] || []); if (picks[id] && !t.includes(picks[id])) t.push(picks[id]); });
+      this.refreshCampHeroes();
+    }
+  },
+  /* Antes de bajar: se puede cambiar quién va (con la recomendación del capítulo siguiente) */
+  async campParty(next) {
+    const p = await UI.partyPick({ mode: 'camp', current: this.party, recommend: next && next.recommend, title: next ? `Capítulo ${next.num} · ${next.title}` : '' });
+    if (!p || (p.length === this.party.length && p.every((id, i) => id === this.party[i]))) return;
+    this.party = this.validParty(p);
+    this.placeCampHeroes();
+    UI.log(`Bajan: ${this.groupNames()}.`, 'good');
+  },
   async camp(idx) {
     this.state = 'camp';
     this.chIdx = idx;
@@ -1838,11 +1875,9 @@ const GAME = {
     await UI.fadeOut();
     FX.clearLabels();
     WORLD.buildCamp();
-    this.heroes = this.party.map((id) => this.makeHero(id));
-    const spots = [[3.4, 2.6, 2.2], [6.6, 2.4, -2.1], [5, 4.3, 3.14]];
-    this.heroes.forEach((h, i) => { h.x = 0; h.y = 0; WORLD.addUnit(h, { face: 0 }); const m = h.mesh; m.position.set(spots[i][0] * TILE, 0, spots[i][1] * TILE); m.lookAt(5 * TILE, 0, 3 * TILE); });
+    this.heroes = [];
     this.enemies = []; this.npcs = []; this.ch = Object.assign({}, CHAPTERS[idx], { lantern: this.flags.lantern || CHAPTERS[idx].lantern });
-    this.updateLantern();
+    this.placeCampHeroes();
     ENGINE.focus(5 * TILE, 3 * TILE, { dist: 13, pitch: 0.55, yaw: 0.2, instant: true });
     audio.startAmbient('camp'); audio.setMusic('camp');
     await UI.fadeIn();
@@ -1850,15 +1885,10 @@ const GAME = {
     ENGINE.cam.t.yaw = 0.2;
     this.campOrbit = true;
     await this.run(c.steps, {});
-    // Ascenso: un talento por héroe
-    const tier = Math.min(idx, 1);
-    if ((this.talents.aldric || []).length <= tier) {
-      const picks = await UI.talents(tier);
-      this.party.forEach((id) => { if (picks[id] && !(this.talents[id] = this.talents[id] || []).includes(picks[id])) this.talents[id].push(picks[id]); });
-      this.refreshCampHeroes();
-    }
-    // Velada: una actividad, resuelta con una prueba
+    await this.campParty(CHAPTERS[idx + 1]);
+    await this.campTalents(Math.min(idx, 1));
     if (!this.flags['vigil' + idx]) await this.vigil(idx);
+    this.save('camp');
     await UI.shop();
     this.campOrbit = false;
     await this.startChapter(idx + 1);
@@ -1867,21 +1897,30 @@ const GAME = {
     this.heroes.forEach((h, i) => { const nh = this.makeHero(h.id); const pos = h.mesh.position.clone(), rot = h.mesh.rotation.y; Object.assign(h, nh, { mesh: h.mesh }); WORLD.rebuildUnit(h); h.mesh.position.copy(pos); h.mesh.rotation.y = rot; void i; });
     this.updateLantern();
   },
+  /* Velada: una actividad por noche, sin tiradas; algunas piden a un héroe concreto */
   async vigil(idx) {
     const V = VIGILS[idx]; if (!V) return;
     this.flags['vigil' + idx] = true;
-    const opts = V.options.map((o) => Object.assign({}, o));
+    const opts = V.options.map((o) => {
+      const q = Object.assign({}, o);
+      if (o.req && !o.req.some((id) => this.party.includes(id))) q.locked = 'Necesita ' + o.req.map((id) => HERO_DEFS[id].role.toLowerCase()).join(' o ');
+      return q;
+    });
     const pick = await UI.choice(V.prompt, opts, { title: 'Velada' });
     if (!pick) return;
-    const h = this.heroes.find((q) => q.id === pick.hero);
-    const r = await this.check(h, pick.attr, pick.dif, { label: pick.label });
-    await UI.say('narrador', r.ok ? pick.ok : pick.ko);
-    if (r.ok) {
-      if (pick.reward === 'detAll') this.flags.detAllCh = idx + 1;
-      if (pick.reward === 'traps') this.flags.trapsKnownCh = idx + 1;
-      if (pick.reward === 'eter') this.flags.eterBonus = (this.flags.eterBonus || 0) + 1;
-      if (pick.reward === 'trueName') this.flags.trueName = true;
-    } else if (pick.penalty === 'seraCut') this.flags.seraCutCh = idx + 1;
+    const who = pick.req ? this.heroes.find((h) => pick.req.includes(h.id)) : this.lanternHolder();
+    const nm = who ? who.name : 'Alguien';
+    const text = {
+      vigor: 'Dormís de un tirón por primera vez en días. (Todos empiezan el próximo capítulo con +2 de vida máxima)',
+      traps: `${nm} vuelve antes del alba con el camino marcado con tiza. (Las trampas del próximo capítulo empiezan señaladas)`,
+      sharp: `El chirrido de la piedra de afilar de ${nm} acompaña la noche. (Todos empiezan el próximo capítulo Inspirados)`,
+      trueName: `${nm} no duerme. Al amanecer hay un nombre escrito en el margen del cuaderno, y no es Isolde. (El enemigo final será más débil)`
+    }[pick.reward];
+    if (pick.reward === 'vigor') this.flags.vigorCh = idx + 1;
+    if (pick.reward === 'traps') this.flags.trapsKnownCh = idx + 1;
+    if (pick.reward === 'sharp') this.flags.sharpCh = idx + 1;
+    if (pick.reward === 'trueName') this.flags.trueName = true;
+    if (text) await UI.say('narrador', text);
     UI.endDialogue();
   },
   async heroDies(h) {
@@ -1892,6 +1931,9 @@ const GAME = {
     setTimeout(() => this.defeat(), 900);
   },
   async defeat() {
+    // una sola derrota por intento, aunque la avisen dos caminos a la vez
+    if (this._defeatGen === this.gen) return;
+    this._defeatGen = this.gen;
     this.state = 'defeat';
     audio.stinger('defeat'); audio.setMusic('silence'); audio.heartbeat(false);
     ENGINE.fx.desatT = 0.9;
@@ -1905,7 +1947,7 @@ const GAME = {
   },
   async ending() {
     this.state = 'ending';
-    U.store.del('umbral.save.v2');
+    U.store.del(SAVE_KEY);
     const ep = EPILOGUES[this.flags.broke === false ? 'gave' : 'broke'];
     audio.setMusic('menu');
     await UI.ending(ep, this.stats);
@@ -1913,6 +1955,31 @@ const GAME = {
   },
 
   /* ------------------------------------------------------------ guion */
+  /* Nombres en los textos: {lider} es quien lleva el farol, {grupo} todo el grupo */
+  groupNames() {
+    const n = this.party.map((id) => HERO_DEFS[id].name);
+    return n.length <= 1 ? (n[0] || '') : n.slice(0, -1).join(', ') + ' y ' + n[n.length - 1];
+  },
+  fmt(s) {
+    if (typeof s !== 'string') return s;
+    const lead = HERO_DEFS[this.party[0]] ? HERO_DEFS[this.party[0]].name : '';
+    return s.replace(/\{lider\}/g, lead).replace(/\{grupo\}/g, this.groupNames());
+  },
+  /* Quién dice una frase del guion: el primero del grupo que tenga una propia; si no, el líder */
+  heroLine(map, exclude) {
+    if (typeof map === 'string') map = { any: map };
+    const ids = this.party.filter((id) => id !== exclude);
+    if (!ids.length) return null;
+    const own = ids.find((id) => map[id]);
+    if (own) return [own, map[own]];
+    return map.any ? [ids[0], map.any] : null;
+  },
+  stepUnit(who, ctx) {
+    if (who === 'lider') return this.heroes[0];
+    if (who === 'tested') return this.tested;
+    if (who === 'hero') return ctx.hero || this.active || this.heroesUp()[0];
+    return this.heroes.find((q) => q.id === who);
+  },
   async run(steps, ctx = {}) {
     if (!steps) return;
     if (steps.length) this.eventful = true;
@@ -1920,26 +1987,44 @@ const GAME = {
       if (!Array.isArray(st)) continue;
       const [k, ...a] = st;
       try {
-        if (SPEAKERS[k] && k !== 'narrador') { await UI.say(k, a[0]); continue; }
+        if (SPEAKERS[k] && k !== 'narrador') { await UI.say(k, this.fmt(a[0])); continue; }
         switch (k) {
-          case 'n': await UI.say('narrador', a[0]); break;
+          case 'n': await UI.say('narrador', this.fmt(a[0])); break;
+          case 'h': case 'h2': {
+            const line = this.heroLine(a[0], k === 'h2' ? this.lastSpeaker : null);
+            if (line) { this.lastSpeaker = line[0]; await UI.say(line[0], this.fmt(line[1])); }
+            break;
+          }
+          case 'hlast': { const id = this.party.includes(this.lastSpeaker) ? this.lastSpeaker : this.party[0]; await UI.say(id, this.fmt(a[0])); break; }
           case 'wait': await U.sleep(a[0]); break;
           case 'sfx': audio.sfx(a[0], { dur: a[1] }); break;
           case 'music': audio.setMusic(a[0]); break;
           case 'stinger': audio.stinger(a[0]); break;
           case 'shake': ENGINE.shake(a[0] || 0.5); break;
-          case 'objective': UI.objective(a[0]); break;
+          case 'objective': UI.objective(this.fmt(a[0])); break;
           case 'hint': UI.hintOnce(a[0]); break;
           case 'bossbar': this.boss = this.enemies.find((e) => e.boss && e.alive); UI.bossBar(this.boss); break;
           case 'camBoss': { const b = this.enemies.find((e) => e.boss && e.alive); if (b) await ENGINE.focusWait(b.x, b.y, { dist: 15 }); break; }
           case 'camAltar': { const al = this.L.altars[0]; if (al) await ENGINE.focusWait(al.x, al.y, { dist: 15 }); break; }
-          case 'bark': { const who = a[0] === 'enemy' ? U.pick(this.visibleEnemies()) : this.heroes.find((h) => h.id === a[0]); if (who) FX.bubble(who, a[1]); break; }
+          case 'bark': { const who = a[0] === 'enemy' ? U.pick(this.visibleEnemies()) : this.stepUnit(a[0], ctx); if (who && who.mesh) FX.bubble(who, this.fmt(a[1])); break; }
+          case 'fear': { const list = a[0] === 'all' ? this.heroesUp() : [this.stepUnit(a[0], ctx)].filter((h) => h && !h.ko); for (const h of list) await this.addStatus(h, 'aterrado', a[1] || 1); break; }
+          case 'ambush': {
+            const h = ctx.hero || this.active || this.heroesUp()[0]; if (!h || h.ko) break;
+            if (h.id === 'elfa' || h.id === 'amazona') { FX.text(this.headPos(h), 'Esquiva', 'heal'); UI.log(`${h.name} lo ve venir y se aparta a tiempo.`, 'good'); audio.sfx('swing'); }
+            else { UI.log(`${h.name} recibe el golpe por sorpresa.`, 'bad'); await this.damage(h, a[0] || 2, { source: 'story' }); }
+            break;
+          }
+          case 'strike': {
+            const h = this.stepUnit(a[0], ctx), b = this.enemies.find((e) => e.boss && e.alive);
+            if (h && !h.ko) await this.diceHit(b ? b.name : 'El golpe', h, a[1] || 3, { label: 'Golpe sin defensa', dir: b ? new THREE.Vector3(h.x - b.x || 0.01, 0, h.y - b.y) : null });
+            break;
+          }
           case 'lights': await this.lights(a[0]); break;
           case 'scare': await UI.scare(a[0]); break;
           case 'spawn': await this.scriptSpawn(a[0], a[1], a[2] || 1, ctx); break;
           case 'npc': await this.spawnNPC(a[0], ctx); break;
           case 'npcGone': await this.removeNPC(a[0]); break;
-          case 'note': await UI.note(a[0], a[1]); break;
+          case 'note': await UI.note(this.fmt(a[0]), this.fmt(a[1])); break;
           case 'give': this.give(a[0], a[1]); break;
           case 'flag': this.flags[a[0]] = a[1]; break;
           case 'lantern': this.flags.lantern = a[0]; this.updateLantern(); break;
@@ -1948,49 +2033,36 @@ const GAME = {
           case 'twist': await this.twist(); break;
           case 'spawnBoss': await this.spawnFinalBoss(a[0]); break;
           case 'choice': case 'check': await this.runChoice(a[0], a[1], ctx); break;
-          case 'test': await this.runTest(a, ctx); break;
-          case 'willTest': await this.willTest(a[0] || 2); break;
-          case 'hurt': { const h = a[0] === 'tested' ? this.tested : this.heroes.find((q) => q.id === a[0]); if (h && !h.ko) await this.damage(h, a[1] || 1, { source: 'story' }); break; }
-          case 'status': { const h = a[0] === 'tested' ? this.tested : this.heroes.find((q) => q.id === a[0]); if (h) await this.addStatus(h, a[1], a[2] || 1); break; }
+          case 'willTest': await this.willTest(); break;
+          case 'hurt': { const h = this.stepUnit(a[0], ctx); if (h && !h.ko) await this.damage(h, a[1] || 1, { source: 'story' }); break; }
+          case 'status': { const h = this.stepUnit(a[0], ctx); if (h) await this.addStatus(h, a[1], a[2] || 1); break; }
         }
       } catch (e) { console.error('step', st, e); }
     }
     UI.endDialogue();
   },
-  /* Elección con o sin prueba de virtud: [label, desc, steps] o {hero, attr, dif, ok, ko} */
+  /* Elección: [label, desc, steps] o {label, desc, steps, req}. «req» es una lista de héroes o una pista ya encontrada */
   async runChoice(prompt, options, ctx) {
     const opts = options.map((o) => (Array.isArray(o) ? { label: o[0], desc: o[1], steps: o[2] } : Object.assign({}, o)));
-    opts.forEach((o) => { if (o.req && !this.flags[o.req]) o.locked = o.reqText || 'No disponible'; });
-    const pick = await UI.choice(prompt, opts);
-    if (!pick) return;
-    if (pick.attr && pick.hero) {
-      const h = this.heroes.find((q) => q.id === pick.hero);
-      const r = await this.check(h, pick.attr, pick.dif, { label: pick.label });
-      await this.run(r.ok ? pick.ok : pick.ko, ctx);
-    } else if (pick.steps) await this.run(pick.steps, ctx);
+    opts.forEach((o) => {
+      o.label = this.fmt(o.label); o.desc = this.fmt(o.desc);
+      if (Array.isArray(o.req)) { if (!o.req.some((id) => this.party.includes(id))) o.locked = o.reqText || 'No disponible'; }
+      else if (o.req && !this.flags[o.req]) o.locked = o.reqText || 'No disponible';
+    });
+    const pick = await UI.choice(this.fmt(prompt), opts);
+    if (pick && pick.steps) await this.run(pick.steps, ctx);
   },
-  async runTest([who, attr, dif, okSteps, koSteps], ctx) {
-    let list;
-    if (who === 'all') list = this.heroesUp();
-    else if (who === 'hero') list = [ctx.hero || this.active || this.heroesUp()[0]].filter(Boolean);
-    else list = this.heroes.filter((h) => h.id === who && !h.ko);
-    for (const h of list) {
-      this.tested = h;
-      const imm = attr === 'VOL' ? this.immuneTo(h, 'aterrado') : false;
-      if (imm) { FX.text(this.headPos(h), imm, 'block'); UI.log(`${h.name} no se inmuta (${imm}).`, 'good'); if (okSteps && okSteps.length) await this.run(okSteps, ctx); continue; }
-      const r = await this.check(h, attr, dif, { label: `Prueba de ${VIRTUES[attr].name}` });
-      const steps = r.ok ? okSteps : koSteps;
-      if (steps && steps.length) await this.run(steps, ctx);
-    }
-  },
-  async willTest(dif) {
+
+  /* La voz de Isolde: aterra al final a quien no sea inmune al miedo, salvo que sepáis la verdad de Tomás */
+  async willTest() {
     this.willFail = [];
     for (const h of this.heroesUp()) {
       let imm = this.immuneTo(h, 'aterrado');
-      if (!imm && h.id === 'sera' && this.flags.tomasTruth) imm = 'Recuerda a Tomás';
-      if (imm) { FX.text(this.headPos(h), imm, 'block'); UI.log(`${h.name} resiste la voz de Isolde (${imm}).`, 'good'); continue; }
-      const r = await this.check(h, 'VOL', dif, { label: 'Resistir la voz de Isolde' });
-      if (!r.ok) { this.willFail.push(h); UI.log(`La voz de Isolde se queda en la cabeza de ${h.name}.`, 'bad'); }
+      if (!imm && this.flags.tomasTruth) imm = 'Recuerda a Tomás';
+      if (imm) { FX.text(this.headPos(h), imm, 'block'); UI.log(`${h.name} no escucha la voz de Isolde (${imm}).`, 'good'); continue; }
+      this.willFail.push(h); FX.text(this.headPos(h), 'La voz se queda dentro', 'warn');
+      UI.log(`La voz de Isolde se queda en la cabeza de ${h.name}.`, 'bad');
+      await U.sleep(200);
     }
   },
   async lights(mode) {
@@ -2001,6 +2073,7 @@ const GAME = {
   },
   async scriptSpawn(type, where, n, ctx) {
     const h = ctx.hero || this.active || this.heroesUp()[0];
+    n = Math.max(1, Math.round(n * PARTY_SCALE.of(this.party.length, 'foes') * (this.D.foes || 1)));
     for (let i = 0; i < n; i++) {
       let p = null;
       if (where === 'near' && h) p = this.freeTileNear(h.x, h.y, 2);
@@ -2008,7 +2081,7 @@ const GAME = {
         const room = ctx.room || this.roomOf(h);
         const cands = room.tiles.filter((t) => this.passable(t.x, t.y, { side: 'enemy' }) && !this.unitAt(t.x, t.y)).sort((a, b) => Math.min(...this.heroes.map((q) => U.cheb(q.x, q.y, b.x, b.y))) - Math.min(...this.heroes.map((q) => U.cheb(q.x, q.y, a.x, a.y))));
         p = cands[Math.floor(Math.random() * Math.min(4, cands.length))];
-      } else if (Array.isArray(where)) p = { x: where[0], y: where[1] };
+      } else if (Array.isArray(where)) p = i === 0 ? { x: where[0], y: where[1] } : this.freeTileNear(where[0], where[1], 2);
       if (p) { const e = await this.spawn(type, p.x, p.y, 'summon'); e.group = -3; if (h) this.faceTo(e, h.x, h.y); }
     }
   },
@@ -2033,14 +2106,19 @@ const GAME = {
     WORLD.removeUnit(npc); this.npcs = this.npcs.filter((n) => n !== npc);
   },
   give(what) {
-    if (what === 'tomasDagger') { this.flags.tomasDagger = true; const s = this.heroes.find((h) => h.id === 'sera'); s.atk++; FX.burst('magic', s.mesh.position, { color: '#cfe6ff' }); audio.sfx('levelUp'); }
+    if (what === 'tomasDagger') {
+      this.flags.tomasDagger = true;
+      if (!this.ownerOf('tomasDagger')) this.stash.push('tomasDagger');
+      const h = this.lanternHolder(); if (h && h.mesh) FX.burst('magic', h.mesh.position, { color: '#cfe6ff' });
+      audio.sfx('levelUp');
+    }
     else if (what === 'blessing') this.heroes.forEach((h) => { if (!h.ko) this.heal(h, 2); });
     else if (what === 'blessing2') this.heroes.forEach((h) => this.heal(h, 3));
-    else if (what === 'thrainLoot') { this.addGold(40, this.heroes[1] && this.heroes[1].mesh ? this.headPos(this.heroes[1]) : null); this.items.elixir++; }
+    else if (what === 'thrainLoot') { const h = this.lanternHolder(); this.addGold(40, h && h.mesh ? this.headPos(h) : null); this.items.elixir++; }
     UI.refresh();
   },
   async twist() {
-    const el = this.heroes.find((h) => h.id === 'elian');
+    const el = this.lanternHolder();
     const al = this.L.altars[0];
     this.flags.lanternGone = true; this.updateLantern();
     if (el && el.mesh) {
