@@ -76,7 +76,7 @@ function fitCamera() {
   const v = new THREE.Vector3();
   for (let d = 9; d < 60; d += 0.4) {
     camera.position.copy(target).addScaledVector(dir, d); camera.lookAt(target); camera.updateMatrixWorld();
-    if (pts.every((p) => { v.copy(p).project(camera); return Math.abs(v.x) < 0.95 && v.y < 0.8 && v.y > -0.8; })) break;
+    if (pts.every((p) => { v.copy(p).project(camera); return Math.abs(v.x) < 0.95 && v.y < 0.8 && v.y > (tall ? -0.55 : -0.62); })) break;
   }
   camera.userData.base = camera.position.clone(); camera.userData.target = target.clone();
   camera.userData.far = { pos: camera.position.clone(), target: target.clone() };
@@ -101,7 +101,7 @@ function zoomFit(units = []) {
   let dist = dFar;
   for (let d = dFar * 0.5; d <= dFar; d += 0.25) {
     cam.position.copy(c).addScaledVector(dir, d); cam.lookAt(c); cam.updateMatrixWorld();
-    if (pts.every((p) => { v.copy(p).project(cam); return Math.abs(v.x) < 0.92 && v.y < 0.66 && v.y > -0.6; })) { dist = d; break; }
+    if (pts.every((p) => { v.copy(p).project(cam); return Math.abs(v.x) < 0.92 && v.y < 0.7 && v.y > -0.45; })) { dist = d; break; }
   }
   return camTo(c.clone().addScaledVector(dir, dist), c);
 }
@@ -181,6 +181,31 @@ function tag(pos, html, cls = '') {
   anchors.push({ el, at: () => pos, tag: true });
   return el;
 }
+/* ---------------- cartel con el resultado de la tirada ---------------- */
+const fiCache = {};
+function fi(type, face) { const k = type + ':' + face; if (!fiCache[k]) fiCache[k] = DICE3D.faceTexture(type, face).image.toDataURL(); return `<img class="fi" src="${fiCache[k]}" alt="">`; }
+function plaque(caption, main, cls = '') {
+  const p = $('plaque');
+  p.className = 'plaque ' + cls;
+  p.innerHTML = `<div class="pq-cap">${caption}</div><div class="pq-main">${main}</div><div class="pq-sub"></div>`;
+  p.hidden = false; void p.offsetWidth; p.classList.add('in');
+}
+function plaqueSub(html, cls = '') { const s = $('plaque').querySelector('.pq-sub'); if (s) s.insertAdjacentHTML('beforeend', `<p class="${cls}">${html}</p>`); }
+function plaqueHide() { $('plaque').hidden = true; }
+const SHORT = { barbaro: 'Rebote: 1 dado contra el otro enemigo', enano: 'Empujón: lo apartas 1 casilla', elfa: 'Paso ligero: +2 de movimiento', hechicero: 'Chispa: recarga una ronda antes', amazona: '¡Conmigo!: un aliado, +1 dado' };
+function destinyLine(att, kind) {
+  if (kind === 'comedy') return [`${fi('destiny', 'comedy')}<span><b class="good">Máscara alegre</b> · ${SHORT[att.kind]}</span>`, 'good'];
+  if (kind === 'tragedy') return [`${fi('destiny', 'tragedy')}<span><b class="bad">Máscara trágica</b> · Ruido: +1 Presagio</span>`, 'bad'];
+  return [`${fi('destiny', 'blank')}<span>Destino en blanco: nada más</span>`, 'none'];
+}
+function geminiVerdict(att, hit, C, T, noCounter) {
+  const foeSide = att.side !== 'hero', net = C - T;
+  const cnt = `${fi('gemini', 'comedy')}<b class="n">×${C}</b>${fi('gemini', 'tragedy')}<b class="n">×${T}</b>`;
+  if (!C && !T) return [`<span>Sin máscaras</span>`, 'none'];
+  if (!net) return [`${cnt}<span>se anulan</span>`, 'none'];
+  if (net > 0) return foeSide ? [`${cnt}<span><b class="bad">${hit ? 'Te derriba: −2 de movimiento' : 'Falla, pero gana posición'}</b></span>`, 'bad'] : [`${cnt}<span><b class="good">${hit ? 'Éxito con ventaja: empujas' : 'Resquicio: +1 dado al aliado'}</b></span>`, 'good'];
+  return foeSide ? [`${cnt}<span><b class="good">${hit ? 'Se le embota el arma' : 'Tropieza: te deja un hueco'}</b></span>`, 'good'] : [`${cnt}<span><b class="bad">${hit ? 'Éxito con coste: arma embotada' : noCounter ? 'Fallo' : 'Fracaso crítico: contraataque'}</b></span>`, 'bad'];
+}
 function clearTags() { anchors.filter((a) => a.tag).forEach((a) => a.el.remove()); anchors = anchors.filter((a) => !a.tag); }
 async function lunge(u, target) {
   const p0 = u.root.position.clone(), dir = target.root.position.clone().sub(p0).setY(0).normalize();
@@ -243,12 +268,18 @@ async function exchange(att, tgt, o) {
   zoomFit([att, tgt]);
   const ad = dice.filter((d) => d.owner === 'a'), dd = dice.filter((d) => d.owner === 'd'), xd = dice.find((d) => d.owner === 'x');
   const hits = ad.filter((d) => HIT(d.kind)), blocks = dd.filter((d) => block(d.kind));
+  const dmg0 = Math.max(0, hits.length - blocks.length), shieldFace = gem ? 'shieldC' : tgt.side === 'hero' ? 'wshield' : 'bshield';
+  plaque(o.caption || `${U.esc(att.name)} → ${U.esc(tgt.name)}`,
+    `${fi(aType, 'skull')}<b class="n">×${hits.length}</b><i>−</i>${fi(dType, shieldFace)}<b class="n">×${blocks.length}</b><i>=</i>${dmg0 ? `<b class="dmg">${dmg0} de daño</b>` : '<b class="none">Sin daño</b>'}`, dmg0 ? 'hit' : 'miss');
+  if (xd) { const [l, c] = destinyLine(att, xd.kind); plaqueSub(l, c); }
+  if (gem) {
+    const C = ad.filter((d) => isComedy(d.kind)).length, T = ad.filter((d) => isTragedy(d.kind)).length, defC = dd.filter((d) => d.kind === 'shieldC').length;
+    const [l, c] = geminiVerdict(att, dmg0 > 0, C, T, o.noCounter); plaqueSub(l, c);
+    if (defC) plaqueSub(`${fi(dType, 'shieldC')}<span>${U.esc(tgt.name)} bloquea con ventaja</span>`, 'none');
+  }
   await U.sleep(120);
   await Promise.all([...hits.map((d) => DICE3D.glow(d, '#ff9a5a')), ...ad.filter((d) => !HIT(d.kind)).map((d) => DICE3D.dim(d)),
     ...blocks.map((d) => DICE3D.glow(d, '#8fc6ff')), ...dd.filter((d) => !block(d.kind)).map((d) => DICE3D.dim(d))]);
-  const lab = (z, n, txt, cls) => tag(new THREE.Vector3(z.x, 0, z.z + (n > 3 ? 1.55 : 1.05)), txt, cls);
-  lab(za, nA, `${att.name}: <b>${plural(hits.length, 'calavera', 'calaveras')}</b>`, 'att');
-  lab(zd, nD, nD ? `${tgt.name}: <b>${plural(blocks.length, 'escudo', 'escudos')}</b>` : `${tgt.name}: sin defensa`, 'def');
   // cada escudo anula una calavera
   const n = Math.min(hits.length, blocks.length);
   for (let i = 0; i < n; i++) {
@@ -286,7 +317,6 @@ async function destinyEffect(h, xd, dmg) {
   if (xd.kind === 'tragedy') {
     S.tally.tragedy++; S.tally.effects++;
     await DICE3D.glow(xd, '#ff3a5a', 1.6); DICE3D.hop(xd);
-    tag(new THREE.Vector3(xd.group.position.x, 0, xd.group.position.z + 0.95), '<b>Máscara trágica</b> · Ruido: +1 Presagio', 'bad');
     floatText(headOf(h, 1.15), '+1 Presagio', 'bad');
     const full = await addDoom();
     return `Destino: <b class="bad">máscara trágica</b>. El ruido atrae a la Hondura: +1 Presagio${full ? ' y se llena: sube un monstruo errante' : ''}.`;
@@ -294,7 +324,6 @@ async function destinyEffect(h, xd, dmg) {
   S.tally.comedy++; S.tally.effects++;
   await DICE3D.glow(xd, '#ffd060', 1.8); DICE3D.hop(xd); audio.sfx('levelUp', { vol: 0.6 });
   const C = COMEDY[h.kind];
-  tag(new THREE.Vector3(xd.group.position.x, 0, xd.group.position.z + 0.95), `<b>Máscara alegre</b> · ${U.esc(C.name)}`, 'good');
   floatText(headOf(h, 1.15), C.name, 'good');
   if (h.kind === 'barbaro') {
     const b = units.b;
@@ -306,6 +335,7 @@ async function destinyEffect(h, xd, dmg) {
     const a = dice[0], blocks = dice.slice(1).filter((d) => d.kind === 'bshield');
     const hit = a.kind === 'skull' && !blocks.length;
     await Promise.all([HIT(a.kind) ? DICE3D.glow(a, '#ff9a5a') : DICE3D.dim(a), ...dice.slice(1).map((d) => (d.kind === 'bshield' ? DICE3D.glow(d, '#8fc6ff') : DICE3D.dim(d)))]);
+    plaqueSub(`${fi('combat', HIT(a.kind) ? 'skull' : a.kind)}<span>Rebote contra ${U.esc(b.name)}: <b class="${hit ? 'dmg' : 'none'}">${hit ? '1 de daño' : HIT(a.kind) ? 'lo para' : 'falla'}</b></span>`, hit ? 'good' : 'none');
     if (hit) { await projectile(a.group.position.clone().setY(0.6), headOf(b), '#ff5a3a', { dur: 300 }); await hurt(b, 1); return `Destino: <b class="good">máscara alegre</b> · Rebote: el hachazo alcanza a ${b.name}, <b>1 de daño</b>.`; }
     floatText(headOf(b, 1.05), HIT(a.kind) ? 'Bloqueado' : 'Fallo', 'info');
     return `Destino: <b class="good">máscara alegre</b> · Rebote: 1 dado contra ${b.name}… ${HIT(a.kind) ? 'lo para con su escudo' : 'falla'}.`;
@@ -347,7 +377,7 @@ async function geminiEffects(att, tgt, r, counter) {
     floatText(headOf(att, 1.15), 'Fracaso crítico', 'bad');
     out.push('<b class="bad">Fracaso crítico</b>: el enemigo contraataca al instante.');
     await U.sleep(500); await DICE3D.clear(); clearTags(); await zoomOut();
-    const c = await exchange(tgt, att, { atk: tgt.atk, def: att.def, zoneA: ZONE.def, zoneD: ZONE.atk });
+    const c = await exchange(tgt, att, { atk: tgt.atk, def: att.def, zoneA: ZONE.def, zoneD: ZONE.atk, noCounter: true, caption: `Contraataque · ${U.esc(tgt.name)} → ${U.esc(att.name)}` });
     out.push(`Contraataque de ${tgt.name}: ${plural(c.hits, 'calavera', 'calaveras')} contra ${plural(c.blocks, 'escudo', 'escudos')}. ${c.dmg ? `<b>${c.dmg} de daño a ${att.name}.</b>` : 'Sin daño.'}`);
     return out;
   }
@@ -358,7 +388,7 @@ async function geminiEffects(att, tgt, r, counter) {
 /* ---------------- el enemigo ataca ---------------- */
 async function foeAttack() {
   const h = units.hero, e = units.a;
-  const r = await exchange(e, h, { atk: e.atk, def: h.def, zoneA: ZONE.def, zoneD: ZONE.atk });
+  const r = await exchange(e, h, { atk: e.atk, def: h.def, zoneA: ZONE.def, zoneD: ZONE.atk, noCounter: true });
   const lines = [`${e.name} tira ${plural(r.nA, 'dado', 'dados')}: ${plural(r.hits, 'calavera', 'calaveras')}. ${h.name} para ${plural(r.blocks, 'golpe', 'golpes')} con ${S.mode === 'mascaras' ? 'el escudo con máscara (1 cara de 6)' : 'escudos blancos (2 caras de 6)'}. ${r.dmg ? `<b>${r.dmg} de daño.</b>` : '<b>Sin daño.</b>'}`];
   if (S.mode === 'destino') lines.push('Los enemigos no tiran el Dado del Destino: su turno sigue igual de rápido.');
   if (S.mode === 'mascaras') lines.push(...(await geminiEffects(e, h, r, true)));
@@ -371,6 +401,9 @@ async function search() {
   const [d] = await DICE3D.throw([{ type: 'treasure', face: r.i, from: from(h), to: ZONE.solo }], { dur: 1000 });
   zoomFit([h]);
   const good = d.kind === 'gold' || d.kind === 'potion' || d.kind === 'item';
+  const dart = d.kind === 'danger' && Math.random() < 0.5;
+  const LBL = { gold: 'Oro: +15 monedas', potion: 'Una poción', item: 'Un objeto: bomba', nothing: 'Nada', danger: dart ? 'Peligro: un dardo, −1 PV' : 'Peligro: ruido, +1 Presagio' };
+  plaque(`${U.esc(h.name)} busca · Dado del Tesoro`, `${fi('treasure', d.kind)}<b class="${good ? 'good' : d.kind === 'danger' ? 'bad' : 'none'}">${LBL[d.kind]}</b>`, good ? 'hit' : 'miss');
   await DICE3D.glow(d, good ? '#ffd060' : d.kind === 'danger' ? '#ff3a5a' : '#bbbbbb', 1.4); DICE3D.hop(d);
   let txt = TREASURE[d.kind];
   if (d.kind === 'gold') { audio.sfx('gold'); floatText(headOf(h, 1.15), '+15 oro', 'gold'); }
@@ -378,10 +411,9 @@ async function search() {
   if (d.kind === 'item') { audio.sfx('chest'); floatText(headOf(h, 1.15), '+1 bomba', 'good'); }
   if (d.kind === 'nothing') floatText(headOf(h, 1.15), 'Nada', 'info');
   if (d.kind === 'danger') {
-    if (Math.random() < 0.5) { audio.sfx('trap'); txt = 'Peligro: un dardo sale de la pared. −1 PV.'; await hurt(h, 1); }
+    if (dart) { audio.sfx('trap'); txt = 'Peligro: un dardo sale de la pared. −1 PV.'; await hurt(h, 1); }
     else { txt = 'Peligro: el ruido despierta algo. +1 Presagio.'; floatText(headOf(h, 1.15), '+1 Presagio', 'bad'); await addDoom(); }
   }
-  tag(new THREE.Vector3(d.group.position.x, 0, d.group.position.z + 1), `<b>${U.esc(txt)}</b>`, good ? 'good' : d.kind === 'danger' ? 'bad' : '');
   report([`${h.name} busca en la sala. Dado del Tesoro: ${txt}`, 'Caras: oro, oro, poción, objeto, nada y peligro. Se tira una vez por sala.']);
 }
 /* ---------------- forzar una cerradura ---------------- */
@@ -395,7 +427,7 @@ async function forceLock() {
   await Promise.all([...sk.map((d) => DICE3D.glow(d, '#ff9a5a')), ...dice.filter((d) => d.kind !== 'skull').map((d) => DICE3D.dim(d))]);
   S.lockHave += sk.length;
   const ok = S.lockHave >= need;
-  tag(new THREE.Vector3(ZONE.solo.x, 0, ZONE.solo.z + 1), ok ? '<b>¡Abierta!</b>' : `<b>${S.lockHave} de ${need}</b> calaveras`, ok ? 'good' : '');
+  plaque(`${U.esc(h.name)} fuerza la cerradura`, `${fi('combat', 'skull')}<b class="n">×${sk.length}</b><i>→</i>${ok ? '<b class="good">¡Abierta!</b>' : `<b class="none">${S.lockHave} de ${need}</b>`}`, ok ? 'hit' : 'miss');
   audio.sfx(ok ? 'door' : 'deny');
   report([`${h.name} fuerza la cerradura: ${plural(sk.length, 'calavera', 'calaveras')}. ${ok ? '<b>Se abre.</b>' : `Lleva ${S.lockHave} de ${need}: las calaveras se suman en el siguiente intento.`}`]);
   if (ok) S.lockHave = 0;
@@ -407,7 +439,7 @@ async function act(fn) {
   audio.init();
   S.busy = true; document.body.classList.add('busy');
   try {
-    clearTags(); await Promise.all([DICE3D.clear(), resetPlaces(), zoomOut()]);
+    clearTags(); plaqueHide(); await Promise.all([DICE3D.clear(), resetPlaces(), zoomOut()]);
     Object.values(units).forEach((u) => { const keep = u.side === 'hero' && u.status.blunt; u.status = keep ? { blunt: u.status.blunt } : {}; badge(u); });
     await fn();
   } catch (e) { console.error(e); }
@@ -415,7 +447,6 @@ async function act(fn) {
 }
 function report(lines) {
   $('result').innerHTML = lines.map((l) => `<p>${l}</p>`).join('');
-  $('strip').innerHTML = lines[lines.length > 1 && /Destino|Máscaras|Éxito|Fracaso|Las máscaras|Sin máscaras/.test(lines[1]) ? 1 : 0];
   S.log.unshift(lines.join(' ')); S.log = S.log.slice(0, 6);
   $('log').innerHTML = S.log.map((l) => `<li>${l}</li>`).join('');
 }
@@ -431,9 +462,9 @@ function renderSide() {
     : S.mode === 'mascaras'
       ? '<p>Si salen más máscaras alegres que trágicas: con daño, <b>empujas</b>; sin daño, <b>+1 dado a un aliado</b>. Si salen más trágicas: con daño, <b>arma embotada</b> (−1 dado); sin daño, <b>contraataque inmediato</b>. Si se igualan, se anulan.</p>'
       : '<p>Sin efectos extra: cada calavera que no para un escudo es 1 de daño.</p>';
-  U.$$('#modes .mode').forEach((b) => (b.onclick = () => { if (S.busy) return; S.mode = b.dataset.mode; audio.init(); audio.sfx('ui'); clearTags(); DICE3D.clear(); renderSide(); renderStats(); }));
-  U.$$('#heroes .chip').forEach((b) => (b.onclick = () => { if (S.busy) return; S.hero = b.dataset.id; audio.init(); audio.sfx('ui'); clearTags(); DICE3D.clear(); buildUnits(); renderStats(); }));
-  U.$$('#foes .chip').forEach((b) => (b.onclick = () => { if (S.busy) return; S.foe = b.dataset.id; audio.init(); audio.sfx('ui'); clearTags(); DICE3D.clear(); buildUnits(); renderStats(); }));
+  U.$$('#modes .mode').forEach((b) => (b.onclick = () => { if (S.busy) return; S.mode = b.dataset.mode; audio.init(); audio.sfx('ui'); clearTags(); plaqueHide(); DICE3D.clear(); renderSide(); renderStats(); }));
+  U.$$('#heroes .chip').forEach((b) => (b.onclick = () => { if (S.busy) return; S.hero = b.dataset.id; audio.init(); audio.sfx('ui'); clearTags(); plaqueHide(); DICE3D.clear(); buildUnits(); renderStats(); }));
+  U.$$('#foes .chip').forEach((b) => (b.onclick = () => { if (S.busy) return; S.foe = b.dataset.id; audio.init(); audio.sfx('ui'); clearTags(); plaqueHide(); DICE3D.clear(); buildUnits(); renderStats(); }));
 }
 
 /* ---------------- números: teoría y comparación ---------------- */
@@ -503,7 +534,7 @@ function loop() {
 
 function start() {
   initScene(); buildUnits(); setDoom(0); renderStats();
-  report(['Elige un sistema arriba y pulsa <b>Atacar</b>: los dados caen sobre el tablero y el resultado se aplica en la escena.']);
+  report(['Elige un sistema arriba y pulsa <b>Atacar</b>: los dados caen sobre el tablero, el resultado aparece en el cartel de arriba y se aplica en la escena.']);
   $('do-attack').onclick = () => act(heroAttack);
   $('do-defend').onclick = () => act(foeAttack);
   $('do-search').onclick = () => act(search);
