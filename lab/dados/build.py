@@ -17,7 +17,7 @@ game = [read(os.path.join(SRC, f)) for f in ['01_util.js', '02_icons.js', '03_au
 w = read(os.path.join(SRC, '08_world.js')).splitlines()
 i = next(k for k, l in enumerate(w) if l.startswith('  crypt: {'))
 crypt = w[i].replace('  crypt: ', 'const CRYPT = ', 1) + '\n' + w[i + 1].rstrip().rstrip(',') + ';'
-js = '\n'.join(game + [crypt, read(os.path.join(R, 'dice3d.js')), read(os.path.join(R, 'tester.js'))])
+js = '\n'.join(game + [crypt, read(os.path.join(SRC, '09_dice3d.js')), read(os.path.join(R, 'tester.js'))])
 
 head = ('<title>Probador de dados</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n'
         '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'

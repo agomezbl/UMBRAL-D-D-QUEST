@@ -1,27 +1,8 @@
 /* ==========================================================================
-   Interfaz de rol: tiradas de cerraduras y trampas, elecciones, ficha del
+   Interfaz de rol: elecciones, ficha del
    grupo, elección de héroes (1 a 5) y talentos
    ========================================================================== */
 Object.assign(UI, {
-  /* ---------------- bandeja de tirada (cerraduras, trampas) ---------------- */
-  checkTray(r) {
-    const el = this.$('dice');
-    const roll = () => [U.randi(2, 4) * 360 + U.randi(-40, 40), U.randi(2, 4) * 360 + U.randi(-40, 40), U.randi(-30, 30)];
-    const row = r.dice.map((f) => this.dieHTML(f, f === 'skull', roll())).join('');
-    const total = r.skulls + (r.have || 0), ok = total >= r.need;
-    el.className = 'dice plate check by-hero' + (r.quick ? ' quick' : '');
-    el.innerHTML = `
-      <div class="dc-head"><b>${U.esc(r.label || 'Tirada')}</b><span>${U.esc(r.u.name)} · ${r.dice.length} dado${r.dice.length === 1 ? '' : 's'} · hacen falta ${r.need} ${icon('skull')}</span></div>
-      <div class="dc-row atk">${row}</div>
-      <div class="dc-res"><span>${r.have ? `${r.have} + ` : ''}${r.skulls} ${icon('skull')}</span><i>de</i><span>${r.need}</span><strong class="${ok ? 'hit' : 'miss'}">${ok ? 'Conseguido' : r.have != null && total > 0 ? 'Aún no' : 'Fallo'}</strong></div>`;
-    el.hidden = false; void el.offsetWidth; el.classList.add('roll');
-    audio.sfx('dice');
-    const t = (r.quick ? 480 : 760) / U.speed;
-    setTimeout(() => { audio.sfx('diceLand'); if (!r.quick) audio.sfx(ok ? 'turnHero' : 'deny', { vol: 0.5 }); }, t * 0.8);
-    this.scheduleDiceHide(t + (r.quick ? 800 : 1400) / U.speed);
-    return U.sleep(r.quick ? 480 : 760);
-  },
-
   /* ---------------- elecciones ---------------- */
   choice(prompt, options, o = {}) {
     return new Promise((resolve) => {

@@ -57,11 +57,11 @@ const DTYPES = { phys: 'golpe', pierce: 'flecha', radiant: 'luz', fire: 'fuego',
 
 /* Dificultad: cambia cómo piensa la Sombra y qué pasa al caer, no solo los números */
 const DIFFICULTY = {
-  relato: { id: 'relato', name: 'Relato', iq: -1, enemyHp: 0, bossHp: -2, enemyAtk: -1, bossAtk: 0, heroHp: 2, foes: 1, doom: 9, potions: 3, champions: 0, fall: 'auto', wounds: false, summons: 4,
+  relato: { id: 'relato', name: 'Relato', iq: -1, enemyHp: 0, bossHp: -2, enemyAtk: -1, bossAtk: 0, heroHp: 2, foes: 1, doom: 11, potions: 3, champions: 0, fall: 'auto', wounds: false, summons: 4,
     blurb: 'Para disfrutar de la historia. Más vida, la Sombra es torpe y quien cae se levanta solo.' },
-  heroe: { id: 'heroe', name: 'Héroe', iq: 0, enemyHp: 0, bossHp: 0, enemyAtk: 0, bossAtk: 0, heroHp: 0, foes: 1.2, doom: 6, potions: 2, champions: 0, fall: 'ally', wounds: true, summons: 6,
+  heroe: { id: 'heroe', name: 'Héroe', iq: 0, enemyHp: 0, bossHp: 0, enemyAtk: 0, bossAtk: 0, heroHp: 0, foes: 1.2, doom: 8, potions: 2, champions: 0, fall: 'ally', wounds: true, summons: 6,
     blurb: 'La experiencia pensada. Cada criatura juega a su manera y quien cae necesita que un compañero le levante.' },
-  pesadilla: { id: 'pesadilla', name: 'Pesadilla', iq: 1, enemyHp: 1, bossHp: 3, enemyAtk: 0, bossAtk: 0, heroHp: 0, foes: 1.05, doom: 5, potions: 2, champions: 5, fall: 'bleed', bleed: 3, wounds: true, summons: 8,
+  pesadilla: { id: 'pesadilla', name: 'Pesadilla', iq: 1, enemyHp: 1, bossHp: 3, enemyAtk: 0, bossAtk: 0, heroHp: 0, foes: 1.05, doom: 7, potions: 2, champions: 5, fall: 'bleed', bleed: 3, wounds: true, summons: 8,
     blurb: 'La Sombra piensa más rápido, hay campeones y quien cae se desangra: si nadie le levanta en 3 rondas, se pierde la aventura.' }
 };
 

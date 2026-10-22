@@ -131,6 +131,7 @@ const MAIN = {
       await U.nextFrame();
       ENGINE.tiltOn = SETTINGS.tilt;
       ENGINE.init(document.getElementById('stage'));
+      DICE3D.init(ENGINE.scene, { size: 0.84, selfLit: 0.22 });
       FX.init(); UI.init(); INPUT.init();
       this.applySettings(false, true);
       say('Tallando las miniaturas…');
@@ -221,5 +222,5 @@ const MAIN = {
   }
 };
 
-window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, TALENTS, BOONS, VIGILS, HERO_ROSTER, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, GEAR, SLOTS, STATUS, TUTOR, TUTORIAL, DESCENT };
+window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, DICE3D, MAIN, SETTINGS, U, audio, RULES, TALENTS, BOONS, VIGILS, HERO_ROSTER, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, GEAR, SLOTS, STATUS, TUTOR, TUTORIAL, DESCENT };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => MAIN.boot()); else MAIN.boot();

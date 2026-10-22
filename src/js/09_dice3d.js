@@ -1,8 +1,8 @@
 /* ==========================================================================
    Dados 3D que se lanzan sobre el tablero.
    Cada dado cae, rebota y se para en la cara que ya ha decidido el juego
-   (el azar se tira antes; la animación solo lo enseña). Pensado para poder
-   llevarse tal cual al juego.
+   (el azar se tira antes; la animación solo lo enseña). Lo usan el juego y
+   el probador de dados (lab/dados).
    ========================================================================== */
 const DICE3D = (() => {
   // orden de caras de BoxGeometry: +x, -x, +y, -y, +z, -z
@@ -13,14 +13,14 @@ const DICE3D = (() => {
   /* Tipos de dado: color del cuerpo, tinta y caras (en el orden de las caras de la caja) */
   const TYPES = {
     combat: { name: 'Dado de combate', body: '#efe6d3', edge: '#b9ab8e', ink: '#1f1813', faces: ['skull', 'wshield', 'skull', 'bshield', 'skull', 'wshield'] },
-    foe: { name: 'Dado de combate', body: '#cdbf9f', edge: '#8f7f62', ink: '#1f1813', faces: ['skull', 'wshield', 'skull', 'bshield', 'skull', 'wshield'] },
+    foe: { name: 'Dado de combate', body: '#d9a796', edge: '#8e4f40', ink: '#1f1813', faces: ['skull', 'wshield', 'skull', 'bshield', 'skull', 'wshield'] },
     gemini: { name: 'Dado de máscaras', body: '#efe6d3', edge: '#b9ab8e', ink: '#1f1813', faces: ['skull', 'skullT', 'skull', 'shieldC', 'comedy', 'tragedy'] },
     geminiFoe: { name: 'Dado de máscaras', body: '#cdbf9f', edge: '#8f7f62', ink: '#1f1813', faces: ['skull', 'skullT', 'skull', 'shieldC', 'comedy', 'tragedy'] },
     destiny: { name: 'Dado del Destino', body: '#dcaa45', edge: '#7a5414', ink: '#2e1a08', size: 1.18, metal: 0.4, faces: ['comedy', 'blank', 'tragedy', 'blank', 'comedy', 'blank'] },
     treasure: { name: 'Dado del Tesoro', body: '#b48650', edge: '#6b4a26', ink: '#2a1a0e', size: 1.1, faces: ['gold', 'potion', 'gold', 'nothing', 'item', 'danger'] }
   };
 
-  let scene = null, SIZE = 0.78;
+  let scene = null, SIZE = 0.78, SELF = 0, VIEW_YAW = 0, warm = null;
   const live = [];
   const texCache = {};
 
@@ -151,7 +151,8 @@ const DICE3D = (() => {
   function makeDie(typeKey) {
     const T = TYPES[typeKey];
     if (!GEO) GEO = roundedBox();
-    const mats = T.faces.map((f) => new THREE.MeshStandardMaterial({ map: faceTexture(typeKey, f), roughness: typeKey === 'destiny' ? 0.32 : 0.46, metalness: T.metal || 0.02, emissive: new THREE.Color('#000000') }));
+    // con «SELF» las caras se iluminan un poco solas: se leen aunque la sala esté a oscuras
+    const mats = T.faces.map((f) => { const map = faceTexture(typeKey, f); return new THREE.MeshStandardMaterial({ map, roughness: typeKey === 'destiny' ? 0.32 : 0.46, metalness: T.metal || 0.02, emissiveMap: SELF ? map : null, emissive: new THREE.Color(SELF ? '#ffffff' : '#000000'), emissiveIntensity: SELF || 1 }); });
     const mesh = new THREE.Mesh(GEO, mats);
     const s = SIZE * (T.size || 1);
     mesh.scale.setScalar(s); mesh.castShadow = true; mesh.receiveShadow = true;
@@ -160,17 +161,19 @@ const DICE3D = (() => {
     const g = new THREE.Group(); g.add(mesh); g.add(ring);
     return { type: typeKey, T, group: g, mesh, ring, mats, size: s, face: 0, kind: null };
   }
-  /* Orientación final: la cara «i» arriba y su dibujo derecho para quien mira desde +z */
+  /* Orientación final: la cara «i» arriba y su dibujo derecho para quien mira desde la cámara */
   function restQuat(i, jitter = 0.3) {
     const q = new THREE.Quaternion().setFromUnitVectors(NORMALS[i], new THREE.Vector3(0, 1, 0));
     const up = TEX_UP[i].clone().applyQuaternion(q); up.y = 0; up.normalize();
-    const want = new THREE.Vector3(0, 0, -1);
+    const want = new THREE.Vector3(-Math.sin(VIEW_YAW), 0, -Math.cos(VIEW_YAW));
     let yaw = Math.atan2(up.x, up.z) - Math.atan2(want.x, want.z);
     yaw = -yaw + (Math.random() - 0.5) * 2 * jitter;
     return new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw).multiply(q);
   }
   /* Elegir una cara al azar (todas igual de probables) */
   function roll(typeKey) { const i = Math.floor(Math.random() * 6); return { i, kind: TYPES[typeKey].faces[i] }; }
+  /* Una cara concreta (si hay varias iguales, una cualquiera de ellas) */
+  function faceOf(typeKey, kind) { const idx = []; TYPES[typeKey].faces.forEach((f, i) => { if (f === kind) idx.push(i); }); return idx.length ? idx[Math.floor(Math.random() * idx.length)] : 0; }
 
   /* Lanzar un grupo de dados. Cada pieza: { type, face (índice), from, to, delay } */
   function throwDice(list, o = {}) {
@@ -222,7 +225,7 @@ const DICE3D = (() => {
   /* ---------------- efectos sobre un dado ya parado ---------------- */
   function glow(d, color, k = 1) {
     d.ring.material.color.set(color); d.ring.material.color.multiplyScalar(1.6 * k);
-    d.mats.forEach((m) => { m.emissive.set(color); m.emissiveIntensity = 0.16 * k; });
+    d.mats.forEach((m) => { m.emissive.set(color); m.emissiveIntensity = (SELF ? SELF * 1.6 : 0.16) * k; });
     return U.tween(260, (t) => { d.ring.material.opacity = 0.9 * t; const s = 1 + 0.18 * Math.sin(t * Math.PI); d.mesh.scale.setScalar(d.size * s); });
   }
   function dim(d) {
@@ -231,7 +234,10 @@ const DICE3D = (() => {
     return U.tween(260, (t) => { d.mats.forEach((m) => m.color.setScalar(1 - 0.5 * t)); d.ring.material.opacity *= 1 - t; d.mesh.scale.setScalar(d.size * (1 - 0.12 * t)); });
   }
   function hop(d) { const y0 = d.group.position.y; return U.tween(300, (t) => (d.group.position.y = y0 + Math.sin(t * Math.PI) * 0.35)); }
+  let clearT = null;
+  function clearLater(ms) { clearTimeout(clearT); clearT = setTimeout(() => clear(), ms / (U.speed || 1)); }
   function clear() {
+    clearTimeout(clearT);
     const old = live.splice(0);
     if (!old.length) return Promise.resolve();
     return U.tween(260, (t) => old.forEach((d) => { d.group.position.y = d.size / 2 - t * d.size; d.mats.forEach((m) => { m.transparent = true; m.opacity = 1 - t; }); d.ring.material.opacity *= 1 - t; }))
@@ -239,9 +245,21 @@ const DICE3D = (() => {
   }
 
   return {
-    TYPES, roll, slots, glow, dim, hop, clear, live: () => live.slice(),
+    TYPES, roll, faceOf, slots, glow, dim, hop, clear, clearLater, live: () => live.slice(),
     throw: throwDice,
-    init(sc, o = {}) { scene = sc; if (o.size) SIZE = o.size; },
-    faceTexture
+    init(sc, o = {}) { scene = sc; if (o.size) SIZE = o.size; if (o.selfLit) SELF = o.selfLit; },
+    setView(yaw) { VIEW_YAW = yaw || 0; },
+    faceTexture,
+    /* Prepara de antemano los sombreadores y las texturas, para que la primera tirada no dé un tirón.
+       Los dados de muestra no se desechan: así el motor conserva sus sombreadores compilados. */
+    prewarm(renderer, camera) {
+      if (!scene || !renderer || !camera) return;
+      try {
+        if (!warm) warm = ['combat', 'foe', 'destiny', 'treasure'].map((t) => makeDie(t));
+        warm.forEach((d) => { d.group.position.set(0, -30, 0); scene.add(d.group); if (renderer.initTexture) d.mats.forEach((m) => m.map && renderer.initTexture(m.map)); });
+        renderer.compile(scene, camera);
+      } catch (e) { /* no pasa nada: se compilará en la primera tirada */ }
+      if (warm) warm.forEach((d) => scene.remove(d.group));
+    }
   };
 })();

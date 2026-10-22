@@ -255,42 +255,39 @@ body.cinema #party { transform: translateX(-20px); }
 #note-text { font-family: var(--f-story); font-style: italic; font-size: 20px; line-height: 1.55; margin: 0; }
 .note-tap { margin-top: 16px; font-family: var(--f-sc); font-size: var(--t-xs); letter-spacing: 0.12em; text-transform: uppercase; color: #7a5a3a; text-align: right; }
 
-/* ------------------------------------------------ dados */
-.dice { position: fixed; z-index: 35; left: 50%; top: max(12%, calc(var(--gt) + 70px)); transform: translateX(-50%); padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; min-width: 260px; max-width: 92vw; }
-.dice.by-foe { border-color: #7a3030; }
-.dc-head { display: flex; flex-direction: column; align-items: center; }
-.dc-head b { font-family: var(--f-display); font-size: 22px; color: var(--candle-hi); font-weight: 500; line-height: 1.1; }
-.dice.by-foe .dc-head b { color: #ffb3a0; }
-.dc-head span { font-size: var(--t-xs); color: var(--ash); font-family: var(--f-sc); letter-spacing: 0.06em; }
-.dc-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; min-height: 36px; align-items: center; }
-.dc-row.def { padding-top: 6px; border-top: 1px dashed var(--bronze-dim); }
-.nodef { font-family: var(--f-story); color: var(--ash); font-size: var(--t-s); }
-.die { width: 34px; height: 34px; perspective: 260px; display: inline-block; --dd: 0.8s; }
-.cube { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)); }
-.dice.roll .cube { animation: tumble var(--dd) cubic-bezier(.15, .75, .3, 1) forwards; }
-.dice.quick .die { --dd: 0.5s; }
-@keyframes tumble { 0% { transform: translateY(-26px) rotateX(var(--rx)) rotateY(var(--ry)) rotateZ(var(--rz)); } 70% { transform: translateY(2px) rotateX(-8deg) rotateY(6deg); } 100% { transform: none; } }
-.fc { position: absolute; inset: 0; background: linear-gradient(145deg, #f6eedb, #d9cdb2); border-radius: 6px; display: grid; place-items: center; backface-visibility: hidden; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25), inset 0 -3px 6px rgba(0, 0, 0, 0.2); }
-.fc .ico { width: 22px; height: 22px; }
-.front { transform: translateZ(17px); } .back { transform: rotateY(180deg) translateZ(17px); }
-.right { transform: rotateY(90deg) translateZ(17px); } .left { transform: rotateY(-90deg) translateZ(17px); }
-.top { transform: rotateX(90deg) translateZ(17px); } .bottom { transform: rotateX(-90deg) translateZ(17px); }
-.f-skull { color: #a31d16; }
-.f-white { color: #2a2a30; }
-.f-white .ico path { fill: #ffffff; fill-opacity: 1; }
-.f-black { color: #0d0b0a; }
-.f-black .ico path { fill: #0d0b0a; fill-opacity: 1; }
-.die.muted { opacity: 0.38; filter: saturate(0.3); transition: opacity 0.3s 0.6s; }
-.die.counted .front { box-shadow: inset 0 0 0 2px var(--candle), 0 0 14px rgba(233, 184, 100, 0.65); }
-.dc-res { display: flex; gap: 8px; align-items: center; font-family: var(--f-sc); font-size: var(--t-m); color: var(--bone); opacity: 0; animation: resin 0.3s ease-out 0.62s forwards; }
-.dice.quick .dc-res { animation-delay: 0.38s; }
-.dc-res span { display: inline-flex; align-items: center; gap: 4px; }
-.dc-res span .ico { width: 16px; height: 16px; color: var(--candle); }
-.dc-res i { font-style: normal; color: var(--ash); }
-.dc-res strong { font-family: var(--f-display); font-size: 24px; font-weight: 500; }
-.dc-res strong.hit { color: #ff8a6a; }
-.dc-res strong.miss { color: #9fcfff; }
-@keyframes resin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* ------------------------------------------------ cartel de la tirada (los dados ruedan en el tablero) */
+.plaque { position: fixed; z-index: 35; left: 50%; top: max(12%, calc(var(--gt) + 70px)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 20px 10px; max-width: calc(100vw - 24px); width: max-content; text-align: center; pointer-events: none; }
+.plaque[hidden] { display: none; }
+.plaque.in { animation: pq 0.3s ease-out; }
+@keyframes pq { from { opacity: 0; transform: translate(-50%, -8px) scale(0.96); } to { opacity: 1; transform: translateX(-50%); } }
+.plaque.hit { border-color: #ff8a5a; }
+.plaque.miss { border-color: var(--bronze-dim); }
+.pq-cap { font-family: var(--f-sc); font-size: var(--t-xs); letter-spacing: 0.06em; color: var(--ash); display: flex; flex-wrap: wrap; gap: 4px 6px; justify-content: center; align-items: center; }
+.pq-cap b { color: var(--candle-hi); font-weight: 700; }
+.plaque.foe .pq-cap b { color: #ffb3a0; }
+.pq-mods { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.pq-mods em { font-style: normal; padding: 0 5px; border-radius: 2px; background: rgba(0, 0, 0, 0.35); }
+.pq-mods .up { color: #9fe0c0; } .pq-mods .down { color: #ff9a86; }
+.pq-main { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 8px; font-family: var(--f-display); font-size: 30px; line-height: 1.1; color: var(--bone); }
+.pq-main i { font-style: normal; color: var(--ash); font-size: 24px; }
+.pq-main b { font-weight: 500; }
+.pq-main b.n { font-family: var(--f-sc); font-size: 22px; font-weight: 700; margin-left: -2px; }
+.fi { width: 34px; height: 34px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); }
+b.dmg { color: #ff6a4a; } b.none { color: var(--ash); } b.good { color: var(--candle-hi); } b.bad { color: #ff7a66; }
+.pq-sub:empty { display: none; }
+.pq-sub p { margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: var(--t-s); color: var(--bone); }
+.pq-sub .fi { width: 24px; height: 24px; border-radius: 4px; }
+.pq-sub b { font-weight: 700; }
+@media (max-width: 820px) {
+  /* en el móvil en vertical, arriba están las fichas del grupo: el cartel va abajo, junto a los botones */
+  .plaque { top: auto; bottom: calc(var(--gb) + 96px); padding: 6px 14px 8px; }
+  @keyframes pq { from { opacity: 0; transform: translate(-50%, 8px) scale(0.96); } to { opacity: 1; transform: translateX(-50%); } }
+  .pq-main { font-size: 26px; }
+  .pq-main b.n { font-size: 19px; }
+  .fi { width: 30px; height: 30px; }
+  body.pq-on #hint { bottom: calc(var(--gb) + 228px); }
+  body.pq-on #toast { bottom: calc(var(--gb) + 236px); }
+}
 
 /* ------------------------------------------------ sustos */
 .scare { position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: 0; }
@@ -479,8 +476,7 @@ body.cinema #party { transform: translateX(-20px); }
   .bn-t { font-size: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tt-name, .act-end.pulse, #dlg-next.ready, .pv-confirm { animation: none; }
-  .dice.roll .cube { animation-duration: 0.01s; }
+  .tt-name, .act-end.pulse, #dlg-next.ready, .pv-confirm, .plaque.in { animation: none; }
 }
 
 /* ------------------------------------------------ sistema de virtudes */
@@ -504,10 +500,10 @@ body.cinema #party { transform: translateX(-20px); }
 #acts-pop .item-row em { font-size: 15px; font-family: var(--f-sc); color: var(--ash); }
 #undo-move { font-family: var(--f-sc); font-size: var(--t-s); letter-spacing: 0.06em; padding: 7px 14px; cursor: pointer; color: var(--bone); display: inline-flex; gap: 8px; align-items: center; }
 #undo-move .ico { color: var(--candle); }
-.pv-mods, .dc-mods { display: flex; gap: 6px; flex-wrap: wrap; font-family: var(--f-sc); font-size: var(--t-xs); letter-spacing: 0.03em; }
-.pv-mods span, .dc-mods span { padding: 1px 6px; border-radius: 2px; background: rgba(0, 0, 0, 0.35); }
-.pv-mods .up, .dc-mods .up { color: #9fe0c0; }
-.pv-mods .down, .dc-mods .down { color: #ff9a86; }
+.pv-mods { display: flex; gap: 6px; flex-wrap: wrap; font-family: var(--f-sc); font-size: var(--t-xs); letter-spacing: 0.03em; }
+.pv-mods span { padding: 1px 6px; border-radius: 2px; background: rgba(0, 0, 0, 0.35); }
+.pv-mods .up { color: #9fe0c0; }
+.pv-mods .down { color: #ff9a86; }
 .pv-virt { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; font-size: var(--t-s); color: var(--bone); font-variant-numeric: tabular-nums; }
 .pv-virt em { font-style: normal; font-family: var(--f-sc); font-size: 10px; color: var(--ash); margin-right: 2px; letter-spacing: 0.06em; }
 .pv-iq { font-family: var(--f-sc); font-size: var(--t-xs); color: var(--candle); }
@@ -515,8 +511,6 @@ body.cinema #party { transform: translateX(-20px); }
 .pv-traits span { font-size: var(--t-xs); padding: 1px 6px; border: 1px solid var(--bronze-dim); border-radius: 2px; color: var(--ash); }
 .pv-traits span.bad { color: #ff9a86; border-color: rgba(212, 80, 58, 0.5); }
 .pv-traits span.good { color: #9fe0c0; border-color: rgba(116, 205, 170, 0.45); }
-.dice.check .dc-res i { font-style: normal; color: var(--ash); font-size: var(--t-s); }
-.dice.reroll { border-color: var(--candle); }
 .det-offer { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; pointer-events: auto; position: relative; padding-top: 4px; }
 .det-offer .btn small { margin-left: 4px; }
 .det-timer { position: absolute; left: 0; right: 0; bottom: -6px; height: 2px; background: var(--candle); transform-origin: left; animation: detTimer 6.5s linear forwards; }
@@ -872,7 +866,7 @@ body.txt-enorme .hc-name small { display: none; }
 </div>
 <button id="ffwd" class="plate" hidden>Acelerar »</button>
 <div id="banner" class="banner"></div>
-<div id="dice" class="dice plate" hidden></div>
+<div id="plaque" class="plaque plate" role="status" aria-live="polite" hidden></div>
 <div id="letterbox"><i></i><i></i></div>
 <div id="dlg" class="dlg plate" hidden>
   <div class="dlg-port" id="dlg-port"><img id="dlg-port-img" alt=""></div>
@@ -5103,6 +5097,272 @@ const WORLD = {
 };
 
 /* ==========================================================================
+   Dados 3D que se lanzan sobre el tablero.
+   Cada dado cae, rebota y se para en la cara que ya ha decidido el juego
+   (el azar se tira antes; la animación solo lo enseña). Lo usan el juego y
+   el probador de dados (lab/dados).
+   ========================================================================== */
+const DICE3D = (() => {
+  // orden de caras de BoxGeometry: +x, -x, +y, -y, +z, -z
+  const NORMALS = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]].map((a) => new THREE.Vector3(...a));
+  // hacia dónde queda «arriba» el dibujo de cada cara (para que se lea derecho desde la cámara)
+  const TEX_UP = [[0, 1, 0], [0, 1, 0], [0, 0, -1], [0, 0, 1], [0, 1, 0], [0, 1, 0]].map((a) => new THREE.Vector3(...a));
+
+  /* Tipos de dado: color del cuerpo, tinta y caras (en el orden de las caras de la caja) */
+  const TYPES = {
+    combat: { name: 'Dado de combate', body: '#efe6d3', edge: '#b9ab8e', ink: '#1f1813', faces: ['skull', 'wshield', 'skull', 'bshield', 'skull', 'wshield'] },
+    foe: { name: 'Dado de combate', body: '#d9a796', edge: '#8e4f40', ink: '#1f1813', faces: ['skull', 'wshield', 'skull', 'bshield', 'skull', 'wshield'] },
+    gemini: { name: 'Dado de máscaras', body: '#efe6d3', edge: '#b9ab8e', ink: '#1f1813', faces: ['skull', 'skullT', 'skull', 'shieldC', 'comedy', 'tragedy'] },
+    geminiFoe: { name: 'Dado de máscaras', body: '#cdbf9f', edge: '#8f7f62', ink: '#1f1813', faces: ['skull', 'skullT', 'skull', 'shieldC', 'comedy', 'tragedy'] },
+    destiny: { name: 'Dado del Destino', body: '#dcaa45', edge: '#7a5414', ink: '#2e1a08', size: 1.18, metal: 0.4, faces: ['comedy', 'blank', 'tragedy', 'blank', 'comedy', 'blank'] },
+    treasure: { name: 'Dado del Tesoro', body: '#b48650', edge: '#6b4a26', ink: '#2a1a0e', size: 1.1, faces: ['gold', 'potion', 'gold', 'nothing', 'item', 'danger'] }
+  };
+
+  let scene = null, SIZE = 0.78, SELF = 0, VIEW_YAW = 0, warm = null;
+  const live = [];
+  const texCache = {};
+
+  /* ---------------- geometría: cubo con aristas redondeadas ---------------- */
+  let GEO = null;
+  function roundedBox(r = 0.16, seg = 10) {
+    const g = new THREE.BoxGeometry(1, 1, 1, seg, seg, seg);
+    const p = g.attributes.position, n = g.attributes.normal, v = new THREE.Vector3(), c = new THREE.Vector3(), d = new THREE.Vector3();
+    const h = 0.5 - r;
+    for (let i = 0; i < p.count; i++) {
+      v.fromBufferAttribute(p, i);
+      c.set(U.clamp(v.x, -h, h), U.clamp(v.y, -h, h), U.clamp(v.z, -h, h));
+      d.copy(v).sub(c).normalize();
+      v.copy(c).addScaledVector(d, r);
+      p.setXYZ(i, v.x, v.y, v.z); n.setXYZ(i, d.x, d.y, d.z);
+    }
+    return g;
+  }
+
+  /* ---------------- dibujo de caras ---------------- */
+  const P = {
+    skull: 'M12 3c-4.4 0-7.5 3.1-7.5 7.3 0 2.6 1.3 4.4 3 5.4V19h9v-3.3c1.7-1 3-2.8 3-5.4C19.5 6.1 16.4 3 12 3Z',
+    shield: 'M12 2.6 4.4 5.5v6.1c0 4.8 3.2 8.3 7.6 9.8 4.4-1.5 7.6-5 7.6-9.8V5.5Z',
+    mask: 'M3.6 5.2c3.4-1.8 13.4-1.8 16.8 0 .5 6.6-2.4 13.6-8.4 14.8C6 18.8 3.1 11.8 3.6 5.2Z',
+    flask: 'M9.6 2.8h4.8M10.2 3v5.4L5.8 15.6A3.7 3.7 0 0 0 9 21h6a3.7 3.7 0 0 0 3.2-5.4L13.8 8.4V3',
+    chest: 'M3.5 10.5h17v9h-17ZM3.5 10.5c0-3.3 2.5-5.5 5.5-5.5h6c3 0 5.5 2.2 5.5 5.5'
+  };
+  function canvasFor(key, draw) {
+    if (texCache[key]) return texCache[key];
+    const S = 256, c = document.createElement('canvas'); c.width = c.height = S;
+    const x = c.getContext('2d');
+    draw(x, S);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+    return (texCache[key] = t);
+  }
+  function bodyFill(x, S, T) {
+    const g = x.createRadialGradient(S / 2, S / 2, S * 0.15, S / 2, S / 2, S * 0.72);
+    g.addColorStop(0, T.body); g.addColorStop(0.78, T.body); g.addColorStop(1, T.edge);
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+    if (T === TYPES.destiny) { // filete dorado
+      x.strokeStyle = T.ink; x.globalAlpha = 0.55; x.lineWidth = 6; x.strokeRect(26, 26, S - 52, S - 52); x.globalAlpha = 1;
+    }
+  }
+  function glyph(x, S, scale = 0.62) { const k = (S * scale) / 24; x.translate(S / 2 - 12 * k, S / 2 - 12 * k); x.scale(k, k); }
+  function drawSkull(x, ink, hole) {
+    x.fillStyle = ink; x.fill(new Path2D(P.skull));
+    x.fillStyle = hole;
+    x.beginPath(); x.ellipse(8.9, 10.9, 2.1, 2.4, -0.2, 0, Math.PI * 2); x.fill();
+    x.beginPath(); x.ellipse(15.1, 10.9, 2.1, 2.4, 0.2, 0, Math.PI * 2); x.fill();
+    x.beginPath(); x.moveTo(12, 13.3); x.lineTo(10.9, 15.4); x.lineTo(13.1, 15.4); x.closePath(); x.fill();
+    x.fillRect(9.6, 17.2, 0.9, 1.9); x.fillRect(11.55, 17.2, 0.9, 1.9); x.fillRect(13.5, 17.2, 0.9, 1.9);
+  }
+  function drawShield(x, white, ink) {
+    const p = new Path2D(P.shield);
+    if (white) { x.fillStyle = '#fbf8f1'; x.fill(p); x.lineWidth = 1.7; x.strokeStyle = ink; x.stroke(p); x.lineWidth = 1.3; x.beginPath(); x.moveTo(12, 6.4); x.lineTo(12, 17.6); x.moveTo(7.6, 10.8); x.lineTo(16.4, 10.8); x.stroke(); }
+    else { x.fillStyle = ink; x.fill(p); x.strokeStyle = '#efe6d3'; x.lineWidth = 1.1; x.beginPath(); x.moveTo(12, 6.4); x.lineTo(12, 17.6); x.moveTo(7.6, 10.8); x.lineTo(16.4, 10.8); x.stroke(); }
+  }
+  function drawMask(x, happy, fill, hole, edge) {
+    x.fillStyle = fill; x.fill(new Path2D(P.mask));
+    if (edge) { x.strokeStyle = edge; x.lineWidth = 0.9; x.stroke(new Path2D(P.mask)); }
+    x.strokeStyle = hole; x.fillStyle = hole; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.lineWidth = 1.9;
+    if (happy) {
+      x.beginPath(); x.moveTo(6.6, 10.4); x.quadraticCurveTo(8.4, 7.6, 10.2, 10.4); x.stroke();
+      x.beginPath(); x.moveTo(13.8, 10.4); x.quadraticCurveTo(15.6, 7.6, 17.4, 10.4); x.stroke();
+      x.beginPath(); x.moveTo(7.4, 13.2); x.quadraticCurveTo(12, 19.4, 16.6, 13.2); x.quadraticCurveTo(12, 15.6, 7.4, 13.2); x.fill();
+    } else {
+      x.beginPath(); x.moveTo(6.6, 8.6); x.quadraticCurveTo(8.4, 11.2, 10.2, 9.6); x.stroke();
+      x.beginPath(); x.moveTo(13.8, 9.6); x.quadraticCurveTo(15.6, 11.2, 17.4, 8.6); x.stroke();
+      x.beginPath(); x.moveTo(7.8, 17.4); x.quadraticCurveTo(12, 11.6, 16.2, 17.4); x.quadraticCurveTo(12, 14.8, 7.8, 17.4); x.fill();
+      x.lineWidth = 1.2; x.beginPath(); x.moveTo(8, 12.6); x.lineTo(7.6, 14.6); x.stroke(); // lágrima
+    }
+  }
+  function faceTexture(typeKey, face) {
+    const T = TYPES[typeKey];
+    return canvasFor(typeKey + ':' + face, (x, S) => {
+      bodyFill(x, S, T);
+      x.save();
+      const comedyCol = typeKey === 'destiny' ? '#fff3d6' : '#c9921d', tragedyCol = typeKey === 'destiny' ? '#a3172c' : '#8e1b2e';
+      const holeCol = typeKey === 'destiny' ? T.ink : T.body;
+      if (face === 'skull') { glyph(x, S); drawSkull(x, T.ink, holeCol); }
+      else if (face === 'wshield') { glyph(x, S); drawShield(x, true, T.ink); }
+      else if (face === 'bshield') { glyph(x, S); drawShield(x, false, T.ink); }
+      else if (face === 'comedy') { glyph(x, S, 0.72); drawMask(x, true, comedyCol, holeCol, typeKey === 'destiny' ? T.ink : null); }
+      else if (face === 'tragedy') { glyph(x, S, 0.72); drawMask(x, false, tragedyCol, holeCol, typeKey === 'destiny' ? T.ink : null); }
+      else if (face === 'skullT' || face === 'shieldC') {
+        x.save(); glyph(x, S, 0.56); x.translate(-2.4, 1.2);
+        if (face === 'skullT') drawSkull(x, T.ink, holeCol); else drawShield(x, true, T.ink);
+        x.restore(); x.save(); x.translate(S * 0.6, S * 0.06); const k = (S * 0.34) / 24; x.scale(k, k);
+        drawMask(x, face === 'shieldC', face === 'shieldC' ? comedyCol : tragedyCol, holeCol); x.restore();
+      }
+      else if (face === 'blank') { // grabado tenue: un sol pequeño
+        x.translate(S / 2, S / 2); x.strokeStyle = T.ink; x.globalAlpha = 0.28; x.lineWidth = 4;
+        x.beginPath(); x.arc(0, 0, 22, 0, Math.PI * 2); x.stroke();
+        for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; x.beginPath(); x.moveTo(Math.cos(a) * 32, Math.sin(a) * 32); x.lineTo(Math.cos(a) * 44, Math.sin(a) * 44); x.stroke(); }
+      }
+      else if (face === 'gold') {
+        x.translate(S / 2, S / 2);
+        const g = x.createRadialGradient(-14, -18, 6, 0, 0, 62); g.addColorStop(0, '#ffe9a0'); g.addColorStop(0.6, '#e2a92c'); g.addColorStop(1, '#8a5a12');
+        x.fillStyle = g; x.beginPath(); x.arc(0, 0, 60, 0, Math.PI * 2); x.fill();
+        x.strokeStyle = '#6b440c'; x.lineWidth = 6; x.stroke(); x.beginPath(); x.arc(0, 0, 42, 0, Math.PI * 2); x.globalAlpha = 0.6; x.stroke(); x.globalAlpha = 1;
+        x.fillStyle = '#6b440c'; x.font = 'bold 54px Georgia, serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('O', 0, 3);
+      }
+      else if (face === 'potion') {
+        glyph(x, S, 0.66);
+        x.fillStyle = '#c4283a'; x.beginPath(); x.moveTo(6.8, 14); x.lineTo(17.2, 14); x.lineTo(18.2, 15.8); x.quadraticCurveTo(19.4, 20.8, 15.2, 20.8); x.lineTo(8.8, 20.8); x.quadraticCurveTo(4.6, 20.8, 5.8, 15.8); x.closePath(); x.fill();
+        x.strokeStyle = T.ink; x.lineWidth = 1.5; x.lineJoin = 'round'; x.stroke(new Path2D(P.flask));
+      }
+      else if (face === 'item') {
+        glyph(x, S, 0.66);
+        x.fillStyle = '#6a3d1c'; x.fill(new Path2D(P.chest)); x.strokeStyle = '#f0c45a'; x.lineWidth = 1.3; x.stroke(new Path2D(P.chest));
+        x.fillStyle = '#f0c45a'; x.fillRect(10.5, 10.5, 3, 3.5);
+      }
+      else if (face === 'nothing') {
+        x.translate(S / 2, S / 2); x.strokeStyle = T.ink; x.globalAlpha = 0.45; x.lineWidth = 7; x.lineCap = 'round';
+        x.beginPath(); x.arc(0, 0, 44, 0, Math.PI * 2); x.stroke(); x.beginPath(); x.moveTo(-32, 32); x.lineTo(32, -32); x.stroke();
+      }
+      else if (face === 'danger') {
+        glyph(x, S, 0.7);
+        x.fillStyle = '#8e1b2e'; x.beginPath(); x.moveTo(3, 20); x.lineTo(6, 9); x.lineTo(9, 20); x.lineTo(12, 5); x.lineTo(15, 20); x.lineTo(18, 9); x.lineTo(21, 20); x.closePath(); x.fill();
+        x.fillStyle = T.ink; x.fillRect(2.5, 19.6, 19, 1.6);
+      }
+      x.restore();
+    });
+  }
+
+  /* ---------------- un dado ---------------- */
+  function makeDie(typeKey) {
+    const T = TYPES[typeKey];
+    if (!GEO) GEO = roundedBox();
+    // con «SELF» las caras se iluminan un poco solas: se leen aunque la sala esté a oscuras
+    const mats = T.faces.map((f) => { const map = faceTexture(typeKey, f); return new THREE.MeshStandardMaterial({ map, roughness: typeKey === 'destiny' ? 0.32 : 0.46, metalness: T.metal || 0.02, emissiveMap: SELF ? map : null, emissive: new THREE.Color(SELF ? '#ffffff' : '#000000'), emissiveIntensity: SELF || 1 }); });
+    const mesh = new THREE.Mesh(GEO, mats);
+    const s = SIZE * (T.size || 1);
+    mesh.scale.setScalar(s); mesh.castShadow = true; mesh.receiveShadow = true;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.58, 40), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+    ring.rotation.x = -Math.PI / 2; ring.scale.setScalar(s * 1.35);
+    const g = new THREE.Group(); g.add(mesh); g.add(ring);
+    return { type: typeKey, T, group: g, mesh, ring, mats, size: s, face: 0, kind: null };
+  }
+  /* Orientación final: la cara «i» arriba y su dibujo derecho para quien mira desde la cámara */
+  function restQuat(i, jitter = 0.3) {
+    const q = new THREE.Quaternion().setFromUnitVectors(NORMALS[i], new THREE.Vector3(0, 1, 0));
+    const up = TEX_UP[i].clone().applyQuaternion(q); up.y = 0; up.normalize();
+    const want = new THREE.Vector3(-Math.sin(VIEW_YAW), 0, -Math.cos(VIEW_YAW));
+    let yaw = Math.atan2(up.x, up.z) - Math.atan2(want.x, want.z);
+    yaw = -yaw + (Math.random() - 0.5) * 2 * jitter;
+    return new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw).multiply(q);
+  }
+  /* Elegir una cara al azar (todas igual de probables) */
+  function roll(typeKey) { const i = Math.floor(Math.random() * 6); return { i, kind: TYPES[typeKey].faces[i] }; }
+  /* Una cara concreta (si hay varias iguales, una cualquiera de ellas) */
+  function faceOf(typeKey, kind) { const idx = []; TYPES[typeKey].faces.forEach((f, i) => { if (f === kind) idx.push(i); }); return idx.length ? idx[Math.floor(Math.random() * idx.length)] : 0; }
+
+  /* Lanzar un grupo de dados. Cada pieza: { type, face (índice), from, to, delay } */
+  function throwDice(list, o = {}) {
+    if (list.length) audio.sfx('dice', { vol: 0.9 });
+    return Promise.all(list.map((it) => new Promise(async (resolve) => {
+      const d = makeDie(it.type);
+      d.face = it.face; d.kind = TYPES[it.type].faces[it.face]; d.owner = it.owner;
+      const from = it.from.clone(), to = it.to.clone();
+      const qF = restQuat(it.face);
+      const axis = new THREE.Vector3(Math.random() - 0.5, Math.random() * 0.4, Math.random() - 0.5).normalize();
+      const spin = Math.PI * (5 + Math.random() * 3);
+      const h0 = (o.height || 2.4) + Math.random() * 0.5, half = d.size / 2;
+      d.group.position.copy(from); d.group.visible = false;
+      scene.add(d.group); live.push(d);
+      await U.sleep(it.delay || 0);
+      d.group.visible = true;
+      const dur = (o.dur || 950) * (0.92 + Math.random() * 0.16);
+      let landed = false;
+      const q = new THREE.Quaternion(), qs = new THREE.Quaternion();
+      await U.tween(dur, (k) => {
+        let f, y;
+        if (k < 0.5) { const t = k / 0.5; f = 0.72 * t; y = h0 * (1 - t * t); }
+        else if (k < 0.74) { const t = (k - 0.5) / 0.24; f = 0.72 + 0.18 * t; y = 0.62 * 4 * t * (1 - t); if (!landed) { landed = true; audio.sfx('diceLand', { vol: 0.55 + Math.random() * 0.3 }); } }
+        else if (k < 0.88) { const t = (k - 0.74) / 0.14; f = 0.9 + 0.07 * t; y = 0.18 * 4 * t * (1 - t); }
+        else { const t = (k - 0.88) / 0.12; f = 0.97 + 0.03 * (1 - (1 - t) * (1 - t)); y = 0; }
+        d.mesh.position.set(0, 0, 0);
+        d.group.position.set(U.lerp(from.x, to.x, f), half + y, U.lerp(from.z, to.z, f));
+        const rem = Math.pow(1 - k, 2.1);
+        qs.setFromAxisAngle(axis, spin * rem);
+        q.copy(qF).multiply(qs);
+        d.mesh.quaternion.copy(q);
+      }, (t) => t);
+      d.mesh.quaternion.copy(qF);
+      d.group.position.set(to.x, half, to.z);
+      resolve(d);
+    })));
+  }
+
+  /* Huecos de aterrizaje: rejilla compacta con un poco de desorden */
+  function slots(center, n, gap = 0.82, perRow = 4) {
+    const out = [], rows = Math.ceil(n / perRow);
+    for (let i = 0; i < n; i++) {
+      const r = Math.floor(i / perRow), inRow = Math.min(perRow, n - r * perRow), c = i - r * perRow;
+      out.push(new THREE.Vector3(center.x + (c - (inRow - 1) / 2) * gap + (Math.random() - 0.5) * 0.12, 0, center.z + (r - (rows - 1) / 2) * gap + (Math.random() - 0.5) * 0.12));
+    }
+    return out;
+  }
+
+  /* ---------------- efectos sobre un dado ya parado ---------------- */
+  function glow(d, color, k = 1) {
+    d.ring.material.color.set(color); d.ring.material.color.multiplyScalar(1.6 * k);
+    d.mats.forEach((m) => { m.emissive.set(color); m.emissiveIntensity = (SELF ? SELF * 1.6 : 0.16) * k; });
+    return U.tween(260, (t) => { d.ring.material.opacity = 0.9 * t; const s = 1 + 0.18 * Math.sin(t * Math.PI); d.mesh.scale.setScalar(d.size * s); });
+  }
+  function dim(d) {
+    d.dimmed = true;
+    d.mats.forEach((m) => { m.emissive.set('#000000'); });
+    return U.tween(260, (t) => { d.mats.forEach((m) => m.color.setScalar(1 - 0.5 * t)); d.ring.material.opacity *= 1 - t; d.mesh.scale.setScalar(d.size * (1 - 0.12 * t)); });
+  }
+  function hop(d) { const y0 = d.group.position.y; return U.tween(300, (t) => (d.group.position.y = y0 + Math.sin(t * Math.PI) * 0.35)); }
+  let clearT = null;
+  function clearLater(ms) { clearTimeout(clearT); clearT = setTimeout(() => clear(), ms / (U.speed || 1)); }
+  function clear() {
+    clearTimeout(clearT);
+    const old = live.splice(0);
+    if (!old.length) return Promise.resolve();
+    return U.tween(260, (t) => old.forEach((d) => { d.group.position.y = d.size / 2 - t * d.size; d.mats.forEach((m) => { m.transparent = true; m.opacity = 1 - t; }); d.ring.material.opacity *= 1 - t; }))
+      .then(() => old.forEach((d) => { scene.remove(d.group); d.mats.forEach((m) => m.dispose()); d.ring.geometry.dispose(); d.ring.material.dispose(); }));
+  }
+
+  return {
+    TYPES, roll, faceOf, slots, glow, dim, hop, clear, clearLater, live: () => live.slice(),
+    throw: throwDice,
+    init(sc, o = {}) { scene = sc; if (o.size) SIZE = o.size; if (o.selfLit) SELF = o.selfLit; },
+    setView(yaw) { VIEW_YAW = yaw || 0; },
+    faceTexture,
+    /* Prepara de antemano los sombreadores y las texturas, para que la primera tirada no dé un tirón.
+       Los dados de muestra no se desechan: así el motor conserva sus sombreadores compilados. */
+    prewarm(renderer, camera) {
+      if (!scene || !renderer || !camera) return;
+      try {
+        if (!warm) warm = ['combat', 'foe', 'destiny', 'treasure'].map((t) => makeDie(t));
+        warm.forEach((d) => { d.group.position.set(0, -30, 0); scene.add(d.group); if (renderer.initTexture) d.mats.forEach((m) => m.map && renderer.initTexture(m.map)); });
+        renderer.compile(scene, camera);
+      } catch (e) { /* no pasa nada: se compilará en la primera tirada */ }
+      if (warm) warm.forEach((d) => scene.remove(d.group));
+    }
+  };
+})();
+
+/* ==========================================================================
    Efectos: partículas, proyectiles, textos flotantes y bocadillos
    ========================================================================== */
 const FX = {
@@ -5313,6 +5573,7 @@ const FX = {
   text(worldPos, text, cls = 'dmg') {
     if (!this.layer) return;
     const el = U.el('div', 'float-txt ' + cls, text);
+    el.style.visibility = 'hidden'; // hasta el primer fotograma, que lo coloca en su sitio
     this.layer.appendChild(el);
     this.labels.push({ el, pos: worldPos.clone ? worldPos.clone() : new THREE.Vector3(worldPos.x, worldPos.y, worldPos.z), t: 0, dur: 1.5, rise: 1.2 });
   },
@@ -5320,6 +5581,7 @@ const FX = {
     if (!this.layer || !unit || !unit.mesh) return;
     this.labels.filter((l) => l.unit === unit).forEach((l) => (l.t = l.dur));
     const el = U.el('div', 'bubble side-' + unit.side, `<span>${U.esc(text)}</span>`);
+    el.style.visibility = 'hidden';
     this.layer.appendChild(el);
     this.labels.push({ el, unit, t: 0, dur, rise: 0, bubble: true });
   },
@@ -5678,11 +5940,11 @@ const DTYPES = { phys: 'golpe', pierce: 'flecha', radiant: 'luz', fire: 'fuego',
 
 /* Dificultad: cambia cómo piensa la Sombra y qué pasa al caer, no solo los números */
 const DIFFICULTY = {
-  relato: { id: 'relato', name: 'Relato', iq: -1, enemyHp: 0, bossHp: -2, enemyAtk: -1, bossAtk: 0, heroHp: 2, foes: 1, doom: 9, potions: 3, champions: 0, fall: 'auto', wounds: false, summons: 4,
+  relato: { id: 'relato', name: 'Relato', iq: -1, enemyHp: 0, bossHp: -2, enemyAtk: -1, bossAtk: 0, heroHp: 2, foes: 1, doom: 11, potions: 3, champions: 0, fall: 'auto', wounds: false, summons: 4,
     blurb: 'Para disfrutar de la historia. Más vida, la Sombra es torpe y quien cae se levanta solo.' },
-  heroe: { id: 'heroe', name: 'Héroe', iq: 0, enemyHp: 0, bossHp: 0, enemyAtk: 0, bossAtk: 0, heroHp: 0, foes: 1.2, doom: 6, potions: 2, champions: 0, fall: 'ally', wounds: true, summons: 6,
+  heroe: { id: 'heroe', name: 'Héroe', iq: 0, enemyHp: 0, bossHp: 0, enemyAtk: 0, bossAtk: 0, heroHp: 0, foes: 1.2, doom: 8, potions: 2, champions: 0, fall: 'ally', wounds: true, summons: 6,
     blurb: 'La experiencia pensada. Cada criatura juega a su manera y quien cae necesita que un compañero le levante.' },
-  pesadilla: { id: 'pesadilla', name: 'Pesadilla', iq: 1, enemyHp: 1, bossHp: 3, enemyAtk: 0, bossAtk: 0, heroHp: 0, foes: 1.05, doom: 5, potions: 2, champions: 5, fall: 'bleed', bleed: 3, wounds: true, summons: 8,
+  pesadilla: { id: 'pesadilla', name: 'Pesadilla', iq: 1, enemyHp: 1, bossHp: 3, enemyAtk: 0, bossAtk: 0, heroHp: 0, foes: 1.05, doom: 7, potions: 2, champions: 5, fall: 'bleed', bleed: 3, wounds: true, summons: 8,
     blurb: 'La Sombra piensa más rápido, hay campeones y quien cae se desangra: si nadie le levanta en 3 rondas, se pierde la aventura.' }
 };
 
@@ -5922,7 +6184,8 @@ const HINTS = {
   attack: 'Toca a un enemigo para atacarlo. Si no está a tu alcance pero puedes llegar, el héroe se acercará y golpeará.',
   door: 'Toca una puerta para abrirla. Las salas ocultas solo se revelan al cruzar su umbral.',
   turn: 'Cada héroe tiene movimiento y una acción por turno. Cuando todos terminen, actuará la Sombra.',
-  search: 'Buscar (lupa) revela las trampas de la sala y puede encontrar tesoro… o despertar algo.',
+  search: 'Buscar (lupa) revela las trampas de la sala y tira el Dado del Tesoro: oro, una poción, un objeto… nada, o peligro.',
+  destiny: 'El dado dorado es el del Destino: acompaña a cada ataque de un héroe. Máscara alegre: un premio propio de tu héroe. Máscara triste: ruido, +1 Presagio. Cara lisa: nada.',
   touch: 'En el móvil: arrastra con un dedo para mover la cámara, pellizca para acercar y gira con dos dedos.',
   flank: 'Flanqueo: si otro héroe está junto a tu objetivo, atacas con un dado más.',
   lock: 'Puerta cerrada: forzarla gasta la acción y se tiran 3 dados; las calaveras se van sumando hasta abrirla. El Enano abre las cerraduras y el Hechicero los sellos sin tirar.',
@@ -6668,6 +6931,7 @@ const GAME = {
       FX.clearLabels();
       WORLD.build(ch, ch.theme);
       this.L = WORLD.L;
+      DICE3D.prewarm(ENGINE.renderer, ENGINE.camera);
       this.checkGear();
       this.heroes = this.party.map((id) => this.makeHero(id));
       this.applyCarry();
@@ -6966,7 +7230,7 @@ const GAME = {
     const skulls = dice.filter((f) => f === 'skull').length;
     if (u && u.side === 'hero') {
       this.stats.checks++;
-      await UI.checkTray({ u, dice, skulls, need, label: o.label, quick: o.quick, have: o.have || 0 });
+      await this.checkRoll(u, dice, need, { label: o.label, have: o.have, at: o.at });
       if (skulls + (o.have || 0) >= need) this.stats.checksOk++;
     }
     return { skulls, ok: skulls + (o.have || 0) >= need };
@@ -7432,7 +7696,7 @@ const GAME = {
     if (this.lockAuto(h, door)) { ok = true; FX.text(this.headPos(h), door.lock === 'sello' ? 'Runas descifradas' : 'Abierta', 'heal'); await U.sleep(300); }
     else {
       const need = this.lockNeed(door), have = door.progress || 0;
-      const r = await this.rollCheck(h, 3, need, { label: door.lock === 'sello' ? 'Romper el sello' : 'Forzar la cerradura', have });
+      const r = await this.rollCheck(h, 3, need, { label: door.lock === 'sello' ? 'Romper el sello' : 'Forzar la cerradura', have, at: door });
       door.progress = have + r.skulls; ok = door.progress >= need;
       if (door.lock === 'cerradura') { audio.sfx('doorSlam', { vol: 0.5 }); this.addDoom(1); }
       if (!ok) {
@@ -7539,7 +7803,10 @@ const GAME = {
     const sk = A.filter((f) => f === 'skull').length, sh = Math.max(0, D.filter((f) => f === shieldFace).length - ignore);
     const R = { skulls: sk, shields: sh, dmg: Math.max(0, sk - sh) };
     const quick = o.quick || (att.side === 'enemy' && SETTINGS.quickEnemyDice);
-    const diceP = UI.dice({ att, tgt, A, D, shieldFace, skulls: R.skulls, shields: R.shields, dmg: R.dmg, label: o.label, quick, mods: ad.mods, ignore });
+    // el Dado del Destino acompaña al primer ataque de cada acción de un héroe
+    const destiny = o.destiny && att.side === 'hero' ? this.rollDestiny() : null;
+    const label = o.label && o.label !== att.name ? `<b>${U.esc(o.label)}</b> · ` : '';
+    await this.combatRoll({ att, tgt, A, D, shieldFace, ignore, quick, destiny, mods: ad.mods, caption: `${label}${U.esc(att.name)} → ${U.esc(tgt.name)}` });
     if (ranged || o.proj) {
       const proj = o.proj || att.proj || 'arrow';
       audio.sfx(proj === 'arrow' ? 'arrow' : proj === 'fire' ? 'fire' : proj === 'dagger' ? 'swing' : 'magic', { pan, vol: 0.8 });
@@ -7551,7 +7818,6 @@ const GAME = {
       await U.tween(170, (k) => { m.position.x = from.x + dir.x * 0.55 * U.easeIn(k); m.position.z = from.z + dir.z * 0.55 * U.easeIn(k); md.rotation.x = 0.2 * k; });
       FX.slash(m.position, dir, att.side === 'hero' ? (att.color || '#fff2d0') : att.boss ? '#ff6a4a' : '#ffb0a0');
     }
-    await diceP;
     const victim = tgt;
     const tp = new THREE.Vector3(victim.mesh.position.x, 1.1, victim.mesh.position.z);
     if (R.dmg > 0) {
@@ -7575,6 +7841,7 @@ const GAME = {
         if (oh && (!oh.minDmg || R.dmg >= oh.minDmg)) await this.addStatus(victim, oh.st, oh.dur);
       }
     }
+    if (destiny) await this.destinyEffect(att, destiny, victim);
     await U.sleep(140);
     return R.dmg;
   },
@@ -7691,7 +7958,7 @@ const GAME = {
     if (h.actions <= 0) return;
     h.actions--;
     const ranged = h.ranged && U.cheb(h.x, h.y, e.x, e.y) > 1;
-    await this.attack(h, e, { ranged, proj: ranged ? h.proj : null, label: h.basic.name });
+    await this.attack(h, e, { ranged, proj: ranged ? h.proj : null, label: h.basic.name, destiny: true });
   },
   /* ------------------------------------------------------------ habilidades y acciones */
   async useSkill(h, s, d) {
@@ -7709,7 +7976,7 @@ const GAME = {
       await U.tween(380, (k) => (md.rotation.y = U.easeOut(k) * Math.PI * 2));
       md.rotation.y = 0;
       let first = true;
-      for (const e of foes) { await this.attack(h, e, { atk: si.dice, label: s.name, quick: !first, noFlank: true }); first = false; }
+      for (const e of foes) { await this.attack(h, e, { atk: si.dice, label: s.name, quick: !first, noFlank: true, destiny: first }); first = false; }
       UI.log(`${h.name} gira con el hacha: ${foes.length} enemigo${foes.length === 1 ? '' : 's'} alcanzado${foes.length === 1 ? '' : 's'}.`, 'good');
     } else if (s.id === 'grito') {
       audio.sfx('reveal', { vol: 0.9 }); ENGINE.shake(0.4);
@@ -7723,7 +7990,7 @@ const GAME = {
     } else if (s.id === 'sismico') {
       const e = d.unit;
       ENGINE.shake(0.7); audio.sfx('quake', { vol: 0.8 });
-      await this.attack(h, e, { atk: si.dice, label: s.name });
+      await this.attack(h, e, { atk: si.dice, label: s.name, destiny: true });
       FX.burst('dust', h.mesh.position); FX.burst('explode', { x: h.x * TILE, y: 0.2, z: h.y * TILE });
       FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#f0b070', si.radius * TILE + 0.8, 600);
       const near = this.visibleEnemies().filter((o) => !o.boss && U.cheb(o.x, o.y, h.x, h.y) <= si.radius);
@@ -7745,7 +8012,7 @@ const GAME = {
       await U.sleep(260);
       const foes = this.visibleEnemies().filter((e) => U.cheb(e.x, e.y, cx, cy) <= 1);
       let first = true;
-      for (const e of foes) { await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'arrow', projFrom: new THREE.Vector3(e.x * TILE, 7, e.y * TILE), label: s.name, quick: !first, light: false }); first = false; }
+      for (const e of foes) { await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'arrow', projFrom: new THREE.Vector3(e.x * TILE, 7, e.y * TILE), label: s.name, quick: !first, light: false, destiny: first }); first = false; }
       if (!foes.length) UI.log('Las flechas se clavan en el suelo vacío.', 'neutral');
     } else if (s.id === 'salto') {
       const m = h.mesh, fx0 = m.position.x, fz0 = m.position.z, tx = d.x * TILE, tz = d.y * TILE;
@@ -7764,7 +8031,7 @@ const GAME = {
       if (!h.ko && room && !room.visited) { room.visited = true; UI.setLocation(this.ch, room); const meta = this.ch.rooms[room.marker]; if (meta && meta.enter) await this.run(meta.enter, { hero: h, room }); }
     } else if (s.id === 'bola') {
       const e = d.unit, oh = h.tal.has('llama') ? { st: 'ardiendo', dur: 2 } : null;
-      await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'fire', label: s.name, dtype: 'fire', onHit: oh });
+      await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'fire', label: s.name, dtype: 'fire', onHit: oh, destiny: true });
       audio.sfx('fire'); FX.burst('fire', { x: e.x * TILE, y: 1, z: e.y * TILE }); FX.burst('explode', { x: e.x * TILE, y: 0.5, z: e.y * TILE });
       ENGINE.flashLight(new THREE.Vector3(e.x * TILE, 1.4, e.y * TILE), '#ff9a4a', 4, 0.6); ENGINE.shake(0.4);
       const splash = this.visibleEnemies().filter((o) => o !== e && U.cheb(o.x, o.y, e.x, e.y) === 1);
@@ -7789,7 +8056,7 @@ const GAME = {
         }
         if (SETTINGS.follow) ENGINE.focusTile(h.x, h.y);
       }
-      if (!h.ko && this.meleeOK(h.x, h.y, e.x, e.y)) { ENGINE.shake(0.3); await this.attack(h, e, { atk: si.dice, label: s.name }); }
+      if (!h.ko && this.meleeOK(h.x, h.y, e.x, e.y)) { ENGINE.shake(0.3); await this.attack(h, e, { atk: si.dice, label: s.name, destiny: true }); }
     } else if (s.id === 'tribu') {
       audio.sfx('levelUp', { vol: 0.7 }); ENGINE.flashLight(at(h), '#ffe0a0', 3.5, 0.8);
       FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#ffd27a', si.radius * TILE + 1, 800);
@@ -7824,10 +8091,10 @@ const GAME = {
     const D = []; for (let i = 0; i < defN; i++) D.push(this.rollDie());
     const skulls = A.filter((f) => f === 'skull').length, shieldFace = tgt.side === 'hero' ? 'white' : 'black';
     const shields = D.filter((f) => f === shieldFace).length, dmg = Math.max(0, skulls - shields);
-    await UI.dice({ att: { name, side: 'hero' }, tgt, A, D, shieldFace, skulls, shields, dmg, label: o.label, quick: true });
+    await this.combatRoll({ att: o.by || null, tgt, A, D, shieldFace, quick: true, caption: `${o.label ? `<b>${U.esc(o.label)}</b> · ` : ''}${U.esc(name)} → ${U.esc(tgt.name)}` });
     const tp = new THREE.Vector3(tgt.mesh.position.x, 1.1, tgt.mesh.position.z);
     if (dmg > 0) {
-      FX.burst('hit', tp); audio.sfx('hit'); this.hitReact(tgt, (o.dir || new THREE.Vector3(1, 0, 0)).normalize()); await this.damage(tgt, dmg, {});
+      FX.burst('hit', tp); audio.sfx('hit'); this.hitReact(tgt, (o.dir || (o.by ? new THREE.Vector3(tgt.x - o.by.x || 0.01, 0, tgt.y - o.by.y) : new THREE.Vector3(1, 0, 0))).normalize()); await this.damage(tgt, dmg, { by: o.by });
       if (o.onHit && this.up(tgt)) await this.addStatus(tgt, o.onHit.st, o.onHit.dur);
     } else { FX.burst('block', tp); audio.sfx('block'); FX.text(tp, 'Bloqueado', 'block'); }
     UI.log(`${name} → ${tgt.name}: ${dmg ? `<b>${dmg} de daño</b>` : 'sin daño'}.`, tgt.side === 'hero' ? 'bad' : 'good');
@@ -7878,30 +8145,41 @@ const GAME = {
     if (special) { room.searchEvent = true; room.searched = true; await this.run(meta.search, { hero: h, room }); UI.refresh(); return; }
     room.searched = true;
     const at = new THREE.Vector3(h.mesh.position.x, 1.6, h.mesh.position.z);
-    const r = Math.random(), safe = this.tutorial;
+    // el Dado del Tesoro: oro, oro, poción, objeto, nada o peligro (en el tutorial, nunca peligro)
+    const kind = await this.treasureRoll(h, this.tutorial);
+    this.stats.treasure = this.stats.treasure || {}; this.stats.treasure[kind] = (this.stats.treasure[kind] || 0) + 1;
     const itemName = { elixir: 'un elixir', bomb: 'una bomba', potion: 'una poción' };
-    if (r < 0.14 && !safe) {
-      UI.log(`${h.name} levanta una losa… y un dardo sale disparado de la pared.`, 'bad');
-      FX.burst('trap', { x: h.x * TILE, y: 0.8, z: h.y * TILE }); audio.sfx('trap');
-      await this.damage(h, 1, { source: 'trap' });
-    } else if (r < 0.24 && !safe && this.state === 'play') {
-      UI.log(`El ruido despierta algo en la Hondura. <b>Viene hacia aquí.</b>`, 'bad');
-      FX.text(at, '¡Algo se acerca!', 'warn'); audio.sfx('whisper', { dur: 1.2 });
-      this.pendingWanderer = true;
-    } else if (r < 0.38) {
+    if (kind === 'danger') {
+      if (Math.random() < 0.5 || this.state !== 'play') {
+        UI.treasurePlaque(h, kind, 'Peligro: un dardo, −1 PV');
+        UI.log(`${h.name} levanta una losa… y un dardo sale disparado de la pared.`, 'bad');
+        FX.burst('trap', { x: h.x * TILE, y: 0.8, z: h.y * TILE }); audio.sfx('trap');
+        await this.damage(h, 1, { source: 'trap' });
+      } else {
+        UI.treasurePlaque(h, kind, 'Peligro: algo viene');
+        UI.log(`El ruido despierta algo en la Hondura. <b>Viene hacia aquí.</b>`, 'bad');
+        FX.text(at, '¡Algo se acerca!', 'warn'); audio.sfx('whisper', { dur: 1.2 });
+        this.pendingWanderer = true;
+      }
+    } else if (kind === 'nothing') {
+      UI.treasurePlaque(h, kind, 'Nada');
       UI.log(`${h.name} no encuentra más que polvo y huesos.`, 'neutral'); FX.text(this.headPos(h), 'Nada', 'block');
-    } else if (r < 0.7) {
-      const g = U.randi(10, 20); this.addGold(g, at); UI.log(`Bajo una losa suelta: ${g} monedas.`, 'good');
+    } else if (kind === 'gold') {
+      const g = U.randi(10, 20); UI.treasurePlaque(h, kind, `Oro: ${g} monedas`);
+      this.addGold(g, at); UI.log(`Bajo una losa suelta: ${g} monedas.`, 'good');
       if (BARKS[h.id].gold && Math.random() < 0.6) FX.bubble(h, U.pick(BARKS[h.id].gold));
-    } else if (r < 0.88) {
-      const g = U.randi(14, 26); this.addGold(g, at); this.items.potion++;
+    } else if (kind === 'potion') {
+      const g = U.randi(6, 14); UI.treasurePlaque(h, kind, `Una poción y ${g} monedas`);
+      this.addGold(g, at); this.items.potion++; audio.sfx('potion', { vol: 0.6 });
       FX.text(new THREE.Vector3(at.x, 2, at.z), '+1 poción', 'heal'); UI.log(`${g} monedas y una poción intacta.`, 'good');
     } else {
       const it = U.pick(['elixir', 'bomb', 'potion', 'bomb']); this.items[it]++;
-      const g = U.randi(18, 32); this.addGold(g, at);
+      const g = U.randi(12, 24); UI.treasurePlaque(h, kind, `${itemName[it][0].toUpperCase() + itemName[it].slice(1)} y ${g} monedas`);
+      this.addGold(g, at); audio.sfx('chest', { vol: 0.6 });
       FX.text(new THREE.Vector3(at.x, 2, at.z), '+1 ' + { elixir: 'elixir', bomb: 'bomba', potion: 'poción' }[it], 'heal');
       UI.log(`¡Un alijo escondido! ${g} monedas y ${itemName[it]}.`, 'good');
     }
+    DICE3D.clearLater(2200); UI.plaqueDone(2200);
     UI.refresh();
   },
   async spawn(type, x, y, fx = 'summon') {
@@ -7953,7 +8231,7 @@ const GAME = {
     h.actions--; this.eventful = true;
     this.faceTo(h, tr.x, tr.y);
     const sure = h.traits && h.traits.locksmith;
-    const r = sure ? { ok: true, skulls: 1 } : await this.rollCheck(h, 2, 1, { label: 'Desarmar la trampa' });
+    const r = sure ? { ok: true, skulls: 1 } : await this.rollCheck(h, 2, 1, { label: 'Desarmar la trampa', at: tr });
     if (r.ok) {
       tr.disarmed = true; audio.sfx('block');
       tr.mesh.userData.spikes.visible = false;
@@ -8421,7 +8699,7 @@ const GAME = {
           }
           case 'strike': {
             const h = this.stepUnit(a[0], ctx), b = this.enemies.find((e) => e.boss && e.alive);
-            if (h && !h.ko) await this.diceHit(b ? b.name : 'El golpe', h, a[1] || 3, { label: 'Golpe sin defensa', dir: b ? new THREE.Vector3(h.x - b.x || 0.01, 0, h.y - b.y) : null });
+            if (h && !h.ko) await this.diceHit(b ? b.name : 'El golpe', h, a[1] || 3, { label: 'Golpe sin defensa', by: b || null });
             break;
           }
           case 'lights': await this.lights(a[0]); break;
@@ -8699,6 +8977,197 @@ Object.assign(GAME, {
 });
 
 /* ==========================================================================
+   Dados sobre el tablero: dónde caen, cómo se resuelven a la vista y los
+   dados especiales (Destino y Tesoro). La suerte la decide el juego antes
+   de tirar; los dados 3D solo la enseñan.
+   ========================================================================== */
+const DESTINY = {
+  barbaro: { name: 'Rebote', short: 'Rebote: 1 dado contra otro enemigo' },
+  enano: { name: 'Empujón', short: 'Empujón: lo apartas 1 casilla' },
+  elfa: { name: 'Paso ligero', short: 'Paso ligero: +2 de movimiento' },
+  hechicero: { name: 'Chispa', short: 'Chispa: una habilidad, 1 ronda antes' },
+  amazona: { name: '¡Conmigo!', short: '¡Conmigo!: un aliado, +1 dado' }
+};
+
+Object.assign(GAME, {
+  /* ¿Casilla libre para que caigan los dados? */
+  diceTileOk(x, y) {
+    const t = this.T(x, y); if (!t || !t.floor || t.wall || t.door || t.hazard || t.block) return false;
+    const r = this.L.rooms[t.room]; return !!(r && r.revealed);
+  },
+  /* Dónde caen: delante de la pelea (hacia la cámara), los del atacante a su lado
+     de la pantalla y los del defensor al otro, sin pisar muros ni figuras */
+  diceLayout(att, tgt, nA, nD, withX) {
+    const yaw = ENGINE.cam.yaw, fw = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)), rt = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+    const ax = att ? att.x : tgt.x, ay = att ? att.y : tgt.y;
+    // de cerca, entre los dos; a distancia, junto al objetivo (que es donde mira la cámara)
+    const far = U.cheb(ax, ay, tgt.x, tgt.y) > 2, k = far ? 1 / Math.hypot(ax - tgt.x, ay - tgt.y) : 0.5;
+    const mid = new THREE.Vector3((tgt.x + (ax - tgt.x) * k) * TILE, 0, (tgt.y + (ay - tgt.y) * k) * TILE);
+    // el atacante, ¿a la derecha o a la izquierda en pantalla?
+    const side = nD ? (Math.sign((ax - tgt.x) * rt.x + (ay - tgt.y) * rt.z) || -1) : 0;
+    const GAP = 0.92, HALF = 1.2;
+    const grid = (c, n, per) => {
+      const out = [], rows = Math.ceil(n / per);
+      for (let i = 0; i < n; i++) {
+        const r = Math.floor(i / per), inRow = Math.min(per, n - r * per), k = i - r * per;
+        out.push(c.clone().addScaledVector(rt, (k - (inRow - 1) / 2) * GAP + (Math.random() - 0.5) * 0.1).addScaledVector(fw, (r - (rows - 1) / 2) * GAP + (Math.random() - 0.5) * 0.1));
+      }
+      return out;
+    };
+    // un dado cabe si cae en suelo descubierto, lejos de las figuras; mejor si no queda detrás de un muro bajo
+    const units = this.allUnits().filter((u) => u.mesh && u.mesh.visible && (u.side !== 'enemy' || u.alive));
+    const cost = (p) => {
+      const gx = Math.round(p.x / TILE), gy = Math.round(p.z / TILE);
+      if (!this.diceTileOk(gx, gy)) return 1;
+      if (units.some((u) => Math.hypot(u.mesh.position.x - p.x, u.mesh.position.z - p.z) < 1.2)) return 1;
+      const fx = Math.round((p.x + fw.x * 1.3) / TILE), fy = Math.round((p.z + fw.z * 1.3) / TILE), ft = this.T(fx, fy);
+      return !ft || ft.wall ? 0.3 : 0;
+    };
+    const rowsMax = Math.ceil(Math.max(nA, nD || 0) / 2), cands = [];
+    for (const f of [1, 1.25, 1.5, 0.75, 1.75, 2, 0.5, 2.5, -1, -1.25, -1.5, -2]) for (const l of [0, 0.25, -0.25, 0.5, -0.5, 0.75, -0.75, 1, -1]) cands.push({ f, l, pref: Math.abs(f - 1.25) + Math.abs(l) * 0.6 + (f < 0 ? 3 : 0) });
+    cands.sort((a, b) => a.pref - b.pref);
+    let best = null;
+    for (const c of cands) {
+      const M = mid.clone().addScaledVector(fw, c.f * TILE).addScaledVector(rt, c.l * TILE);
+      const sa = grid(side ? M.clone().addScaledVector(rt, side * HALF) : M, nA, nD ? 2 : 3);
+      const sd = nD ? grid(M.clone().addScaledVector(rt, -side * HALF), nD, 2) : [];
+      const x = withX ? M.clone().addScaledVector(fw, (rowsMax / 2) * GAP + 0.95) : null;
+      const bad = sa.concat(sd, x ? [x] : []).reduce((n, p) => n + cost(p), 0) + c.pref * 0.01;
+      if (!best || bad < best.bad) best = { sa, sd, x, M, bad };
+      if (bad < 0.1) break;
+    }
+    return best;
+  },
+  diceFrom(u, fallback) {
+    if (u && u.mesh) { const p = u.mesh.position, yaw = ENGINE.cam.yaw; return new THREE.Vector3(p.x + Math.sin(yaw) * 0.5, 2.1, p.z + Math.cos(yaw) * 0.5); }
+    return fallback.clone().add(new THREE.Vector3(0, 4.5, 0));
+  },
+  faceIdx(type, f) { return DICE3D.faceOf(type, f === 'white' ? 'wshield' : f === 'black' ? 'bshield' : f); },
+  /* Si algún dado va a caer fuera de la pantalla, la cámara se centra en ellos */
+  diceInView(M, pts, margin = 0.1) {
+    if (!SETTINGS.follow) return; // quien prefiere mover la cámara a mano tiene el cartel con el resultado
+    const out = (p) => { const s = ENGINE.project(p.clone().setY(0.4)); return !s.visible || s.x < ENGINE.w * margin || s.x > ENGINE.w * (1 - margin) || s.y < ENGINE.h * 0.12 || s.y > ENGINE.h * 0.86; };
+    if ([M].concat(pts || []).some(out)) ENGINE.focusTile(M.x / TILE, M.z / TILE);
+  },
+
+  /* Tirada de combate a la vista: ataque contra defensa (y el Dado del Destino si toca) */
+  async combatRoll(r) {
+    const { att, tgt, A, D, shieldFace, quick } = r, ignore = r.ignore || 0;
+    DICE3D.setView(ENGINE.cam.yaw); DICE3D.clear();
+    const aType = !att || att.side !== 'enemy' ? 'combat' : 'foe', dType = tgt.side === 'hero' ? 'combat' : 'foe';
+    const { sa, sd, x: sx, M } = this.diceLayout(att, tgt, A.length, D.length, !!r.destiny);
+    this.diceInView(M, sa.concat(sd, sx ? [sx] : []), quick ? 0.02 : 0.1);
+    const fA = this.diceFrom(att, sa[0]), fD = this.diceFrom(tgt, sd[0] || M);
+    const list = A.map((f, i) => ({ type: aType, face: this.faceIdx(aType, f), from: fA, to: sa[i], delay: i * 45, owner: 'a' }))
+      .concat(D.map((f, i) => ({ type: dType, face: this.faceIdx(dType, f), from: fD, to: sd[i], delay: 110 + i * 45, owner: 'd' })));
+    if (r.destiny) list.push({ type: 'destiny', face: DICE3D.faceOf('destiny', r.destiny), from: fA, to: sx, delay: 200, owner: 'x' });
+    const dice = await DICE3D.throw(list, { dur: quick ? 560 : 820, height: quick ? 1.8 : 2.4 });
+    const ad = dice.filter((d) => d.owner === 'a'), dd = dice.filter((d) => d.owner === 'd'), xd = dice.find((d) => d.owner === 'x');
+    const sk = shieldFace === 'white' ? 'wshield' : 'bshield';
+    const hits = ad.filter((d) => d.kind === 'skull'), shields = dd.filter((d) => d.kind === sk);
+    const broken = shields.slice(0, Math.min(ignore, shields.length)), blocks = shields.slice(broken.length);
+    const dmg = Math.max(0, hits.length - blocks.length);
+    UI.rollPlaque({ caption: r.caption, mods: r.mods, aType, dType, shieldFace: sk, skulls: hits.length, shields: shields.length, broken: broken.length, dmg, destiny: r.destiny, att });
+    const fx = [...hits.map((d) => DICE3D.glow(d, '#ff9a5a')), ...ad.filter((d) => d.kind !== 'skull').map((d) => DICE3D.dim(d)),
+      ...blocks.map((d) => DICE3D.glow(d, '#8fc6ff')), ...broken.map((d) => DICE3D.dim(d)), ...dd.filter((d) => d.kind !== sk).map((d) => DICE3D.dim(d))];
+    if (xd) fx.push(r.destiny === 'comedy' ? DICE3D.glow(xd, '#ffd060', 1.6) : r.destiny === 'tragedy' ? DICE3D.glow(xd, '#ff3a5a', 1.6) : DICE3D.dim(xd));
+    await Promise.all(fx);
+    // cada escudo apaga una calavera: una chispa azul va del escudo a la calavera
+    const n = Math.min(hits.length, blocks.length);
+    for (let i = 0; i < n; i++) {
+      const s = blocks[i], k = hits[hits.length - 1 - i];
+      if (!quick) await this.diceSpark(s.group.position, k.group.position);
+      DICE3D.dim(s); DICE3D.dim(k);
+      audio.sfx('block', { vol: 0.45 });
+    }
+    DICE3D.clearLater(quick ? 1400 : 2200); UI.plaqueDone(quick ? 1400 : 2200);
+    return { dice, xd, dmg };
+  },
+  diceSpark(a, b) {
+    const m = new THREE.Mesh(G.sph(0.1, 10, 8), MAT.glow('#8fc6ff', 3));
+    const p0 = a.clone().setY(0.6), p1 = b.clone().setY(0.6);
+    m.position.copy(p0); ENGINE.scene.add(m);
+    return U.tween(210, (k) => { m.position.lerpVectors(p0, p1, k); m.position.y += Math.sin(k * Math.PI) * 0.5; })
+      .then(() => { ENGINE.scene.remove(m); FX.burst('block', p1); });
+  },
+  /* Tirada simple (cerraduras, sellos, trampas): calaveras contra lo que hace falta */
+  async checkRoll(u, dice, need, o = {}) {
+    DICE3D.setView(ENGINE.cam.yaw); DICE3D.clear();
+    const { sa, M } = this.diceLayout(u, o.at || u, dice.length, 0, false);
+    this.diceInView(M, sa);
+    const got = await DICE3D.throw(dice.map((f, i) => ({ type: 'combat', face: this.faceIdx('combat', f), from: this.diceFrom(u, M), to: sa[i], delay: i * 50 })), { dur: 800 });
+    const sk = got.filter((d) => d.kind === 'skull'), have = (o.have || 0) + sk.length, ok = have >= need;
+    UI.checkPlaque({ caption: o.label || 'Tirada', skulls: sk.length, have, need, ok, cumulative: o.have != null });
+    audio.sfx(ok ? 'turnHero' : 'deny', { vol: 0.5 });
+    await Promise.all([...sk.map((d) => DICE3D.glow(d, '#ff9a5a')), ...got.filter((d) => d.kind !== 'skull').map((d) => DICE3D.dim(d))]);
+    DICE3D.clearLater(2000); UI.plaqueDone(2000);
+    return { ok, have };
+  },
+
+  /* ---------------- Dado del Destino ---------------- */
+  rollDestiny() { return DICE3D.roll('destiny').kind; },
+  async destinyEffect(h, kind, tgt) {
+    if (!kind || kind === 'blank' || !this.up(h)) return;
+    const head = this.headPos(h);
+    this.stats.destiny = this.stats.destiny || { comedy: 0, tragedy: 0 };
+    UI.hintOnce('destiny');
+    if (kind === 'tragedy') {
+      this.stats.destiny.tragedy++;
+      const bossOn = this.boss && this.boss.alive && this.boss.active;
+      audio.sfx('whisper', { dur: 0.8, vol: 0.6 });
+      if (!bossOn) { this.addDoom(1); FX.text(head, '+1 Presagio', 'warn'); UI.log(`Máscara trágica: el ruido de ${h.name} atrae a la Hondura (+1 Presagio).`, 'bad'); }
+      else { h.mvLeft = 0; FX.text(head, 'Desequilibrado', 'warn'); UI.log(`Máscara trágica: ${h.name} pierde el equilibrio y el movimiento que le quedaba.`, 'bad'); }
+      UI.refresh(); return;
+    }
+    this.stats.destiny.comedy++;
+    const D = DESTINY[h.id] || { name: 'Suerte' };
+    audio.sfx('levelUp', { vol: 0.5 }); FX.burst('magic', h.mesh.position, { color: '#ffd060', color2: '#ffb000' });
+    FX.text(head, D.name, 'heal');
+    const say = (t) => UI.plaqueDestiny(`<b class="good">Máscara alegre</b> · ${t}`);
+    const inspire = (u, why) => { u.status.inspirado = Math.max(u.status.inspirado || 0, 2); FX.text(this.headPos(u), 'Inspirado', 'heal'); UI.log(why, 'good'); say(h.id === 'amazona' ? `${D.name}: ${u === h ? 'Inspirada' : U.esc(u.name) + ' queda Inspirado'}, +1 dado en ${u === h ? 'tu' : 'su'} próximo ataque` : 'En su lugar, Inspirado: +1 dado en tu próximo ataque'); };
+    if (h.id === 'barbaro') {
+      const others = this.visibleEnemies().filter((e) => e !== tgt && U.cheb(e.x, e.y, tgt.x, tgt.y) <= 1 && U.cheb(e.x, e.y, h.x, h.y) <= 2);
+      const t2 = others.sort((a, b) => a.hp - b.hp)[0] || (this.up(tgt) ? tgt : null);
+      if (t2) { say(`Rebote: 1 dado contra ${U.esc(t2.name)}`); UI.log(`Máscara alegre: el hachazo de ${h.name} rebota hacia ${t2.name}.`, 'good'); await U.sleep(700); await this.diceHit(h.name, t2, 1, { label: 'Rebote', by: h }); }
+      else inspire(h, `Máscara alegre: ${h.name} queda Inspirado.`);
+    } else if (h.id === 'enano') {
+      const dx = Math.sign(tgt.x - h.x), dy = Math.sign(tgt.y - h.y), nx = tgt.x + dx, ny = tgt.y + dy;
+      if (this.up(tgt) && !tgt.boss && (dx || dy) && this.passable(nx, ny, { side: 'enemy' }) && !this.unitAt(nx, ny)) {
+        audio.sfx('quake', { vol: 0.5 }); ENGINE.shake(0.3);
+        say(`Empujón: ${U.esc(tgt.name)} retrocede una casilla`);
+        await this.hop(tgt, nx, ny, { dur: 220, h: 0.2 }); this.faceTo(tgt, h.x, h.y);
+        UI.log(`Máscara alegre: ${h.name} aparta a ${tgt.name} de un empujón.`, 'good');
+      } else inspire(h, `Máscara alegre: ${h.name} queda Inspirado.`);
+    } else if (h.id === 'elfa') {
+      h.mvLeft += 2; say('Paso ligero: +2 de movimiento'); FX.text(new THREE.Vector3(head.x, head.y + 0.5, head.z), '+2 movimiento', 'heal');
+      UI.log(`Máscara alegre: ${h.name} gana +2 de movimiento este turno.`, 'good');
+    } else if (h.id === 'hechicero') {
+      const s = h.skills.filter((q) => q.cd > 0).sort((a, b) => b.cd - a.cd)[0];
+      if (s) { s.cd--; say(`Chispa: ${U.esc(s.name)} estará lista una ronda antes`); UI.log(`Máscara alegre: ${s.name} estará lista una ronda antes.`, 'good'); }
+      else inspire(h, `Máscara alegre: ${h.name} queda Inspirado.`);
+    } else if (h.id === 'amazona') {
+      const al = this.heroes.filter((a) => a !== h && !a.ko && U.cheb(a.x, a.y, h.x, h.y) <= 3).sort((a, b) => U.cheb(a.x, a.y, h.x, h.y) - U.cheb(b.x, b.y, h.x, h.y))[0];
+      inspire(al || h, `Máscara alegre: ${(al || h).name} queda Inspirado (+1 dado en su próximo ataque).`);
+    }
+    UI.refresh();
+  },
+
+  /* ---------------- Dado del Tesoro (Buscar) ---------------- */
+  async treasureRoll(h, safe) {
+    DICE3D.setView(ENGINE.cam.yaw); DICE3D.clear();
+    let r = DICE3D.roll('treasure');
+    if (safe && r.kind === 'danger') r = { i: DICE3D.faceOf('treasure', 'gold'), kind: 'gold' };
+    const { sa, M } = this.diceLayout(h, h, 1, 0, false);
+    this.diceInView(M, sa);
+    const [d] = await DICE3D.throw([{ type: 'treasure', face: r.i, from: this.diceFrom(h, M), to: sa[0] }], { dur: 900 });
+    const good = r.kind === 'gold' || r.kind === 'potion' || r.kind === 'item';
+    await DICE3D.glow(d, good ? '#ffd060' : r.kind === 'danger' ? '#ff3a5a' : '#bbbbbb', 1.4);
+    DICE3D.hop(d);
+    return r.kind;
+  }
+});
+
+/* ==========================================================================
    Interfaz: HUD, diálogo, dados, tarjetas, tienda y menús
    ========================================================================== */
 const UI = {
@@ -8726,7 +9195,7 @@ const UI = {
     this.$('hint-ok').onclick = () => { this.$('hint').hidden = true; };
     this.logs = [];
   },
-  hideAll() { ['dlg', 'choice', 'note', 'dice', 'hint', 'preview', 'chronicle', 'items-pop', 'sheet'].forEach((id) => { const e = this.$(id); if (e) e.hidden = true; }); this.screen(null); },
+  hideAll() { if (typeof DICE3D !== 'undefined') DICE3D.clear(); this.plaqueHide(); ['dlg', 'choice', 'note', 'hint', 'preview', 'chronicle', 'items-pop', 'sheet'].forEach((id) => { const e = this.$(id); if (e) e.hidden = true; }); this.screen(null); },
   showHUD(on) { this.hud.hidden = !on; document.body.classList.toggle('in-game', on); },
 
   /* ---------------- grupo ---------------- */
@@ -8942,35 +9411,6 @@ const UI = {
       setTimeout(() => n.addEventListener('pointerup', close), 300);
     });
   },
-  /* ---------------- dados ---------------- */
-  dieHTML(face, counted, roll) {
-    const ic = face === 'skull' ? 'skull' : 'shield';
-    const faces = ['skull', 'white', 'black', 'skull', 'white', 'skull'];
-    const f = (cls, fc) => `<span class="fc ${cls} f-${fc}">${icon(fc === 'skull' ? 'skull' : 'shield')}</span>`;
-    void ic;
-    return `<span class="die ${counted ? 'counted' : 'muted'}" style="--rx:${roll[0]}deg;--ry:${roll[1]}deg;--rz:${roll[2]}deg"><span class="cube">${f('front', face)}${f('back', faces[1])}${f('right', faces[2])}${f('left', faces[3])}${f('top', faces[4])}${f('bottom', faces[5])}</span></span>`;
-  },
-  dice(r) {
-    const el = this.$('dice');
-    const roll = () => [U.randi(2, 4) * 360 + U.randi(-40, 40), U.randi(2, 4) * 360 + U.randi(-40, 40), U.randi(-30, 30)];
-    const atkRow = r.A.map((f) => this.dieHTML(f, f === 'skull', roll())).join('');
-    const defRow = r.D.map((f) => this.dieHTML(f, f === r.shieldFace, roll())).join('');
-    el.className = 'dice plate ' + (r.att.side === 'hero' ? 'by-hero' : 'by-foe') + (r.quick ? ' quick' : '') + (r.reroll ? ' reroll' : '');
-    const mods = r.mods && r.mods.length ? `<div class="dc-mods">${r.mods.map(([t, v]) => `<span class="${v > 0 ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v} ${U.esc(t)}</span>`).join('')}</div>` : '';
-    el.innerHTML = `
-      <div class="dc-head"><b>${U.esc(r.label || r.att.name)}</b><span>${U.esc(r.att.name)} → ${U.esc(r.tgt.name)}</span></div>${mods}
-      <div class="dc-row atk">${atkRow}</div>
-      <div class="dc-row def">${defRow || '<em class="nodef">sin defensa</em>'}</div>
-      <div class="dc-res"><span>${r.skulls} ${icon('skull')}</span><i>−</i><span>${r.shields} ${icon('shield')}</span><i>=</i><strong class="${r.dmg ? 'hit' : 'miss'}">${r.dmg ? r.dmg + ' de daño' : 'Bloqueado'}</strong></div>`;
-    el.hidden = false; void el.offsetWidth; el.classList.add('roll');
-    audio.sfx('dice');
-    const t = (r.quick ? 520 : 820) / U.speed;
-    setTimeout(() => audio.sfx('diceLand'), t * 0.8);
-    this.scheduleDiceHide(t + (r.quick ? 900 : 1500) / U.speed);
-    return U.sleep(r.quick ? 520 : 820);
-  },
-  scheduleDiceHide(ms) { const el = this.$('dice'); clearTimeout(this._dh); this._dh = setTimeout(() => { if (this._holdDice) return; el.classList.remove('roll'); el.hidden = true; }, ms); },
-
   /* ---------------- sustos ---------------- */
   async scare(kind) {
     const s = this.$('scare');
@@ -9198,7 +9638,7 @@ const UI = {
     const opts = ['relato', 'heroe', 'pesadilla'].map((id) => DIFFICULTY[id]);
     const s = this.screen(`<div class="card diff"><div class="eyebrow">${desc ? 'Modo Descenso' : 'Nueva partida'}</div><h2>¿Cuánta oscuridad soportáis?</h2>
       <div class="diff-opts">${opts.map((d) => `<button class="diff-opt ${d.id === 'heroe' ? 'sel' : ''}" data-d="${d.id}"><b>${d.name}</b><small>${d.blurb}</small>
-        <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: cada ${d.doom} rondas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}${desc ? `<li>Velas: ${DESCENT.LIVES[d.id]} ${DESCENT.LIVES[d.id] === 1 ? 'intento de más' : 'intentos de más'}</li>` : ''}</ul></button>`).join('')}</div>
+        <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: ${d.doom} marcas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}${desc ? `<li>Velas: ${DESCENT.LIVES[d.id]} ${DESCENT.LIVES[d.id] === 1 ? 'intento de más' : 'intentos de más'}</li>` : ''}</ul></button>`).join('')}</div>
       ${tutDone ? '' : `<p class="df-tut">${icon('target')} <span>¿Primera vez? El <b>tutorial guiado</b> te enseña lo esencial en unos diez minutos, sin tocar tu partida.</span> <button class="btn small" id="df-tut">Hacer el tutorial</button></p>`}
       <div class="row"><button class="btn" id="df-back">Volver</button><button class="btn primary" id="df-go">${icon('crown')} Elegir a los héroes</button></div></div>`, 'dim title-screen');
     const dt = s.querySelector('#df-tut'); if (dt) dt.onclick = () => this.startTutorial();
@@ -9246,11 +9686,12 @@ const UI = {
     const s = this.screen(`<div class="card help"><div class="eyebrow">Cómo se juega</div><h2>Reglas del descenso</h2>
       <div class="help-grid">
         <section><h3>${icon('boot')} El turno</h3><p>Cada héroe tiene <b>movimiento</b> y <b>una acción</b>. Puedes moverte antes y después de actuar. Cuando todos terminan, actúa la Sombra.</p></section>
-        <section><h3>${icon('skull')} Los dados</h3><p>Al atacar se tiran dados de combate: cada <b>calavera</b> es un golpe. El defensor tira los suyos: los héroes paran con <b>escudos blancos</b> (2 de 6 caras) y los monstruos con <b>escudos negros</b> (1 de 6). Daño = calaveras − escudos.</p></section>
+        <section><h3>${icon('skull')} Los dados</h3><p>Los dados ruedan sobre el tablero y un cartel dice el resultado. Cada <b>calavera</b> es un golpe. El defensor tira los suyos: los héroes paran con <b>escudos blancos</b> (2 de 6 caras) y los monstruos con <b>escudos negros</b> (1 de 6). Daño = calaveras − escudos.</p></section>
+        <section><h3>${icon('crown')} El Dado del Destino</h3><p>Cada ataque de un héroe (o habilidad de ataque) lleva un dado dorado. <b>Máscara alegre</b> (2 de 6): el premio de tu héroe. Bárbaro, <b>Rebote</b>: 1 dado contra otro enemigo. Enano, <b>Empujón</b>: aparta al enemigo. Elfa, <b>Paso ligero</b>: +2 de movimiento. Hechicero, <b>Chispa</b>: una habilidad se recarga antes. Amazona, <b>¡Conmigo!</b>: un aliado cercano queda Inspirado. <b>Máscara triste</b> (1 de 6): ruido, +1 Presagio (contra un jefe, pierdes el movimiento). Cara lisa: nada.</p></section>
         <section><h3>${icon('crown')} Los cinco héroes</h3><p><b>Bárbaro</b> (pega y aguanta), <b>Enano</b> (duro, rompe escudos, abre cerraduras), <b>Elfa arquera</b> (dispara lejos, ve trampas), <b>Hechicero</b> (fuego y curación) y <b>Amazona</b> (lanza a 2 casillas y carga). Bajad de 1 a 5: con más héroes salen más enemigos.</p></section>
         <section><h3>${icon('sword')} Acciones</h3><p><b>Atacar</b> con el arma, o usar una de tus <b>dos habilidades</b> (después se recargan unas rondas). <b>Buscar</b> revela las trampas de la sala y puede dar tesoro. Abrir cofres y levantar a un caído también gasta la acción.</p></section>
         <section><h3>${icon('door')} Puertas y cerraduras</h3><p>Las salas están ocultas hasta que abres su puerta. Las cerraduras de hierro y los sellos se fuerzan tirando 3 dados: las calaveras se suman hasta abrirla. El Enano abre las cerraduras y el Hechicero los sellos sin tirar.</p></section>
-        <section><h3>${icon('search')} Buscar y Presagio</h3><p>Buscar se hace una vez por sala y sin enemigos dentro. Casi siempre sale algo bueno, pero a veces salta un dardo o el ruido despierta algo. El <b>Presagio</b> (ojo de arriba) crece cada ronda y con el ruido; al llenarse, algo errante sube a buscaros.</p></section>
+        <section><h3>${icon('search')} Buscar y Presagio</h3><p>Buscar se hace una vez por sala y sin enemigos dentro, y se tira el <b>Dado del Tesoro</b>: oro (2 caras), poción, objeto, nada o peligro (un dardo, o el ruido despierta algo). El <b>Presagio</b> (ojo de arriba) crece cada ronda y con el ruido; al llenarse, algo errante sube a buscaros.</p></section>
         <section><h3>${icon('sword')} Posición</h3><p><b>Flanqueo:</b> +1 dado si otro aliado está junto a tu objetivo. Nadie te ataca por moverte: colócate con libertad.</p></section>
         <section><h3>${icon('eye')} Estados</h3><p><b>Aterrado</b> (−1 dado de ataque), <b>Envenenado</b> y <b>Ardiendo</b> (−1 PV por turno), <b>Aturdido</b> (pierde su turno), <b>Inspirado</b> (+1 dado en su próximo ataque). Los enemigos pueden <b>huir</b> si cae su líder o la mitad de su grupo.</p></section>
         <section><h3>${icon('revive')} Caer y levantarse</h3><p>Un héroe a 0 PV cae. Un aliado a su lado puede levantarle con su acción, o el Hechicero con Luz sanadora. Vuelve Herido (−1 PV máximo hasta acampar). En Pesadilla, quien cae se desangra.</p></section>
@@ -9353,29 +9794,73 @@ Object.assign(UI, {
 });
 
 /* ==========================================================================
-   Interfaz de rol: tiradas de cerraduras y trampas, elecciones, ficha del
+   Cartel del resultado: en cuanto los dados se paran, dice en grande lo que
+   ha salido (calaveras − escudos = daño, la máscara del Destino, el tesoro)
+   ========================================================================== */
+Object.assign(UI, {
+  _fi: {},
+  faceImg(type, face) {
+    const k = type + ':' + face;
+    if (!this._fi[k]) this._fi[k] = DICE3D.faceTexture(type, face).image.toDataURL();
+    return `<img class="fi" src="${this._fi[k]}" alt="">`;
+  },
+  plaque(caption, main, cls = '') {
+    const p = this.$('plaque'); clearTimeout(this._pqT);
+    p.className = 'plaque plate ' + cls;
+    p.innerHTML = `<div class="pq-cap">${caption}</div><div class="pq-main">${main}</div><div class="pq-sub"></div>`;
+    p.hidden = false; this.placePlaque(p); void p.offsetWidth; p.classList.add('in');
+    document.body.classList.add('pq-on');
+  },
+  /* En el móvil en vertical va abajo; si el panel del tutorial ocupa esa zona, justo encima de él */
+  placePlaque(p) {
+    p.style.bottom = '';
+    if (!window.matchMedia('(max-width: 820px)').matches) return;
+    const t = this.$('tutor'); if (!t || t.hidden) return;
+    const r = t.getBoundingClientRect();
+    if (r.height && r.top > window.innerHeight * 0.35) p.style.bottom = Math.round(window.innerHeight - r.top + 10) + 'px';
+  },
+  plaqueSub(html, cls = '') { const s = this.$('plaque').querySelector('.pq-sub'); if (s) s.insertAdjacentHTML('beforeend', `<p class="${cls}">${html}</p>`); },
+  /* La máscara alegre dice al final qué ha pasado de verdad */
+  plaqueDestiny(html) { const e = this.$('plaque').querySelector('.pq-destiny span'); if (e) e.innerHTML = html; },
+  plaqueDone(ms = 1800) { clearTimeout(this._pqT); this._pqT = setTimeout(() => this.plaqueHide(), ms / (U.speed || 1)); },
+  plaqueHide() { clearTimeout(this._pqT); const p = this.$('plaque'); if (p) p.hidden = true; document.body.classList.remove('pq-on'); },
+
+  /* Ataque: calaveras − escudos = daño, y la máscara si se tiró el Destino */
+  rollPlaque(r) {
+    const fi = (t, f) => this.faceImg(t, f), blocks = r.shields - r.broken;
+    const foe = r.att && r.att.side === 'enemy';
+    const mods = r.mods && r.mods.length ? ` <span class="pq-mods">${r.mods.map(([t, v]) => `<em class="${v > 0 ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v} ${U.esc(t)}</em>`).join('')}</span>` : '';
+    this.plaque(r.caption + mods,
+      `${fi(r.aType, 'skull')}<b class="n">×${r.skulls}</b><i>−</i>${fi(r.dType, r.shieldFace)}<b class="n">×${blocks}</b><i>=</i>${r.dmg ? `<b class="dmg">${r.dmg} de daño</b>` : '<b class="none">Sin daño</b>'}`,
+      (r.dmg ? 'hit' : 'miss') + (foe ? ' foe' : ''));
+    if (r.broken) this.plaqueSub(`${fi(r.dType, r.shieldFace)}<span>${r.broken === 1 ? 'Un escudo no cuenta' : `${r.broken} escudos no cuentan`}: ${r.att && r.att.traits && r.att.traits.shieldbreaker ? 'rompe-escudos' : 'tiro certero'}</span>`, 'none');
+    if (r.destiny) {
+      const D = DESTINY[r.att.id] || { name: 'Suerte' };
+      const bossOn = GAME.boss && GAME.boss.alive && GAME.boss.active;
+      if (r.destiny === 'comedy') this.plaqueSub(`${fi('destiny', 'comedy')}<span><b class="good">Máscara alegre</b> · ${D.name}…</span>`, 'good pq-destiny');
+      else if (r.destiny === 'tragedy') this.plaqueSub(`${fi('destiny', 'tragedy')}<span><b class="bad">Máscara trágica</b> · ${bossOn ? 'Desequilibrado: pierdes el movimiento' : 'Ruido: +1 Presagio'}</span>`, 'bad pq-destiny');
+      else this.plaqueSub(`${fi('destiny', 'blank')}<span>Destino en blanco: nada más</span>`, 'none pq-destiny');
+    }
+  },
+  /* Cerraduras, sellos y trampas: calaveras que hacen falta */
+  checkPlaque(r) {
+    const fi = this.faceImg('combat', 'skull');
+    const verdict = r.ok ? '<b class="good">Conseguido</b>' : r.cumulative && r.have > 0 ? '<b class="none">Aún no</b>' : '<b class="bad">Fallo</b>';
+    this.plaque(`<b>${U.esc(r.caption)}</b> · hacen falta ${r.need} calavera${r.need === 1 ? '' : 's'}`, `${fi}<b class="n">×${r.skulls}</b><i>→</i>${verdict}`, r.ok ? 'hit' : 'miss');
+    if (r.cumulative && r.have !== r.skulls) this.plaqueSub(`<span>${r.ok ? 'Con lo de antes, basta' : `Con lo de antes, lleváis ${r.have} de ${r.need}`}</span>`, 'none');
+  },
+  /* Buscar: la cara del Dado del Tesoro */
+  treasurePlaque(h, kind, text) {
+    const good = kind === 'gold' || kind === 'potion' || kind === 'item';
+    this.plaque(`<b>${U.esc(h.name)} busca</b> · Dado del Tesoro`, `${this.faceImg('treasure', kind)}<b class="${good ? 'good' : kind === 'danger' ? 'bad' : 'none'}">${text}</b>`, good ? 'hit' : 'miss');
+  }
+});
+
+/* ==========================================================================
+   Interfaz de rol: elecciones, ficha del
    grupo, elección de héroes (1 a 5) y talentos
    ========================================================================== */
 Object.assign(UI, {
-  /* ---------------- bandeja de tirada (cerraduras, trampas) ---------------- */
-  checkTray(r) {
-    const el = this.$('dice');
-    const roll = () => [U.randi(2, 4) * 360 + U.randi(-40, 40), U.randi(2, 4) * 360 + U.randi(-40, 40), U.randi(-30, 30)];
-    const row = r.dice.map((f) => this.dieHTML(f, f === 'skull', roll())).join('');
-    const total = r.skulls + (r.have || 0), ok = total >= r.need;
-    el.className = 'dice plate check by-hero' + (r.quick ? ' quick' : '');
-    el.innerHTML = `
-      <div class="dc-head"><b>${U.esc(r.label || 'Tirada')}</b><span>${U.esc(r.u.name)} · ${r.dice.length} dado${r.dice.length === 1 ? '' : 's'} · hacen falta ${r.need} ${icon('skull')}</span></div>
-      <div class="dc-row atk">${row}</div>
-      <div class="dc-res"><span>${r.have ? `${r.have} + ` : ''}${r.skulls} ${icon('skull')}</span><i>de</i><span>${r.need}</span><strong class="${ok ? 'hit' : 'miss'}">${ok ? 'Conseguido' : r.have != null && total > 0 ? 'Aún no' : 'Fallo'}</strong></div>`;
-    el.hidden = false; void el.offsetWidth; el.classList.add('roll');
-    audio.sfx('dice');
-    const t = (r.quick ? 480 : 760) / U.speed;
-    setTimeout(() => { audio.sfx('diceLand'); if (!r.quick) audio.sfx(ok ? 'turnHero' : 'deny', { vol: 0.5 }); }, t * 0.8);
-    this.scheduleDiceHide(t + (r.quick ? 800 : 1400) / U.speed);
-    return U.sleep(r.quick ? 480 : 760);
-  },
-
   /* ---------------- elecciones ---------------- */
   choice(prompt, options, o = {}) {
     return new Promise((resolve) => {
@@ -9625,7 +10110,9 @@ const TUTOR = {
         text: T ? 'Para atacar, toca al esqueleto y vuelve a tocarlo para confirmar. Antes verás cuántos dados tiras y tu probabilidad de herir. Lyriel dispara desde lejos; si alguien no llega, se acerca solo.' : 'Haz clic en un esqueleto para atacarlo. Antes verás cuántos dados tiras y tu probabilidad de herir. Lyriel dispara desde lejos; si alguien no llega, se acerca solo.',
         on: { attack: true, skill: (d) => d && d.s && d.s.target === 'enemy' } },
       { id: 'dice', title: 'Los dados', next: true,
-        text: 'Cada calavera es un golpe. Los monstruos paran con escudos negros (1 cara de 6) y los héroes con escudos blancos (2 de 6). Daño = calaveras − escudos.' },
+        text: 'Los dados ruedan en el tablero y el cartel de arriba dice el resultado. Cada calavera es un golpe. Los monstruos paran con escudos negros (1 cara de 6) y los héroes con escudos blancos (2 de 6). Daño = calaveras − escudos.' },
+      { id: 'destiny', title: 'El Dado del Destino', next: true,
+        text: 'El dado dorado acompaña a cada ataque de un héroe. Máscara alegre: el premio de ese héroe (Korvak rebota el golpe contra otro enemigo, Lyriel gana movimiento, Aldebrán recarga antes una habilidad). Máscara triste: ruido, +1 Presagio. Cara lisa: nada.' },
       { id: 'skill', title: 'Habilidades', needsAction: 'hechicero',
         ring: () => (GAME.active && GAME.active.id === 'hechicero' ? '#actions [data-act="s0"]' : '.hero-card[data-hero="hechicero"]'),
         arrow: () => (GAME.mode && GAME.mode.type === 'skill' ? nearest() : null),
@@ -9653,7 +10140,7 @@ const TUTOR = {
         text: `${tap} el cofre para abrirlo (gasta la acción). Al lado hay un atril: leer no cuesta nada.`,
         until: () => chest.looted && !GAME.busy },
       { id: 'search', title: 'Buscar', ring: '#actions [data-act="search"]', needsAction: true, skipIf: () => this.flags.searched,
-        text: `Con la sala tranquila, ${T ? 'toca' : 'pulsa'} «Buscar» (la lupa)${T ? '' : ' o la tecla 4'}: revela las trampas de la sala y a veces aparece tesoro. Se busca una vez por sala, hace ruido… y en la Hondura, alguna vez, sale un susto.`,
+        text: `Con la sala tranquila, ${T ? 'toca' : 'pulsa'} «Buscar» (la lupa)${T ? '' : ' o la tecla 4'}: revela las trampas de la sala y tira el Dado del Tesoro: oro, una poción, un objeto… o nada. Se busca una vez por sala y hace ruido; fuera de aquí, la cara de peligro trae un dardo o algo que sube a por vosotros.`,
         on: { search: true } },
       { id: 'items', title: 'Objetos', ring: '#actions [data-act="items"]', next: true,
         text: 'En «Objetos» están las pociones (beberla no gasta la acción), los elixires (una acción más) y las bombas.' },
@@ -9959,6 +10446,7 @@ const MAIN = {
       await U.nextFrame();
       ENGINE.tiltOn = SETTINGS.tilt;
       ENGINE.init(document.getElementById('stage'));
+      DICE3D.init(ENGINE.scene, { size: 0.84, selfLit: 0.22 });
       FX.init(); UI.init(); INPUT.init();
       this.applySettings(false, true);
       say('Tallando las miniaturas…');
@@ -10049,7 +10537,7 @@ const MAIN = {
   }
 };
 
-window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, MAIN, SETTINGS, U, audio, RULES, TALENTS, BOONS, VIGILS, HERO_ROSTER, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, GEAR, SLOTS, STATUS, TUTOR, TUTORIAL, DESCENT };
+window.UMBRAL = { GAME, ENGINE, WORLD, UI, FX, DICE3D, MAIN, SETTINGS, U, audio, RULES, TALENTS, BOONS, VIGILS, HERO_ROSTER, DIFFICULTY, HERO_DEFS, HERO_IDS, ENEMY_TYPES, CHAPTERS, SHOP, GEAR, SLOTS, STATUS, TUTOR, TUTORIAL, DESCENT };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => MAIN.boot()); else MAIN.boot();
 
 })();

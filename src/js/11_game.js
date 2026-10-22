@@ -263,6 +263,7 @@ const GAME = {
       FX.clearLabels();
       WORLD.build(ch, ch.theme);
       this.L = WORLD.L;
+      DICE3D.prewarm(ENGINE.renderer, ENGINE.camera);
       this.checkGear();
       this.heroes = this.party.map((id) => this.makeHero(id));
       this.applyCarry();
@@ -561,7 +562,7 @@ const GAME = {
     const skulls = dice.filter((f) => f === 'skull').length;
     if (u && u.side === 'hero') {
       this.stats.checks++;
-      await UI.checkTray({ u, dice, skulls, need, label: o.label, quick: o.quick, have: o.have || 0 });
+      await this.checkRoll(u, dice, need, { label: o.label, have: o.have, at: o.at });
       if (skulls + (o.have || 0) >= need) this.stats.checksOk++;
     }
     return { skulls, ok: skulls + (o.have || 0) >= need };
@@ -1027,7 +1028,7 @@ const GAME = {
     if (this.lockAuto(h, door)) { ok = true; FX.text(this.headPos(h), door.lock === 'sello' ? 'Runas descifradas' : 'Abierta', 'heal'); await U.sleep(300); }
     else {
       const need = this.lockNeed(door), have = door.progress || 0;
-      const r = await this.rollCheck(h, 3, need, { label: door.lock === 'sello' ? 'Romper el sello' : 'Forzar la cerradura', have });
+      const r = await this.rollCheck(h, 3, need, { label: door.lock === 'sello' ? 'Romper el sello' : 'Forzar la cerradura', have, at: door });
       door.progress = have + r.skulls; ok = door.progress >= need;
       if (door.lock === 'cerradura') { audio.sfx('doorSlam', { vol: 0.5 }); this.addDoom(1); }
       if (!ok) {
@@ -1134,7 +1135,10 @@ const GAME = {
     const sk = A.filter((f) => f === 'skull').length, sh = Math.max(0, D.filter((f) => f === shieldFace).length - ignore);
     const R = { skulls: sk, shields: sh, dmg: Math.max(0, sk - sh) };
     const quick = o.quick || (att.side === 'enemy' && SETTINGS.quickEnemyDice);
-    const diceP = UI.dice({ att, tgt, A, D, shieldFace, skulls: R.skulls, shields: R.shields, dmg: R.dmg, label: o.label, quick, mods: ad.mods, ignore });
+    // el Dado del Destino acompaña al primer ataque de cada acción de un héroe
+    const destiny = o.destiny && att.side === 'hero' ? this.rollDestiny() : null;
+    const label = o.label && o.label !== att.name ? `<b>${U.esc(o.label)}</b> · ` : '';
+    await this.combatRoll({ att, tgt, A, D, shieldFace, ignore, quick, destiny, mods: ad.mods, caption: `${label}${U.esc(att.name)} → ${U.esc(tgt.name)}` });
     if (ranged || o.proj) {
       const proj = o.proj || att.proj || 'arrow';
       audio.sfx(proj === 'arrow' ? 'arrow' : proj === 'fire' ? 'fire' : proj === 'dagger' ? 'swing' : 'magic', { pan, vol: 0.8 });
@@ -1146,7 +1150,6 @@ const GAME = {
       await U.tween(170, (k) => { m.position.x = from.x + dir.x * 0.55 * U.easeIn(k); m.position.z = from.z + dir.z * 0.55 * U.easeIn(k); md.rotation.x = 0.2 * k; });
       FX.slash(m.position, dir, att.side === 'hero' ? (att.color || '#fff2d0') : att.boss ? '#ff6a4a' : '#ffb0a0');
     }
-    await diceP;
     const victim = tgt;
     const tp = new THREE.Vector3(victim.mesh.position.x, 1.1, victim.mesh.position.z);
     if (R.dmg > 0) {
@@ -1170,6 +1173,7 @@ const GAME = {
         if (oh && (!oh.minDmg || R.dmg >= oh.minDmg)) await this.addStatus(victim, oh.st, oh.dur);
       }
     }
+    if (destiny) await this.destinyEffect(att, destiny, victim);
     await U.sleep(140);
     return R.dmg;
   },
@@ -1286,7 +1290,7 @@ const GAME = {
     if (h.actions <= 0) return;
     h.actions--;
     const ranged = h.ranged && U.cheb(h.x, h.y, e.x, e.y) > 1;
-    await this.attack(h, e, { ranged, proj: ranged ? h.proj : null, label: h.basic.name });
+    await this.attack(h, e, { ranged, proj: ranged ? h.proj : null, label: h.basic.name, destiny: true });
   },
   /* ------------------------------------------------------------ habilidades y acciones */
   async useSkill(h, s, d) {
@@ -1304,7 +1308,7 @@ const GAME = {
       await U.tween(380, (k) => (md.rotation.y = U.easeOut(k) * Math.PI * 2));
       md.rotation.y = 0;
       let first = true;
-      for (const e of foes) { await this.attack(h, e, { atk: si.dice, label: s.name, quick: !first, noFlank: true }); first = false; }
+      for (const e of foes) { await this.attack(h, e, { atk: si.dice, label: s.name, quick: !first, noFlank: true, destiny: first }); first = false; }
       UI.log(`${h.name} gira con el hacha: ${foes.length} enemigo${foes.length === 1 ? '' : 's'} alcanzado${foes.length === 1 ? '' : 's'}.`, 'good');
     } else if (s.id === 'grito') {
       audio.sfx('reveal', { vol: 0.9 }); ENGINE.shake(0.4);
@@ -1318,7 +1322,7 @@ const GAME = {
     } else if (s.id === 'sismico') {
       const e = d.unit;
       ENGINE.shake(0.7); audio.sfx('quake', { vol: 0.8 });
-      await this.attack(h, e, { atk: si.dice, label: s.name });
+      await this.attack(h, e, { atk: si.dice, label: s.name, destiny: true });
       FX.burst('dust', h.mesh.position); FX.burst('explode', { x: h.x * TILE, y: 0.2, z: h.y * TILE });
       FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#f0b070', si.radius * TILE + 0.8, 600);
       const near = this.visibleEnemies().filter((o) => !o.boss && U.cheb(o.x, o.y, h.x, h.y) <= si.radius);
@@ -1340,7 +1344,7 @@ const GAME = {
       await U.sleep(260);
       const foes = this.visibleEnemies().filter((e) => U.cheb(e.x, e.y, cx, cy) <= 1);
       let first = true;
-      for (const e of foes) { await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'arrow', projFrom: new THREE.Vector3(e.x * TILE, 7, e.y * TILE), label: s.name, quick: !first, light: false }); first = false; }
+      for (const e of foes) { await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'arrow', projFrom: new THREE.Vector3(e.x * TILE, 7, e.y * TILE), label: s.name, quick: !first, light: false, destiny: first }); first = false; }
       if (!foes.length) UI.log('Las flechas se clavan en el suelo vacío.', 'neutral');
     } else if (s.id === 'salto') {
       const m = h.mesh, fx0 = m.position.x, fz0 = m.position.z, tx = d.x * TILE, tz = d.y * TILE;
@@ -1359,7 +1363,7 @@ const GAME = {
       if (!h.ko && room && !room.visited) { room.visited = true; UI.setLocation(this.ch, room); const meta = this.ch.rooms[room.marker]; if (meta && meta.enter) await this.run(meta.enter, { hero: h, room }); }
     } else if (s.id === 'bola') {
       const e = d.unit, oh = h.tal.has('llama') ? { st: 'ardiendo', dur: 2 } : null;
-      await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'fire', label: s.name, dtype: 'fire', onHit: oh });
+      await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'fire', label: s.name, dtype: 'fire', onHit: oh, destiny: true });
       audio.sfx('fire'); FX.burst('fire', { x: e.x * TILE, y: 1, z: e.y * TILE }); FX.burst('explode', { x: e.x * TILE, y: 0.5, z: e.y * TILE });
       ENGINE.flashLight(new THREE.Vector3(e.x * TILE, 1.4, e.y * TILE), '#ff9a4a', 4, 0.6); ENGINE.shake(0.4);
       const splash = this.visibleEnemies().filter((o) => o !== e && U.cheb(o.x, o.y, e.x, e.y) === 1);
@@ -1384,7 +1388,7 @@ const GAME = {
         }
         if (SETTINGS.follow) ENGINE.focusTile(h.x, h.y);
       }
-      if (!h.ko && this.meleeOK(h.x, h.y, e.x, e.y)) { ENGINE.shake(0.3); await this.attack(h, e, { atk: si.dice, label: s.name }); }
+      if (!h.ko && this.meleeOK(h.x, h.y, e.x, e.y)) { ENGINE.shake(0.3); await this.attack(h, e, { atk: si.dice, label: s.name, destiny: true }); }
     } else if (s.id === 'tribu') {
       audio.sfx('levelUp', { vol: 0.7 }); ENGINE.flashLight(at(h), '#ffe0a0', 3.5, 0.8);
       FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#ffd27a', si.radius * TILE + 1, 800);
@@ -1419,10 +1423,10 @@ const GAME = {
     const D = []; for (let i = 0; i < defN; i++) D.push(this.rollDie());
     const skulls = A.filter((f) => f === 'skull').length, shieldFace = tgt.side === 'hero' ? 'white' : 'black';
     const shields = D.filter((f) => f === shieldFace).length, dmg = Math.max(0, skulls - shields);
-    await UI.dice({ att: { name, side: 'hero' }, tgt, A, D, shieldFace, skulls, shields, dmg, label: o.label, quick: true });
+    await this.combatRoll({ att: o.by || null, tgt, A, D, shieldFace, quick: true, caption: `${o.label ? `<b>${U.esc(o.label)}</b> · ` : ''}${U.esc(name)} → ${U.esc(tgt.name)}` });
     const tp = new THREE.Vector3(tgt.mesh.position.x, 1.1, tgt.mesh.position.z);
     if (dmg > 0) {
-      FX.burst('hit', tp); audio.sfx('hit'); this.hitReact(tgt, (o.dir || new THREE.Vector3(1, 0, 0)).normalize()); await this.damage(tgt, dmg, {});
+      FX.burst('hit', tp); audio.sfx('hit'); this.hitReact(tgt, (o.dir || (o.by ? new THREE.Vector3(tgt.x - o.by.x || 0.01, 0, tgt.y - o.by.y) : new THREE.Vector3(1, 0, 0))).normalize()); await this.damage(tgt, dmg, { by: o.by });
       if (o.onHit && this.up(tgt)) await this.addStatus(tgt, o.onHit.st, o.onHit.dur);
     } else { FX.burst('block', tp); audio.sfx('block'); FX.text(tp, 'Bloqueado', 'block'); }
     UI.log(`${name} → ${tgt.name}: ${dmg ? `<b>${dmg} de daño</b>` : 'sin daño'}.`, tgt.side === 'hero' ? 'bad' : 'good');
@@ -1473,30 +1477,41 @@ const GAME = {
     if (special) { room.searchEvent = true; room.searched = true; await this.run(meta.search, { hero: h, room }); UI.refresh(); return; }
     room.searched = true;
     const at = new THREE.Vector3(h.mesh.position.x, 1.6, h.mesh.position.z);
-    const r = Math.random(), safe = this.tutorial;
+    // el Dado del Tesoro: oro, oro, poción, objeto, nada o peligro (en el tutorial, nunca peligro)
+    const kind = await this.treasureRoll(h, this.tutorial);
+    this.stats.treasure = this.stats.treasure || {}; this.stats.treasure[kind] = (this.stats.treasure[kind] || 0) + 1;
     const itemName = { elixir: 'un elixir', bomb: 'una bomba', potion: 'una poción' };
-    if (r < 0.14 && !safe) {
-      UI.log(`${h.name} levanta una losa… y un dardo sale disparado de la pared.`, 'bad');
-      FX.burst('trap', { x: h.x * TILE, y: 0.8, z: h.y * TILE }); audio.sfx('trap');
-      await this.damage(h, 1, { source: 'trap' });
-    } else if (r < 0.24 && !safe && this.state === 'play') {
-      UI.log(`El ruido despierta algo en la Hondura. <b>Viene hacia aquí.</b>`, 'bad');
-      FX.text(at, '¡Algo se acerca!', 'warn'); audio.sfx('whisper', { dur: 1.2 });
-      this.pendingWanderer = true;
-    } else if (r < 0.38) {
+    if (kind === 'danger') {
+      if (Math.random() < 0.5 || this.state !== 'play') {
+        UI.treasurePlaque(h, kind, 'Peligro: un dardo, −1 PV');
+        UI.log(`${h.name} levanta una losa… y un dardo sale disparado de la pared.`, 'bad');
+        FX.burst('trap', { x: h.x * TILE, y: 0.8, z: h.y * TILE }); audio.sfx('trap');
+        await this.damage(h, 1, { source: 'trap' });
+      } else {
+        UI.treasurePlaque(h, kind, 'Peligro: algo viene');
+        UI.log(`El ruido despierta algo en la Hondura. <b>Viene hacia aquí.</b>`, 'bad');
+        FX.text(at, '¡Algo se acerca!', 'warn'); audio.sfx('whisper', { dur: 1.2 });
+        this.pendingWanderer = true;
+      }
+    } else if (kind === 'nothing') {
+      UI.treasurePlaque(h, kind, 'Nada');
       UI.log(`${h.name} no encuentra más que polvo y huesos.`, 'neutral'); FX.text(this.headPos(h), 'Nada', 'block');
-    } else if (r < 0.7) {
-      const g = U.randi(10, 20); this.addGold(g, at); UI.log(`Bajo una losa suelta: ${g} monedas.`, 'good');
+    } else if (kind === 'gold') {
+      const g = U.randi(10, 20); UI.treasurePlaque(h, kind, `Oro: ${g} monedas`);
+      this.addGold(g, at); UI.log(`Bajo una losa suelta: ${g} monedas.`, 'good');
       if (BARKS[h.id].gold && Math.random() < 0.6) FX.bubble(h, U.pick(BARKS[h.id].gold));
-    } else if (r < 0.88) {
-      const g = U.randi(14, 26); this.addGold(g, at); this.items.potion++;
+    } else if (kind === 'potion') {
+      const g = U.randi(6, 14); UI.treasurePlaque(h, kind, `Una poción y ${g} monedas`);
+      this.addGold(g, at); this.items.potion++; audio.sfx('potion', { vol: 0.6 });
       FX.text(new THREE.Vector3(at.x, 2, at.z), '+1 poción', 'heal'); UI.log(`${g} monedas y una poción intacta.`, 'good');
     } else {
       const it = U.pick(['elixir', 'bomb', 'potion', 'bomb']); this.items[it]++;
-      const g = U.randi(18, 32); this.addGold(g, at);
+      const g = U.randi(12, 24); UI.treasurePlaque(h, kind, `${itemName[it][0].toUpperCase() + itemName[it].slice(1)} y ${g} monedas`);
+      this.addGold(g, at); audio.sfx('chest', { vol: 0.6 });
       FX.text(new THREE.Vector3(at.x, 2, at.z), '+1 ' + { elixir: 'elixir', bomb: 'bomba', potion: 'poción' }[it], 'heal');
       UI.log(`¡Un alijo escondido! ${g} monedas y ${itemName[it]}.`, 'good');
     }
+    DICE3D.clearLater(2200); UI.plaqueDone(2200);
     UI.refresh();
   },
   async spawn(type, x, y, fx = 'summon') {
@@ -1548,7 +1563,7 @@ const GAME = {
     h.actions--; this.eventful = true;
     this.faceTo(h, tr.x, tr.y);
     const sure = h.traits && h.traits.locksmith;
-    const r = sure ? { ok: true, skulls: 1 } : await this.rollCheck(h, 2, 1, { label: 'Desarmar la trampa' });
+    const r = sure ? { ok: true, skulls: 1 } : await this.rollCheck(h, 2, 1, { label: 'Desarmar la trampa', at: tr });
     if (r.ok) {
       tr.disarmed = true; audio.sfx('block');
       tr.mesh.userData.spikes.visible = false;
@@ -2016,7 +2031,7 @@ const GAME = {
           }
           case 'strike': {
             const h = this.stepUnit(a[0], ctx), b = this.enemies.find((e) => e.boss && e.alive);
-            if (h && !h.ko) await this.diceHit(b ? b.name : 'El golpe', h, a[1] || 3, { label: 'Golpe sin defensa', dir: b ? new THREE.Vector3(h.x - b.x || 0.01, 0, h.y - b.y) : null });
+            if (h && !h.ko) await this.diceHit(b ? b.name : 'El golpe', h, a[1] || 3, { label: 'Golpe sin defensa', by: b || null });
             break;
           }
           case 'lights': await this.lights(a[0]); break;

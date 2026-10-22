@@ -26,7 +26,7 @@ const UI = {
     this.$('hint-ok').onclick = () => { this.$('hint').hidden = true; };
     this.logs = [];
   },
-  hideAll() { ['dlg', 'choice', 'note', 'dice', 'hint', 'preview', 'chronicle', 'items-pop', 'sheet'].forEach((id) => { const e = this.$(id); if (e) e.hidden = true; }); this.screen(null); },
+  hideAll() { if (typeof DICE3D !== 'undefined') DICE3D.clear(); this.plaqueHide(); ['dlg', 'choice', 'note', 'hint', 'preview', 'chronicle', 'items-pop', 'sheet'].forEach((id) => { const e = this.$(id); if (e) e.hidden = true; }); this.screen(null); },
   showHUD(on) { this.hud.hidden = !on; document.body.classList.toggle('in-game', on); },
 
   /* ---------------- grupo ---------------- */
@@ -242,35 +242,6 @@ const UI = {
       setTimeout(() => n.addEventListener('pointerup', close), 300);
     });
   },
-  /* ---------------- dados ---------------- */
-  dieHTML(face, counted, roll) {
-    const ic = face === 'skull' ? 'skull' : 'shield';
-    const faces = ['skull', 'white', 'black', 'skull', 'white', 'skull'];
-    const f = (cls, fc) => `<span class="fc ${cls} f-${fc}">${icon(fc === 'skull' ? 'skull' : 'shield')}</span>`;
-    void ic;
-    return `<span class="die ${counted ? 'counted' : 'muted'}" style="--rx:${roll[0]}deg;--ry:${roll[1]}deg;--rz:${roll[2]}deg"><span class="cube">${f('front', face)}${f('back', faces[1])}${f('right', faces[2])}${f('left', faces[3])}${f('top', faces[4])}${f('bottom', faces[5])}</span></span>`;
-  },
-  dice(r) {
-    const el = this.$('dice');
-    const roll = () => [U.randi(2, 4) * 360 + U.randi(-40, 40), U.randi(2, 4) * 360 + U.randi(-40, 40), U.randi(-30, 30)];
-    const atkRow = r.A.map((f) => this.dieHTML(f, f === 'skull', roll())).join('');
-    const defRow = r.D.map((f) => this.dieHTML(f, f === r.shieldFace, roll())).join('');
-    el.className = 'dice plate ' + (r.att.side === 'hero' ? 'by-hero' : 'by-foe') + (r.quick ? ' quick' : '') + (r.reroll ? ' reroll' : '');
-    const mods = r.mods && r.mods.length ? `<div class="dc-mods">${r.mods.map(([t, v]) => `<span class="${v > 0 ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v} ${U.esc(t)}</span>`).join('')}</div>` : '';
-    el.innerHTML = `
-      <div class="dc-head"><b>${U.esc(r.label || r.att.name)}</b><span>${U.esc(r.att.name)} → ${U.esc(r.tgt.name)}</span></div>${mods}
-      <div class="dc-row atk">${atkRow}</div>
-      <div class="dc-row def">${defRow || '<em class="nodef">sin defensa</em>'}</div>
-      <div class="dc-res"><span>${r.skulls} ${icon('skull')}</span><i>−</i><span>${r.shields} ${icon('shield')}</span><i>=</i><strong class="${r.dmg ? 'hit' : 'miss'}">${r.dmg ? r.dmg + ' de daño' : 'Bloqueado'}</strong></div>`;
-    el.hidden = false; void el.offsetWidth; el.classList.add('roll');
-    audio.sfx('dice');
-    const t = (r.quick ? 520 : 820) / U.speed;
-    setTimeout(() => audio.sfx('diceLand'), t * 0.8);
-    this.scheduleDiceHide(t + (r.quick ? 900 : 1500) / U.speed);
-    return U.sleep(r.quick ? 520 : 820);
-  },
-  scheduleDiceHide(ms) { const el = this.$('dice'); clearTimeout(this._dh); this._dh = setTimeout(() => { if (this._holdDice) return; el.classList.remove('roll'); el.hidden = true; }, ms); },
-
   /* ---------------- sustos ---------------- */
   async scare(kind) {
     const s = this.$('scare');
@@ -498,7 +469,7 @@ const UI = {
     const opts = ['relato', 'heroe', 'pesadilla'].map((id) => DIFFICULTY[id]);
     const s = this.screen(`<div class="card diff"><div class="eyebrow">${desc ? 'Modo Descenso' : 'Nueva partida'}</div><h2>¿Cuánta oscuridad soportáis?</h2>
       <div class="diff-opts">${opts.map((d) => `<button class="diff-opt ${d.id === 'heroe' ? 'sel' : ''}" data-d="${d.id}"><b>${d.name}</b><small>${d.blurb}</small>
-        <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: cada ${d.doom} rondas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}${desc ? `<li>Velas: ${DESCENT.LIVES[d.id]} ${DESCENT.LIVES[d.id] === 1 ? 'intento de más' : 'intentos de más'}</li>` : ''}</ul></button>`).join('')}</div>
+        <ul class="diff-list"><li>La Sombra: ${d.iq < 0 ? 'torpe' : d.iq > 0 ? 'más astuta' : 'piensa según cada criatura'}</li><li>Caer: ${d.fall === 'auto' ? 'te levantas solo' : d.fall === 'bleed' ? `te desangras (${d.bleed} rondas)` : 'un aliado te levanta, quedas herido'}</li><li>Presagio: ${d.doom} marcas</li>${d.champions ? '<li>Campeones entre los enemigos</li>' : ''}${desc ? `<li>Velas: ${DESCENT.LIVES[d.id]} ${DESCENT.LIVES[d.id] === 1 ? 'intento de más' : 'intentos de más'}</li>` : ''}</ul></button>`).join('')}</div>
       ${tutDone ? '' : `<p class="df-tut">${icon('target')} <span>¿Primera vez? El <b>tutorial guiado</b> te enseña lo esencial en unos diez minutos, sin tocar tu partida.</span> <button class="btn small" id="df-tut">Hacer el tutorial</button></p>`}
       <div class="row"><button class="btn" id="df-back">Volver</button><button class="btn primary" id="df-go">${icon('crown')} Elegir a los héroes</button></div></div>`, 'dim title-screen');
     const dt = s.querySelector('#df-tut'); if (dt) dt.onclick = () => this.startTutorial();
@@ -546,11 +517,12 @@ const UI = {
     const s = this.screen(`<div class="card help"><div class="eyebrow">Cómo se juega</div><h2>Reglas del descenso</h2>
       <div class="help-grid">
         <section><h3>${icon('boot')} El turno</h3><p>Cada héroe tiene <b>movimiento</b> y <b>una acción</b>. Puedes moverte antes y después de actuar. Cuando todos terminan, actúa la Sombra.</p></section>
-        <section><h3>${icon('skull')} Los dados</h3><p>Al atacar se tiran dados de combate: cada <b>calavera</b> es un golpe. El defensor tira los suyos: los héroes paran con <b>escudos blancos</b> (2 de 6 caras) y los monstruos con <b>escudos negros</b> (1 de 6). Daño = calaveras − escudos.</p></section>
+        <section><h3>${icon('skull')} Los dados</h3><p>Los dados ruedan sobre el tablero y un cartel dice el resultado. Cada <b>calavera</b> es un golpe. El defensor tira los suyos: los héroes paran con <b>escudos blancos</b> (2 de 6 caras) y los monstruos con <b>escudos negros</b> (1 de 6). Daño = calaveras − escudos.</p></section>
+        <section><h3>${icon('crown')} El Dado del Destino</h3><p>Cada ataque de un héroe (o habilidad de ataque) lleva un dado dorado. <b>Máscara alegre</b> (2 de 6): el premio de tu héroe. Bárbaro, <b>Rebote</b>: 1 dado contra otro enemigo. Enano, <b>Empujón</b>: aparta al enemigo. Elfa, <b>Paso ligero</b>: +2 de movimiento. Hechicero, <b>Chispa</b>: una habilidad se recarga antes. Amazona, <b>¡Conmigo!</b>: un aliado cercano queda Inspirado. <b>Máscara triste</b> (1 de 6): ruido, +1 Presagio (contra un jefe, pierdes el movimiento). Cara lisa: nada.</p></section>
         <section><h3>${icon('crown')} Los cinco héroes</h3><p><b>Bárbaro</b> (pega y aguanta), <b>Enano</b> (duro, rompe escudos, abre cerraduras), <b>Elfa arquera</b> (dispara lejos, ve trampas), <b>Hechicero</b> (fuego y curación) y <b>Amazona</b> (lanza a 2 casillas y carga). Bajad de 1 a 5: con más héroes salen más enemigos.</p></section>
         <section><h3>${icon('sword')} Acciones</h3><p><b>Atacar</b> con el arma, o usar una de tus <b>dos habilidades</b> (después se recargan unas rondas). <b>Buscar</b> revela las trampas de la sala y puede dar tesoro. Abrir cofres y levantar a un caído también gasta la acción.</p></section>
         <section><h3>${icon('door')} Puertas y cerraduras</h3><p>Las salas están ocultas hasta que abres su puerta. Las cerraduras de hierro y los sellos se fuerzan tirando 3 dados: las calaveras se suman hasta abrirla. El Enano abre las cerraduras y el Hechicero los sellos sin tirar.</p></section>
-        <section><h3>${icon('search')} Buscar y Presagio</h3><p>Buscar se hace una vez por sala y sin enemigos dentro. Casi siempre sale algo bueno, pero a veces salta un dardo o el ruido despierta algo. El <b>Presagio</b> (ojo de arriba) crece cada ronda y con el ruido; al llenarse, algo errante sube a buscaros.</p></section>
+        <section><h3>${icon('search')} Buscar y Presagio</h3><p>Buscar se hace una vez por sala y sin enemigos dentro, y se tira el <b>Dado del Tesoro</b>: oro (2 caras), poción, objeto, nada o peligro (un dardo, o el ruido despierta algo). El <b>Presagio</b> (ojo de arriba) crece cada ronda y con el ruido; al llenarse, algo errante sube a buscaros.</p></section>
         <section><h3>${icon('sword')} Posición</h3><p><b>Flanqueo:</b> +1 dado si otro aliado está junto a tu objetivo. Nadie te ataca por moverte: colócate con libertad.</p></section>
         <section><h3>${icon('eye')} Estados</h3><p><b>Aterrado</b> (−1 dado de ataque), <b>Envenenado</b> y <b>Ardiendo</b> (−1 PV por turno), <b>Aturdido</b> (pierde su turno), <b>Inspirado</b> (+1 dado en su próximo ataque). Los enemigos pueden <b>huir</b> si cae su líder o la mitad de su grupo.</p></section>
         <section><h3>${icon('revive')} Caer y levantarse</h3><p>Un héroe a 0 PV cae. Un aliado a su lado puede levantarle con su acción, o el Hechicero con Luz sanadora. Vuelve Herido (−1 PV máximo hasta acampar). En Pesadilla, quien cae se desangra.</p></section>

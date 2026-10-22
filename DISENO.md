@@ -379,7 +379,7 @@ Rendimiento: los adornos se unen en una sola malla por material. Con un capítul
 
 - **Cerraduras y sellos:** una sola acción, sin menú. Se tiran 3 dados y las calaveras se van sumando entre intentos hasta llegar a 2 (cerradura) o 3 (sello). La cerradura hace ruido (+1 Presagio); el sello muerde si no sale ninguna calavera (−1 PV).
 - **Trampas:** 2 dados, basta una calavera para desarmarla; sin ninguna, salta.
-- **Buscar:** una acción, una vez por sala y sin enemigos dentro. Revela las trampas y saca algo de una tabla al azar: nada (14 %), oro (32 %), oro y poción (18 %), un alijo con objeto (12 %), un dardo que quita 1 PV (14 %) o un ruido que trae un monstruo errante (10 %). Hace ruido (+1 Presagio).
+- **Buscar:** una acción, una vez por sala y sin enemigos dentro. Revela las trampas y tira el Dado del Tesoro (ver 12.3). Hace ruido (+1 Presagio).
 - **Sin ataques de oportunidad:** moverse es libre. Se mantiene el flanqueo (+1 dado).
 - **Moral:** cuando cae un líder enemigo (o la mitad de su grupo), cada criatura cercana huye con un 50 %; los cobardes siempre.
 - **Historia:** cada frase la dice el primer héroe del grupo que tenga una propia; si no, quien lleva el farol (el primero que eliges). Algunas opciones necesitan a un héroe concreto (Thráin habla con el Enano; descifrar el cuaderno de Osric pide al Hechicero). El final aterra a todos menos al Bárbaro, salvo que hayáis escuchado a Tomás.
@@ -427,3 +427,77 @@ Lectura: el grupo recomendado se nota (en Pesadilla, 0 derrotas frente a 6 con u
 - Pantallas en ordenador, móvil en vertical y móvil en horizontal: elección del grupo, barra de acciones, ficha, campamento con cuatro y cinco héroes, talentos, velada y tienda.
 - Partidas guardadas en mitad de una ronda (campaña y Descenso) que se reanudan igual. Las partidas guardadas con las reglas anteriores no se cargan (usaban virtudes); el juego las ignora sin fallar.
 - Tocar una puerta, cofre o escrito lejano ahora acerca al héroe todo lo que pueda, en lugar de decir «fuera de alcance».
+
+## 12. Dados en el tablero, Dado del Destino y Dado del Tesoro
+
+### 12.1 Lo que se pidió
+
+- Estudiar qué sistema de dados conviene (partiendo de un análisis de los dados de HeroQuest) y ver en pantalla cómo se tiran los dados en cada tirada, que se vea el resultado y que el juego actúe en consecuencia.
+- Probarlo antes en un laboratorio aparte (lab/dados) y, una vez caen los dados, que salga en pantalla simplemente el resultado.
+
+### 12.2 Decisiones
+
+| Pregunta | Opción elegida |
+| --- | --- |
+| Sistema de dados | El clásico (calavera 3 de 6, escudo blanco 2 de 6, escudo negro 1 de 6) más un Dado del Destino dorado |
+| Máscara trágica | Sí: hace ruido (+1 Presagio) |
+| Dónde caen | Sobre el tablero, junto a la pelea |
+| Movimiento | Fijo, como hasta ahora (sin tirar 2D6) |
+| Buscar | Con un Dado del Tesoro |
+
+El laboratorio comparaba tres sistemas con los mismos héroes y enemigos: el clásico, el clásico con Dado del Destino y los dados de máscaras que proponía el análisis (cada dado de combate con caras de comedia y tragedia). El tercero obliga a leer y aplicar un efecto en casi cada tirada; el Dado del Destino deja el combate igual de legible y añade un momento por ataque.
+
+### 12.3 Reglas
+
+- **Dado del Destino:** 2 caras de máscara alegre, 1 de máscara triste y 3 lisas. Lo tira el héroe en cada acción de ataque (ataque básico o habilidad de ataque; en las que golpean a varios, solo con el primero). Los enemigos no lo tiran.
+- **Máscara alegre:** un premio propio de cada héroe. Si no se puede aplicar (no hay a quién, no cabe, no hay nada que recargar), el héroe queda Inspirado (+1 dado en su próximo ataque).
+
+| Héroe | Premio |
+| --- | --- |
+| Bárbaro | **Rebote:** 1 dado de ataque contra otro enemigo junto al objetivo (o contra el mismo si no hay otro) |
+| Enano | **Empujón:** el objetivo retrocede una casilla, si está libre (los jefes no se mueven) |
+| Elfa | **Paso ligero:** +2 de movimiento este turno |
+| Hechicero | **Chispa:** la habilidad con más recarga estará lista una ronda antes |
+| Amazona | **¡Conmigo!:** el aliado más cercano a 3 casillas o menos (o ella misma) queda Inspirado |
+
+- **Máscara triste:** +1 Presagio. Contra un jefe, cuando el Presagio ya no corre, el héroe pierde el movimiento que le quedaba.
+- **Presagio con dos marcas más** (Relato 11, Héroe 8, Pesadilla 7), porque las máscaras tristes también lo llenan: con tres héroes sale una máscara triste cada dos rondas, más o menos.
+- **Dado del Tesoro (Buscar):** oro (2 caras, 10–20 monedas), poción (y 6–14 monedas), objeto (elixir, bomba o poción, y 12–24 monedas), nada y peligro (la mitad de las veces un dardo, −1 PV; la otra mitad el ruido trae un monstruo errante). En el tutorial, la cara de peligro cuenta como oro. Las búsquedas especiales de la historia siguen igual.
+
+### 12.4 Cómo se ve
+
+- El juego decide la tirada primero y los dados 3D solo la muestran: cada dado cae con la cara decidida hacia arriba y el dibujo derecho para la cámara.
+- Caen delante de la pelea (hacia la cámara): los del atacante en su lado de la pantalla y los del defensor en el otro, con el dado dorado delante. Nunca encima de muros, salas sin descubrir ni figuras; si delante no hay sitio, detrás. Si la zona queda fuera de la pantalla, la cámara se acerca.
+- Los dados de los héroes son de marfil y los de los enemigos rosados, para distinguirlos.
+- Al pararse: las calaveras brillan en naranja, los escudos que cuentan en azul y el resto se apaga. Cada escudo lanza una chispa azul a una calavera y las dos se apagan; las que quedan encendidas son el daño.
+- **Cartel del resultado:** arriba en el centro (en el móvil en vertical, abajo junto a los botones, y encima del panel del tutorial si está abierto). Dice quién ataca a quién y con qué, los modificadores (+1 Flanqueo…), «calavera ×N − escudo ×M = daño», los escudos que no cuentan (rompe-escudos, tiro certero) y la máscara del Destino, que se completa con lo que ha pasado de verdad.
+- Cerraduras, sellos y trampas tiran sus dados igual, con un cartel de «hacen falta N calaveras» y lo que se lleva acumulado.
+- Los dados y el cartel desaparecen a los dos segundos o al empezar la siguiente tirada. Los sombreadores de los dados se preparan al cargar cada nivel para que la primera tirada no dé un tirón.
+
+### 12.5 Simulaciones y ajustes
+
+Mismo jugador automático que en 11.5. No aprovecha el movimiento extra de la Elfa (Paso ligero) y sí todo lo demás, así que con jugadores de verdad el Destino ayuda algo más de lo que se ve aquí.
+
+Primera tanda, con el Presagio como antes: el grupo frágil en Pesadilla (Amazona, Elfa y Hechicero) se atascó en el capítulo I con 7 derrotas. Las máscaras tristes llenaban el Presagio bastante más deprisa y salían más monstruos errantes. De ahí las dos marcas más. Con ellas, los errantes por ronda vuelven a lo de antes o algo menos.
+
+Resultados con los valores finales (dos partidas cuando la primera se salía de lo habitual):
+
+| Grupo | Dificultad | Derrotas | Resultado | Antes (11.5) |
+| --- | --- | --- | --- | --- |
+| Bárbaro solo | Pesadilla | 0 | Campaña completa | 0 |
+| Elfa sola | Héroe | 7 | Atascada en el capítulo I | 3 (en otras dos partidas, atascada en el II) |
+| Amazona y Hechicero | Héroe | 5 · 0 | Campaña completa las dos veces | 1 |
+| Enano, Elfa y Amazona | Héroe | 4 · 0 | Campaña completa las dos veces | 2 |
+| Hechicero, Amazona y Bárbaro (recomendado) | Pesadilla | 3 · 1 | Campaña completa las dos veces | 0 |
+| Amazona, Elfa y Hechicero (todos frágiles) | Pesadilla | 4 | Campaña completa | 6 |
+| Los cinco | Pesadilla | 1 | Campaña completa | 0 |
+| Amazona, Enano y Hechicero, Descenso | Pesadilla | — | Hasta el nivel 4 las dos veces | Entre el 2 y el 7 |
+
+Lectura: con las dos marcas más, el juego queda en la misma franja que antes. Las diferencias entre dos partidas del mismo grupo (5 derrotas y luego 0) son mayores que las que trae el Destino. La Elfa sola sigue siendo la forma más difícil de jugar, y depende mucho de la suerte.
+
+### 12.6 Verificación
+
+- Prueba propia de los dados en ordenador y en móvil en vertical: ataque de cerca y a distancia, tirada enemiga, máscara alegre con los cinco héroes (Rebote, Empujón, Paso ligero, Chispa y ¡Conmigo!, y el caso en que no se puede aplicar), máscara triste, cerradura con lo acumulado y búsqueda. Sin errores; los dados y el cartel se recogen solos.
+- Tutorial completo en ordenador y en móvil, con el paso nuevo «El Dado del Destino».
+- Partidas guardadas en mitad de una ronda (campaña y Descenso) que se reanudan igual.
+- Campaña completa con el jugador automático en las combinaciones de 12.5, sin errores.

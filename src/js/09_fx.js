@@ -209,6 +209,7 @@ const FX = {
   text(worldPos, text, cls = 'dmg') {
     if (!this.layer) return;
     const el = U.el('div', 'float-txt ' + cls, text);
+    el.style.visibility = 'hidden'; // hasta el primer fotograma, que lo coloca en su sitio
     this.layer.appendChild(el);
     this.labels.push({ el, pos: worldPos.clone ? worldPos.clone() : new THREE.Vector3(worldPos.x, worldPos.y, worldPos.z), t: 0, dur: 1.5, rise: 1.2 });
   },
@@ -216,6 +217,7 @@ const FX = {
     if (!this.layer || !unit || !unit.mesh) return;
     this.labels.filter((l) => l.unit === unit).forEach((l) => (l.t = l.dur));
     const el = U.el('div', 'bubble side-' + unit.side, `<span>${U.esc(text)}</span>`);
+    el.style.visibility = 'hidden';
     this.layer.appendChild(el);
     this.labels.push({ el, unit, t: 0, dur, rise: 0, bubble: true });
   },
