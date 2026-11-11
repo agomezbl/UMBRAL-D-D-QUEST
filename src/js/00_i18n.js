@@ -4,7 +4,7 @@
      L('Texto en español', 'Texte en français')
    El idioma se elige en la pantalla de inicio. Al cambiarlo, el juego se vuelve
    a cargar para que todos los textos salgan ya en el idioma nuevo.
-   Orden de preferencia: ?lang=fr en la dirección > lo elegido antes > idioma del aparato.
+   Orden de preferencia: ?lang=fr en la dirección > lo elegido en UMBRAL > lo elegido en la Estación de Curionaut > idioma del aparato.
    ========================================================================== */
 const LANGS = { es: 'Español', fr: 'Français' };
 const LANG = (() => {
@@ -15,6 +15,11 @@ const LANG = (() => {
   try {
     const s = JSON.parse(localStorage.getItem('umbral.lang'));
     if (s && LANGS[s]) return s;
+  } catch (e) {}
+  // dentro de Curionaut: el idioma que el niño eligió en la Estación
+  try {
+    const st = JSON.parse(localStorage.getItem('estacion-nil-v1'));
+    if (st && LANGS[st.lang]) return st.lang;
   } catch (e) {}
   const n = ((navigator.languages && navigator.languages[0]) || navigator.language || 'es').toLowerCase();
   return n.startsWith('fr') ? 'fr' : 'es';
