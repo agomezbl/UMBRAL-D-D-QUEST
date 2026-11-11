@@ -1,8 +1,8 @@
 {
-  "name": "Umbral · Crónicas de la Última Llama",
+  "name": "Umbral · Crónicas / Chroniques",
   "short_name": "Umbral",
   "lang": "es",
-  "description": "Mazmorra táctica por turnos en 3D con dados de calavera.",
+  "description": "Mazmorra táctica por turnos en 3D · Donjon tactique au tour par tour en 3D.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

@@ -6,6 +6,8 @@ const DIRS8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, 
 const HERO_IDS = HERO_ROSTER;
 const DEFAULT_PARTY = ['barbaro', 'elfa', 'hechicero'];
 const SAVE_KEY = 'umbral.save.v3', DESCENT_KEY = 'umbral.descent.v2';
+/* Francés: «e» final de concordancia para las heroínas (Lyriel y Thalia) */
+const FEM = (u) => (u && (u.id === 'elfa' || u.id === 'amazona') ? 'e' : '');
 
 const GAME = {
   state: 'title', chIdx: 0, ch: null, L: null,
@@ -76,7 +78,7 @@ const GAME = {
   ownerOf(itemId) { return HERO_ROSTER.find((id) => this.hasGear(id, itemId)) || (this.stash.includes(itemId) ? 'stash' : null); },
   /* ¿Puede llevarlo? Devuelve el motivo si no */
   gearBlock(id, it) {
-    if (it.who && !it.who.includes(id)) return `${HERO_DEFS[id].role}: no puede llevarlo`;
+    if (it.who && !it.who.includes(id)) return L(`${HERO_DEFS[id].role}: no puede llevarlo`, `${HERO_DEFS[id].role} : ne peut pas le porter`);
     return null;
   },
   gearDiscount() { return this.party.some((id) => this.modOf(id, 'haggle')) ? 0.1 : 0; },
@@ -116,16 +118,16 @@ const GAME = {
   skillInfo(h, s) {
     const t = h.tal, spell = this.modOf(h.id, 'spell');
     switch (s.id) {
-      case 'torbellino': return { dice: h.atk, text: `Golpea a todos los enemigos que tenga al lado: ${h.atk} dados a cada uno.` };
-      case 'grito': return { radius: 2, heal: 2, text: 'Los enemigos a 2 casillas quedan aterrados 2 turnos (−1 dado de ataque) y Korvak recupera 2 PV. Los guardianes no se asustan.' };
-      case 'sismico': { const r = t.has('terremoto') ? 2 : 1; return { dice: h.meleeAtk, radius: r, text: `Martillazo de ${h.meleeAtk} dados que ignora 1 escudo. Los enemigos a ${r} casilla${r > 1 ? 's' : ''} de Borin quedan aturdidos y pierden su turno (los guardianes no).` }; }
-      case 'muralla': return { text: `+2 dados de defensa hasta su próximo turno y los enemigos cercanos irán a por él.${t.has('murallaHierro') ? ' Los aliados de al lado, +1.' : ''}` };
-      case 'lluvia': { const n = (t.has('tormenta') ? 3 : 2) + this.modOf(h.id, 'shoot'); return { dice: n, text: `${n} dados a cada enemigo de una zona de 3×3, a hasta 6 casillas. No daña a los aliados.` }; }
-      case 'salto': return { text: `Salta a una casilla libre a 5 casillas, por encima de enemigos y obstáculos. No gasta la acción.${t.has('viento') ? ' Queda Inspirada.' : ''}` };
-      case 'bola': { const n = (t.has('meteoro') ? 4 : 3) + spell, sp = (t.has('meteoro') ? 3 : 2) + spell; return { dice: n, splash: sp, text: `${n} dados de fuego al objetivo y ${sp} a cada enemigo junto a él.${t.has('llama') ? ' Deja ardiendo a quien hiere.' : ''}` }; }
-      case 'luz': { const n = 3 + spell + (t.has('aurora') ? 1 : 0); return { heal: n, text: `Cura ${n} PV a un aliado a 4 casillas (o a sí mismo) o levanta a un caído.${t.has('aurora') ? ' También cura 2 PV a los aliados junto al objetivo.' : ''}` }; }
-      case 'carga': { const n = h.atk + (t.has('imparable') ? 2 : 1); return { dice: n, text: `Corre hasta un enemigo a 5 casillas sin gastar movimiento y le golpea con ${n} dados.` }; }
-      case 'tribu': return { radius: 3, text: `Ella y sus aliados a 3 casillas: +1 dado en su próximo ataque y +2 de movimiento este turno.${t.has('cancion') ? ' Además recuperan 2 PV.' : ''}` };
+      case 'torbellino': return { dice: h.atk, text: L(`Golpea a todos los enemigos que tenga al lado: ${h.atk} dados a cada uno.`, `Frappe tous les ennemis adjacents : ${h.atk} dés contre chacun.`) };
+      case 'grito': return { radius: 2, heal: 2, text: L('Los enemigos a 2 casillas quedan asustados 2 turnos (−1 dado de ataque) y Korvak recupera 2 PV. Los guardianes no se asustan.', 'Les ennemis à 2 cases sont effrayés pendant 2 tours (−1 dé d’attaque) et Korvak récupère 2 PV. Les gardiens n’ont pas peur.') };
+      case 'sismico': { const r = t.has('terremoto') ? 2 : 1; return { dice: h.meleeAtk, radius: r, text: L(`Martillazo de ${h.meleeAtk} dados que ignora 1 escudo. Los enemigos a ${r} casilla${r > 1 ? 's' : ''} de Borin quedan aturdidos y pierden su turno (los guardianes no).`, `Coup de marteau de ${h.meleeAtk} dés qui ignore 1 bouclier. Les ennemis à ${r} case${r > 1 ? 's' : ''} de Borin sont étourdis et perdent leur tour (sauf les gardiens).`) }; }
+      case 'muralla': return { text: L(`+2 dados de defensa hasta su próximo turno y los enemigos cercanos irán a por él.${t.has('murallaHierro') ? ' Los aliados de al lado, +1.' : ''}`, `+2 dés de défense jusqu’à son prochain tour, et les ennemis proches s’en prennent à lui.${t.has('murallaHierro') ? ' Alliés adjacents : +1.' : ''}`) };
+      case 'lluvia': { const n = (t.has('tormenta') ? 3 : 2) + this.modOf(h.id, 'shoot'); return { dice: n, text: L(`${n} dados a cada enemigo de una zona de 3×3, a hasta 6 casillas. No daña a los aliados.`, `${n} dés contre chaque ennemi d’une zone de 3×3, jusqu’à 6 cases. Épargne les alliés.`) }; }
+      case 'salto': return { text: L(`Salta a una casilla libre a 5 casillas, por encima de enemigos y obstáculos. No gasta la acción.${t.has('viento') ? ' Queda Inspirada.' : ''}`, `Bondit sur une case libre à 5 cases, par-dessus ennemis et obstacles. Ne coûte pas l’action.${t.has('viento') ? ' Elle devient Inspirée.' : ''}`) };
+      case 'bola': { const n = (t.has('meteoro') ? 4 : 3) + spell, sp = (t.has('meteoro') ? 3 : 2) + spell; return { dice: n, splash: sp, text: L(`${n} dados de fuego al objetivo y ${sp} a cada enemigo junto a él.${t.has('llama') ? ' Deja ardiendo a quien hiere.' : ''}`, `${n} dés de feu sur la cible et ${sp} sur chaque ennemi à côté d’elle.${t.has('llama') ? ' Ceux qu’elle blesse prennent feu.' : ''}`) }; }
+      case 'luz': { const n = 3 + spell + (t.has('aurora') ? 1 : 0); return { heal: n, text: L(`Cura ${n} PV a un aliado a 4 casillas (o a sí mismo) o levanta a un caído.${t.has('aurora') ? ' También cura 2 PV a los aliados junto al objetivo.' : ''}`, `Rend ${n} PV à un allié à 4 cases (ou à lui-même), ou relève un héros à terre.${t.has('aurora') ? ' Rend aussi 2 PV aux alliés voisins de la cible.' : ''}`) }; }
+      case 'carga': { const n = h.atk + (t.has('imparable') ? 2 : 1); return { dice: n, text: L(`Corre hasta un enemigo a 5 casillas sin gastar movimiento y le golpea con ${n} dados.`, `Fonce sur un ennemi à 5 cases sans dépenser de déplacement et le frappe avec ${n} dés.`) }; }
+      case 'tribu': return { radius: 3, text: L(`Ella y sus aliados a 3 casillas: +1 dado en su próximo ataque y +2 de movimiento este turno.${t.has('cancion') ? ' Además recuperan 2 PV.' : ''}`, `Elle et ses alliés à 3 cases : +1 dé à leur prochaine attaque et +2 de déplacement ce tour-ci.${t.has('cancion') ? ' En plus, ils récupèrent 2 PV.' : ''}`) };
     }
     return { text: '' };
   },
@@ -138,13 +140,13 @@ const GAME = {
     let iq = T.iq || 2;
     if (e.boss) { e.hp += D.bossHp + (S ? S.bossHp : 0); e.atk += D.bossAtk; e.hp = Math.round(e.hp * PARTY_SCALE.of(this.party.length, 'boss')); }
     else if (type !== 'risen') { e.hp += D.enemyHp + (S ? S.hp : 0); e.atk = Math.max(1, e.atk + D.enemyAtk + (S ? S.atk : 0)); }
-    if (o.champion) { e.champion = true; e.hp += 1; e.atk += 1; e.gold *= 2; e.name = 'Campeón · ' + e.name; iq += 1; }
+    if (o.champion) { e.champion = true; e.hp += 1; e.atk += 1; e.gold *= 2; e.name = L('Campeón · ', 'Champion · ') + e.name; iq += 1; }
     if (type === 'ignis' && this.flags.ignisWeak) e.def = Math.max(1, e.def - 1);
     e.maxHp = e.hp = Math.max(1, e.hp);
     e.iq = U.clamp(iq + D.iq, 1, 5);
     return e;
   },
-  iqLabel(e) { return e.iq <= 2 ? 'Bestial' : e.iq === 3 ? 'Táctico' : 'Astuto'; },
+  iqLabel(e) { return e.iq <= 2 ? L('Bestial', 'Bestial') : e.iq === 3 ? L('Táctico', 'Tacticien') : L('Astuto', 'Rusé'); },
   allUnits() { return this.heroes.concat(this.enemies.filter((e) => e.alive), this.npcs); },
   unitAt(x, y) { return this.allUnits().find((u) => u.x === x && u.y === y && (u.side !== 'enemy' || u.alive)); },
   heroesUp() { return this.heroes.filter((h) => !h.ko); },
@@ -259,7 +261,7 @@ const GAME = {
     this.busy++;
     try {
       const ch = this.ch;
-      await UI.chapterCard(R ? Object.assign({}, ch, { eyebrow: ch.descent ? `Descenso · Nivel ${ch.num} · ronda ${R.round}` : `Capítulo ${ch.num} · ronda ${R.round}` }) : ch);
+      await UI.chapterCard(R ? Object.assign({}, ch, { eyebrow: ch.descent ? L(`Descenso · Nivel ${ch.num} · ronda ${R.round}`, `Descente · Niveau ${ch.num} · manche ${R.round}`) : L(`Capítulo ${ch.num} · ronda ${R.round}`, `Chapitre ${ch.num} · manche ${R.round}`) }) : ch);
       FX.clearLabels();
       WORLD.build(ch, ch.theme);
       this.L = WORLD.L;
@@ -305,7 +307,7 @@ const GAME = {
       startRoom.visited = true;
       UI.refresh();
       await this.run(ch.intro, { room: startRoom });
-      if (this.flags.trapsKnownCh === idx) UI.log('Las marcas de tiza de la exploración señalan las trampas de este nivel.', 'good');
+      if (this.flags.trapsKnownCh === idx) UI.log(L('Las marcas de tiza de la exploración señalan las trampas de este nivel.', 'Les marques de craie laissées en éclaireur signalent les pièges de ce niveau.'), 'good');
     } catch (e) { console.error(e); }
     this.busy = 0;
     await this.startRound();
@@ -394,7 +396,8 @@ const GAME = {
     });
     // criaturas y PNJ
     (R.enemies || []).forEach((s) => {
-      const { rot, ...rest } = s;
+      // el nombre se rehace en el idioma actual (por si se cambió de idioma a media partida)
+      const { rot, name, ...rest } = s; void name;
       const e = this.makeEnemy(s.kind, s.x, s.y, { champion: s.champion });
       Object.assign(e, rest);
       this.enemies.push(e); WORLD.addUnit(e, { face: rot || 0 });
@@ -421,7 +424,8 @@ const GAME = {
     if (R.objective) UI.objective(R.objective);
     if (R.bossBar && bossOn) UI.bossBar(this.boss);
     if (R.lights === 'out') { this.lightsMode = 'out'; WORLD.setLightsMult(0); ENGINE.key.intensity = 0.12; ENGINE.hemi.intensity = 0.08; }
-    UI.log(`Partida reanudada en la ronda ${this.round}.`, 'good');
+    // aquí «L» es el mapa (this.L), no la función de idiomas
+    UI.log(LANG === 'fr' ? `Partie reprise à la manche ${this.round}.` : `Partida reanudada en la ronda ${this.round}.`, 'good');
     await U.sleep(250);
   },
   /* Tutorial guiado: sala de prácticas con reglas de Relato; no toca la partida guardada */
@@ -462,7 +466,7 @@ const GAME = {
           if (h.status.desangrando) {
             h.status.desangrando--;
             if (h.status.desangrando <= 0) { await this.heroDies(h); return; }
-            UI.log(`<b>${h.name} se desangra.</b> Quedan ${h.status.desangrando} ronda${h.status.desangrando > 1 ? 's' : ''} para levantarle.`, 'bad');
+            UI.log(L(`<b>${h.name} se queda sin fuerzas.</b> Quedan ${h.status.desangrando} ronda${h.status.desangrando > 1 ? 's' : ''} para levantarle.`, `<b>${h.name} est à bout de forces.</b> Il reste ${h.status.desangrando} manche${h.status.desangrando > 1 ? 's' : ''} pour l’aider à se relever.`), 'bad');
           }
           continue;
         }
@@ -471,7 +475,7 @@ const GAME = {
         delete h.status.muralla; delete h.status.guard; delete h.status.taunt;
         await this.tickStart(h);
         if (h.ko) continue;
-        if (h.status.aturdido) { h.actions = 0; FX.text(this.headPos(h), 'Aturdido', 'warn'); UI.log(`${h.name} está aturdido y pierde su acción.`, 'bad'); }
+        if (h.status.aturdido) { h.actions = 0; FX.text(this.headPos(h), L('Aturdido', 'Étourdi' + FEM(h)), 'warn'); UI.log(L(`${h.name} está aturdido y pierde su acción.`, `${h.name} est étourdi${FEM(h)} et perd son action.`), 'bad'); }
       }
     } finally { this.busy = Math.max(0, this.busy - 1); }
     await this.beginHeroPhase();
@@ -482,7 +486,7 @@ const GAME = {
     this.phase = 'hero';
     const anyHostile = this.visibleEnemies().length > 0;
     if (!resumed && (!this.boss || !this.boss.alive)) audio.setMusic(anyHostile ? 'combat' : 'explore');
-    UI.banner(resumed ? `Ronda ${this.round}` : this.round === 1 ? 'Vuestro turno' : `Ronda ${this.round}`, resumed ? 'Seguís donde lo dejasteis' : anyHostile ? 'La Sombra os observa' : 'Explorad con cautela', 'hero');
+    UI.banner(resumed ? L(`Ronda ${this.round}`, `Manche ${this.round}`) : this.round === 1 ? L('Vuestro turno', 'À vous de jouer') : L(`Ronda ${this.round}`, `Manche ${this.round}`), resumed ? L('Seguís donde lo dejasteis', 'Vous reprenez où vous en étiez') : anyHostile ? L('La Sombra os observa', 'L’Ombre vous observe') : L('Explorad con cautela', 'Explorez avec prudence'), 'hero');
     audio.sfx('turnHero');
     const first = this.heroes.find((h) => !h.ended && !h.ko);
     if (!first) { await this.shadowPhase(); return; }
@@ -524,19 +528,19 @@ const GAME = {
 
   immuneTo(u, key) {
     if (u.side === 'enemy') return (u.T.immune || []).includes(key) || (key === 'aterrado' && (u.T.traits || []).includes('sinMiedo'));
-    if (key === 'aterrado' && u.traits && u.traits.fearless) return 'Sin miedo';
+    if (key === 'aterrado' && u.traits && u.traits.fearless) return L('Sin miedo', 'Intrépide');
     return false;
   },
   async addStatus(u, key, dur, o = {}) {
     if (!this.up(u)) return false;
     const imm = this.immuneTo(u, key);
-    if (imm) { if (u.side === 'hero' && !o.quiet) FX.text(this.headPos(u), typeof imm === 'string' ? imm : 'Inmune', 'block'); return false; }
+    if (imm) { if (u.side === 'hero' && !o.quiet) FX.text(this.headPos(u), typeof imm === 'string' ? imm : L('Inmune', 'Immunisé' + FEM(u)), 'block'); return false; }
     const was = u.status[key] || 0;
     u.status[key] = Math.max(was, dur);
     FX.text(this.headPos(u), STATUS[key].name, STATUS[key].bad ? 'warn' : 'heal');
     if (key === 'aterrado' && u.side === 'hero') { audio.sfx('whisper', { dur: 0.8, vol: 0.6 }); UI.hintOnce('fear'); }
     if (key === 'aturdido' && u.side === 'hero' && this.phase === 'hero' && this.active === u) u.actions = 0;
-    if (u.side === 'hero') UI.log(`${u.name}: <b>${STATUS[key].name}</b>.`, STATUS[key].bad ? 'bad' : 'good');
+    if (u.side === 'hero') UI.log(L(`${u.name}: <b>${STATUS[key].name}</b>.`, `${u.name} : <b>${STATUS[key].name}</b>.`), STATUS[key].bad ? 'bad' : 'good');
     UI.refresh();
     return true;
   },
@@ -546,7 +550,7 @@ const GAME = {
         FX.burst(k === 'ardiendo' ? 'fire' : 'death', u.mesh.position, k === 'envenenado' ? { color: '#a8ff7a', color2: '#2a5a10' } : {});
         if (k === 'ardiendo') audio.sfx('fire', { vol: 0.4 });
         await this.damage(u, 1, { dot: k });
-        if (u.side === 'hero') UI.log(`${u.name} sufre 1 de daño (${STATUS[k].name.toLowerCase()}).`, 'bad');
+        if (u.side === 'hero') UI.log(L(`${u.name} sufre 1 de daño (${STATUS[k].name.toLowerCase()}).`, `${u.name} subit 1 dégât (${STATUS[k].name.toLowerCase()}).`), 'bad');
       }
     }
   },
@@ -671,7 +675,7 @@ const GAME = {
       if (!this.R.stand.has(U.key(p.x, p.y))) continue;
       const sub = this.pathTo(this.R, p.x, p.y); if (!sub) continue;
       const left = best.d - (sub.length - 1);
-      return { kind: 'move', x: p.x, y: p.y, path: sub, prov: 0, text: label, sub: `Avanza ${sub.length - 1} casilla${sub.length > 2 ? 's' : ''} hacia allí${left > 0 ? `; faltarán ${left}` : ''}.` };
+      return { kind: 'move', x: p.x, y: p.y, path: sub, prov: 0, text: label, sub: L(`Avanza ${sub.length - 1} casilla${sub.length > 2 ? 's' : ''} hacia allí${left > 0 ? `; faltarán ${left}` : ''}.`, `Avance de ${sub.length - 1} case${sub.length > 2 ? 's' : ''} dans cette direction${left > 0 ? ` ; il en manquera ${left}` : ''}.`) };
     }
     return null;
   },
@@ -694,62 +698,62 @@ const GAME = {
     const u = this.unitAt(x, y);
     if (this.mode) {
       const valid = this.validTargets().find((q) => q.x === x && q.y === y);
-      if (!valid) return { kind: 'none', text: 'Objetivo no válido', sub: 'Elige una casilla resaltada o cancela.' };
+      if (!valid) return { kind: 'none', text: L('Objetivo no válido', 'Cible non valable'), sub: L('Elige una casilla resaltada o cancela.', 'Choisis une case en surbrillance ou annule.') };
       if (this.mode.type === 'attack') return this.attackPreview(h, u, null);
-      if (this.mode.type === 'bomb') return { kind: 'bomb', x, y, text: 'Lanzar bomba alquímica', sub: '3 dados de fuego a cada criatura del área 3×3, y prende fuego. ¡Cuidado con los aliados!', area: true };
+      if (this.mode.type === 'bomb') return { kind: 'bomb', x, y, text: L('Lanzar bomba alquímica', 'Lancer la bombe alchimique'), sub: L('3 dados de fuego a cada criatura del área 3×3, y prende fuego. ¡Cuidado con los aliados!', '3 dés de feu contre chaque créature de la zone 3×3, qui prend feu. Attention aux alliés !'), area: true };
       const s = this.mode.skill, si = this.skillInfo(h, s);
       if (s.target === 'enemy') return this.attackPreview(h, u, s);
-      if (s.target === 'ally') return { kind: 'skill', x, y, unit: u, text: `${s.name} → ${u.name}`, sub: u.ko ? `Lo levanta con ${si.heal} PV.` : `Cura ${si.heal} PV.` };
-      if (s.target === 'area') { const n = this.visibleEnemies().filter((e) => U.cheb(e.x, e.y, x, y) <= 1).length; return { kind: 'skill', x, y, text: s.name, sub: `${si.dice} dados a cada enemigo de la zona · ${n ? `${n} enemigo${n > 1 ? 's' : ''} dentro` : 'ahora mismo no hay nadie dentro'}.`, area: true }; }
-      if (s.target === 'tile') return { kind: 'skill', x, y, text: s.name, sub: 'Saltarás aquí. Conservas el movimiento y la acción.' };
+      if (s.target === 'ally') return { kind: 'skill', x, y, unit: u, text: `${s.name} → ${u.name}`, sub: u.ko ? L(`Lo levanta con ${si.heal} PV.`, `${FEM(u) ? 'La' : 'Le'} relève avec ${si.heal} PV.`) : L(`Cura ${si.heal} PV.`, `Rend ${si.heal} PV.`) };
+      if (s.target === 'area') { const n = this.visibleEnemies().filter((e) => U.cheb(e.x, e.y, x, y) <= 1).length; return { kind: 'skill', x, y, text: s.name, sub: L(`${si.dice} dados a cada enemigo de la zona · ${n ? `${n} enemigo${n > 1 ? 's' : ''} dentro` : 'ahora mismo no hay nadie dentro'}.`, `${si.dice} dés contre chaque ennemi de la zone · ${n ? `${n} ennemi${n > 1 ? 's' : ''} dedans` : 'personne dedans pour l’instant'}.`), area: true }; }
+      if (s.target === 'tile') return { kind: 'skill', x, y, text: s.name, sub: L('Saltarás aquí. Conservas el movimiento y la acción.', 'Tu bondiras ici. Tu gardes ton déplacement et ton action.') };
     }
     if (u && u.side === 'hero') {
-      if (u === h) return { kind: 'self', unit: u, text: `${h.full}`, sub: `${h.mvLeft} de movimiento · ${h.actions > 0 ? 'acción disponible' : 'sin acción'}` };
-      if (u.ko && h.actions > 0) { const ap = this.adjApproach(h, x, y); if (ap) return { kind: 'revive', x, y, unit: u, via: ap, text: `Levantar a ${u.name}`, sub: `Gasta tu acción. Vuelve con 2 PV${this.D.wounds ? ' y queda Herido (−1 PV máximo)' : ''}.${this.provText(ap.p)}` }; }
-      if (!u.ended && !u.ko) return { kind: 'switch', unit: u, text: `Cambiar a ${u.name}`, sub: 'Selecciona otro héroe que aún no ha terminado.' };
-      return { kind: 'info', unit: u, text: u.name, sub: u.ko ? (u.status.desangrando ? `Caído · se desangra en ${u.status.desangrando}` : 'Caído') : 'Ya ha actuado este turno' };
+      if (u === h) return { kind: 'self', unit: u, text: `${h.full}`, sub: L(`${h.mvLeft} de movimiento · ${h.actions > 0 ? 'acción disponible' : 'sin acción'}`, `${h.mvLeft} de déplacement · ${h.actions > 0 ? 'action disponible' : 'plus d’action'}`) };
+      if (u.ko && h.actions > 0) { const ap = this.adjApproach(h, x, y); if (ap) return { kind: 'revive', x, y, unit: u, via: ap, text: L(`Levantar a ${u.name}`, `Relever ${u.name}`), sub: L(`Gasta tu acción. Vuelve con 2 PV${this.D.wounds ? ' y queda Herido (−1 PV máximo)' : ''}.${this.provText(ap.p)}`, `Coûte ton action. Revient avec 2 PV${this.D.wounds ? ` et reste Blessé${FEM(u)} (−1 PV max.)` : ''}.${this.provText(ap.p)}`) }; }
+      if (!u.ended && !u.ko) return { kind: 'switch', unit: u, text: L(`Cambiar a ${u.name}`, `Passer à ${u.name}`), sub: L('Selecciona otro héroe que aún no ha terminado.', 'Choisis un autre héros qui n’a pas encore fini.') };
+      return { kind: 'info', unit: u, text: u.name, sub: u.ko ? (u.status.desangrando ? L(`Caído · sin fuerzas en ${u.status.desangrando}`, `À terre · à bout de forces dans ${u.status.desangrando}`) : L('Caído', 'À terre')) : L('Ya ha actuado este turno', 'A déjà agi ce tour-ci') };
     }
     if (u && u.side === 'enemy') {
       if (!u.active) return null;
-      if (h.actions <= 0) return { kind: 'info', unit: u, text: u.name, sub: 'Sin acción disponible este turno.' };
+      if (h.actions <= 0) return { kind: 'info', unit: u, text: u.name, sub: L('Sin acción disponible este turno.', 'Plus d’action disponible ce tour-ci.') };
       const from = this.attackFrom(h, u);
-      if (!from) return { kind: 'info', unit: u, text: u.name, sub: 'Fuera de tu alcance este turno.' };
+      if (!from) return { kind: 'info', unit: u, text: u.name, sub: L('Fuera de tu alcance este turno.', 'Hors de ta portée ce tour-ci.') };
       return this.attackPreview(h, u, null, from);
     }
-    if (u && u.side === 'npc') return { kind: 'info', unit: u, text: SPEAKERS[u.kind] ? SPEAKERS[u.kind].name : 'Espíritu', sub: 'Un eco del pasado.' };
+    if (u && u.side === 'npc') return { kind: 'info', unit: u, text: SPEAKERS[u.kind] ? SPEAKERS[u.kind].name : L('Espíritu', 'Esprit'), sub: L('Un eco del pasado.', 'Un écho du passé.') };
     if (t.door && !t.doorRef.open) {
       const ap = this.doorApproach(h, t.doorRef);
-      const L = t.doorRef.lock;
-      if (L) {
-        const name = L === 'sello' ? 'Sello rúnico' : 'Cerradura de hierro';
-        if (!ap) return this.approachMove(h, x, y, false, `Ir hacia la ${L === 'sello' ? 'puerta sellada' : 'cerradura'}`) || { kind: 'none', text: name, sub: 'Acércate para intentar abrirla.' };
-        if (h.actions <= 0) return { kind: 'none', text: name, sub: 'Abrirla gasta la acción, y ya no te queda.' };
-        return { kind: 'lock', x, y, door: t.doorRef, via: ap, text: this.lockAuto(h, t.doorRef) ? `${name}: abrir` : `${name}: forzar`, sub: this.lockText(h, t.doorRef) };
+      const lk = t.doorRef.lock;
+      if (lk) {
+        const name = lk === 'sello' ? L('Sello rúnico', 'Sceau runique') : L('Cerradura de hierro', 'Serrure de fer');
+        if (!ap) return this.approachMove(h, x, y, false, L(`Ir hacia la ${lk === 'sello' ? 'puerta sellada' : 'cerradura'}`, `Aller vers ${lk === 'sello' ? 'la porte scellée' : 'la serrure'}`)) || { kind: 'none', text: name, sub: L('Acércate para intentar abrirla.', 'Approche-toi pour essayer de l’ouvrir.') };
+        if (h.actions <= 0) return { kind: 'none', text: name, sub: L('Abrirla gasta la acción, y ya no te queda.', 'L’ouvrir coûte l’action, et tu n’en as plus.') };
+        return { kind: 'lock', x, y, door: t.doorRef, via: ap, text: this.lockAuto(h, t.doorRef) ? L(`${name}: abrir`, `${name} : ouvrir`) : L(`${name}: forzar`, `${name} : forcer`), sub: this.lockText(h, t.doorRef) };
       }
-      if (ap) return { kind: 'door', x, y, door: t.doorRef, via: ap, text: 'Abrir puerta', sub: (ap.d ? `Avanzar ${ap.d} y abrir` : 'Sin coste') + this.provText(ap.p) };
-      return this.approachMove(h, x, y, false, 'Ir hacia la puerta') || { kind: 'none', text: 'Puerta cerrada', sub: 'Demasiado lejos para alcanzarla este turno.' };
+      if (ap) return { kind: 'door', x, y, door: t.doorRef, via: ap, text: L('Abrir puerta', 'Ouvrir la porte'), sub: (ap.d ? L(`Avanzar ${ap.d} y abrir`, `Avancer de ${ap.d} et ouvrir`) : L('Sin coste', 'Gratuit')) + this.provText(ap.p) };
+      return this.approachMove(h, x, y, false, L('Ir hacia la puerta', 'Aller vers la porte')) || { kind: 'none', text: L('Puerta cerrada', 'Porte fermée'), sub: L('Demasiado lejos para alcanzarla este turno.', 'Trop loin pour l’atteindre ce tour-ci.') };
     }
     if (t.ch === 'C') {
       const c = this.L.chests.find((q) => q.x === x && q.y === y);
-      if (c && !c.looted) { const ap = h.actions > 0 && this.adjApproach(h, x, y); return ap ? { kind: 'chest', x, y, chest: c, via: ap, text: 'Abrir cofre', sub: 'Gasta tu acción.' + this.provText(ap.p) } : (U.cheb(h.x, h.y, x, y) > 1 && this.approachMove(h, x, y, true, 'Ir hacia el cofre')) || { kind: 'none', text: 'Cofre', sub: h.actions > 0 ? 'Fuera de alcance.' : 'Abrirlo necesita una acción.' }; }
-      return { kind: 'none', text: 'Cofre vacío', sub: '' };
+      if (c && !c.looted) { const ap = h.actions > 0 && this.adjApproach(h, x, y); return ap ? { kind: 'chest', x, y, chest: c, via: ap, text: L('Abrir cofre', 'Ouvrir le coffre'), sub: L('Gasta tu acción.', 'Coûte ton action.') + this.provText(ap.p) } : (U.cheb(h.x, h.y, x, y) > 1 && this.approachMove(h, x, y, true, L('Ir hacia el cofre', 'Aller vers le coffre'))) || { kind: 'none', text: L('Cofre', 'Coffre'), sub: h.actions > 0 ? L('Fuera de alcance.', 'Hors de portée.') : L('Abrirlo necesita una acción.', 'L’ouvrir demande une action.') }; }
+      return { kind: 'none', text: L('Cofre vacío', 'Coffre vide'), sub: '' };
     }
     if (t.ch === '?') {
       const n = this.L.notes.find((q) => q.x === x && q.y === y);
       const ap = this.adjApproach(h, x, y);
-      return ap ? { kind: 'note', x, y, note: n, via: ap, text: n.read ? 'Releer' : 'Leer', sub: 'Sin coste.' + this.provText(ap.p) } : this.approachMove(h, x, y, true, 'Ir hacia el escrito') || { kind: 'none', text: 'Un escrito', sub: 'Acércate para leerlo.' };
+      return ap ? { kind: 'note', x, y, note: n, via: ap, text: n.read ? L('Releer', 'Relire') : L('Leer', 'Lire'), sub: L('Sin coste.', 'Gratuit.') + this.provText(ap.p) } : this.approachMove(h, x, y, true, L('Ir hacia el escrito', 'Aller vers l’écrit')) || { kind: 'none', text: L('Un escrito', 'Un écrit'), sub: L('Acércate para leerlo.', 'Approche-toi pour le lire.') };
     }
     if (t.ch === 'X' && this.descent && this.ch.exit && this.ch.exit.x === x && this.ch.exit.y === y) return this.stairsInfo(h, x, y);
-    if (t.ch === '*') return { kind: 'none', text: 'El sello', sub: this.boss && this.boss.alive ? 'Su guardián lo protege.' : 'Late con una luz antigua.' };
+    if (t.ch === '*') return { kind: 'none', text: L('El sello', 'Le sceau'), sub: this.boss && this.boss.alive ? L('Su guardián lo protege.', 'Son gardien le protège.') : L('Late con una luz antigua.', 'Il palpite d’une lumière ancienne.') };
     if (t.trap && t.trap.revealed && !t.trap.disarmed && !t.trap.sprung) {
       const ap = h.actions > 0 && this.adjApproach(h, x, y);
       const sure = h.traits && h.traits.locksmith;
-      return ap ? { kind: 'disarm', x, y, trap: t.trap, via: ap, text: 'Desarmar trampa', sub: sure ? 'El Enano la desarma sin fallar · gasta tu acción.' : `Tira 2 dados: con una calavera la desarma (${RULES.pct(RULES.pAtLeast(2, 1))}); sin ninguna, salta · gasta tu acción.` } : { kind: 'none', text: 'Trampa', sub: 'Acércate para desarmarla.' };
+      return ap ? { kind: 'disarm', x, y, trap: t.trap, via: ap, text: L('Desarmar trampa', 'Désamorcer le piège'), sub: sure ? L('El Enano la desarma sin fallar · gasta tu acción.', 'Le Nain le désamorce à coup sûr · coûte ton action.') : L(`Tira 2 dados: con una calavera la desarma (${RULES.pct(RULES.pAtLeast(2, 1))}); sin ninguna, salta · gasta tu acción.`, `Lance 2 dés : un crâne suffit pour le désamorcer (${RULES.pct(RULES.pAtLeast(2, 1))}) ; sinon, il se déclenche · coûte ton action.`) } : { kind: 'none', text: L('Trampa', 'Piège'), sub: L('Acércate para desarmarla.', 'Approche-toi pour le désamorcer.') };
     }
     const k = U.key(x, y);
     if (this.R && this.R.stand.has(k) && (x !== h.x || y !== h.y)) {
       const path = this.pathTo(this.R, x, y), p = this.R.prov.get(k) || 0;
-      return { kind: 'move', x, y, path, prov: p, text: 'Mover', sub: `${path.length - 1} de ${h.mvLeft} casillas${this.provText(p)}` };
+      return { kind: 'move', x, y, path, prov: p, text: L('Mover', 'Se déplacer'), sub: L(`${path.length - 1} de ${h.mvLeft} casillas${this.provText(p)}`, `${path.length - 1} case${path.length > 2 ? 's' : ''} sur ${h.mvLeft}${this.provText(p)}`) };
     }
     return null;
   },
@@ -758,19 +762,19 @@ const GAME = {
     const mods = [];
     const melee = !o.ranged && U.cheb(att.x, att.y, tgt.x, tgt.y) === 1;
     let n = o.atk != null ? o.atk : (melee && att.meleeAtk != null && att.ranged ? att.meleeAtk : att.atk);
-    if (att.status && att.status.aterrado) mods.push(['Aterrado', -1]);
-    if (att.status && att.status.inspirado) mods.push(['Inspirado', 1]);
+    if (att.status && att.status.aterrado) mods.push([L('Asustado', 'Effrayé'), -1]);
+    if (att.status && att.status.inspirado) mods.push([L('Inspirado', 'Inspiré'), 1]);
     if (melee && !o.noFlank) {
       const friends = att.side === 'hero' ? this.heroesUp() : this.visibleEnemies();
-      if (friends.some((a) => a !== att && !(a.status && a.status.huyendo) && U.cheb(a.x, a.y, tgt.x, tgt.y) === 1)) mods.push(['Flanqueo', 1]);
+      if (friends.some((a) => a !== att && !(a.status && a.status.huyendo) && U.cheb(a.x, a.y, tgt.x, tgt.y) === 1)) mods.push([L('Flanqueo', 'Prise de flanc'), 1]);
     }
-    if (att.T && att.T.fury && att.hp < att.maxHp) mods.push(['Furia', 1]);
-    if (att.traits && att.traits.rage && att.hp <= att.maxHp / 2) mods.push(['Sangre caliente', 1]);
+    if (att.T && att.T.fury && att.hp < att.maxHp) mods.push([L('Furia', 'Furie'), 1]);
+    if (att.traits && att.traits.rage && att.hp <= att.maxHp / 2) mods.push([L('Corazón ardiente', 'Cœur ardent'), 1]);
     const dt = o.dtype || att.dtype || 'phys';
     if (tgt.T) {
-      if ((tgt.T.weak || []).includes(dt)) mods.push([`Vulnerable (${DTYPES[dt]})`, 1]);
-      if ((tgt.T.resist || []).includes(dt)) mods.push([`Resiste (${DTYPES[dt]})`, -1]);
-      if (tgt.T.resistMundane && !att.magic && (dt === 'phys' || dt === 'pierce')) mods.push(['Incorpóreo', -1]);
+      if ((tgt.T.weak || []).includes(dt)) mods.push([L(`Vulnerable (${DTYPES[dt]})`, `Vulnérable (${DTYPES[dt]})`), 1]);
+      if ((tgt.T.resist || []).includes(dt)) mods.push([L(`Resiste (${DTYPES[dt]})`, `Résiste (${DTYPES[dt]})`), -1]);
+      if (tgt.T.resistMundane && !att.magic && (dt === 'phys' || dt === 'pierce')) mods.push([L('Incorpóreo', 'Incorporel'), -1]);
     }
     mods.forEach(([, v]) => (n += v));
     return { n: Math.max(1, n), mods, dtype: dt };
@@ -806,7 +810,9 @@ const GAME = {
     const def = this.defDice(e);
     const odds = U.combatOdds(ad.n, def, 1 / 6, o.ignore || 0);
     const modTxt = ad.mods.length ? ' (' + ad.mods.map(([t, v]) => `${v > 0 ? '+' : ''}${v} ${t.toLowerCase()}`).join(', ') + ')' : '';
-    return { kind: skill ? 'skill' : 'attack', x: e.x, y: e.y, unit: e, via: from, skill, text: `${name} → ${e.name}`, sub: `${ad.n} dados${modTxt} contra ${def} · ${Math.round(odds.pHit * 100)}% de herir · daño medio ${odds.exp.toFixed(1)}`, atk: ad.n, def, odds, mods: ad.mods };
+    // Ojo de Tahúr: si toca estimar en esta ronda, el porcentaje no se enseña hasta después
+    const tahur = typeof SABER !== 'undefined' && SABER.willAsk({ odds, unit: e });
+    return { kind: skill ? 'skill' : 'attack', x: e.x, y: e.y, unit: e, via: from, skill, text: `${name} → ${e.name}`, sub: tahur ? L(`${ad.n} dados${modTxt} contra ${def} · Ojo de Tahúr: ¿cuánto calculas tú?`, `${ad.n} dés${modTxt} contre ${def} · Œil du Parieur : à toi de calculer !`) : L(`${ad.n} dados${modTxt} contra ${def} · ${Math.round(odds.pHit * 100)}% de herir · daño medio ${odds.exp.toFixed(1)}`, `${ad.n} dés${modTxt} contre ${def} · ${Math.round(odds.pHit * 100)} % de blesser · dégâts moyens ${odds.exp.toFixed(1).replace('.', ',')}`), atk: ad.n, def, odds, mods: ad.mods };
   },
   async click(x, y, touch) {
     if (this.busy || this.phase !== 'hero' || this.state !== 'play') return;
@@ -846,8 +852,8 @@ const GAME = {
         case 'move': await this.moveHero(h, d.path); break;
         case 'door': await this.openDoor(d.door, h); break;
         case 'lock': await this.tryLock(h, d.door); break;
-        case 'attack': if (this.mode && this.mode.type === 'attack') this.mode = null; await this.heroAttack(h, d.unit); break;
-        case 'skill': await this.useSkill(h, this.mode.skill, d); this.mode = null; break;
+        case 'attack': if (this.mode && this.mode.type === 'attack') this.mode = null; await SABER.beforeAttack(h, d); await this.heroAttack(h, d.unit); SABER.bonus = false; break;
+        case 'skill': if (d.unit && d.odds) await SABER.beforeAttack(h, d); await this.useSkill(h, this.mode.skill, d); this.mode = null; SABER.bonus = false; break;
         case 'bomb': await this.throwBomb(h, d.x, d.y); this.mode = null; break;
         case 'chest': await this.openChest(h, d.chest); break;
         case 'note': await this.readNote(h, d.note); break;
@@ -884,29 +890,29 @@ const GAME = {
     this.mode = m; this.pending = null; this.undo = null; UI.preview(null);
     if (m && m.instant) { const mm = m; this.mode = null; this.lock(async () => { await this.useSkill(this.active, mm.skill, {}); }).then(() => this.afterAction(this.active)); return; }
     this.refreshPlan(); UI.refresh();
-    if (m && !this.validTargets().length) { UI.toast(m.empty || 'No hay objetivos válidos al alcance.'); this.mode = null; this.refreshPlan(); UI.refresh(); }
+    if (m && !this.validTargets().length) { UI.toast(m.empty || L('No hay objetivos válidos al alcance.', 'Aucune cible valable à portée.')); this.mode = null; this.refreshPlan(); UI.refresh(); }
   },
   skillBlock(h, s) {
-    if (s.cd > 0) return `${s.name} estará lista en ${s.cd} ronda${s.cd > 1 ? 's' : ''}.`;
-    if (!s.free && h.actions <= 0) return 'Ya has usado tu acción este turno.';
-    if (s.id === 'torbellino' && !this.visibleEnemies().some((e) => this.meleeOK(h.x, h.y, e.x, e.y))) return 'Torbellino necesita enemigos a tu lado.';
+    if (s.cd > 0) return L(`${s.name} estará lista en ${s.cd} ronda${s.cd > 1 ? 's' : ''}.`, `${s.name} : disponible dans ${s.cd} manche${s.cd > 1 ? 's' : ''}.`);
+    if (!s.free && h.actions <= 0) return L('Ya has usado tu acción este turno.', 'Tu as déjà utilisé ton action ce tour-ci.');
+    if (s.id === 'torbellino' && !this.visibleEnemies().some((e) => this.meleeOK(h.x, h.y, e.x, e.y))) return L('Torbellino necesita enemigos a tu lado.', `${s.name} : il faut des ennemis à ton contact.`);
     return null;
   },
   action(id) {
     const h = this.active; if (!h || this.busy || this.phase !== 'hero') return;
     audio.sfx('ui');
     const run = (fn) => { this.undo = null; this.lock(() => fn()).then(() => this.afterAction(h)); };
-    if (id === 'attack') { if (h.actions <= 0) return UI.toast('Ya has usado tu acción este turno.'); this.setMode({ key: 'attack', type: 'attack', color: 'attack', empty: 'Ningún enemigo a tu alcance desde aquí. Toca a un enemigo para acercarte y atacar.' }); }
+    if (id === 'attack') { if (h.actions <= 0) return UI.toast(L('Ya has usado tu acción este turno.', 'Tu as déjà utilisé ton action ce tour-ci.')); this.setMode({ key: 'attack', type: 'attack', color: 'attack', empty: L('Ningún enemigo a tu alcance desde aquí. Toca a un enemigo para acercarte y atacar.', 'Aucun ennemi à portée d’ici. Touche un ennemi pour t’approcher et attaquer.') }); }
     else if (id === 's0' || id === 's1') {
       const s = h.skills[+id[1]], why = this.skillBlock(h, s);
       if (why) return UI.toast(why);
-      const empty = { carga: 'Ningún enemigo al alcance de la carga.', lluvia: 'No hay ningún sitio a la vista donde disparar.', luz: 'Nadie está herido ni caído a tu alcance.', salto: 'No hay sitio libre para saltar.' }[s.id];
+      const empty = L({ carga: 'Ningún enemigo al alcance de la carga.', lluvia: 'No hay ningún sitio a la vista donde disparar.', luz: 'Nadie está herido ni caído a tu alcance.', salto: 'No hay sitio libre para saltar.' }, { carga: 'Aucun ennemi à portée de charge.', lluvia: 'Aucun endroit en vue où tirer.', luz: 'Personne de blessé ou à terre à ta portée.', salto: 'Aucune case libre où bondir.' })[s.id];
       this.setMode({ key: id, type: 'skill', skill: s, instant: s.target === 'self', color: s.target === 'ally' ? 'heal' : 'skill', empty });
     }
     else if (id === 'search') run(() => this.search(h));
     else if (id === 'potion') run(() => this.drink(h));
     else if (id === 'elixir') run(() => this.elixir(h));
-    else if (id === 'bomb') { if (h.actions <= 0) return UI.toast('Lanzar una bomba gasta tu acción.'); if (this.items.bomb <= 0) return UI.toast('No os quedan bombas.'); this.setMode({ key: 'bomb', type: 'bomb', color: 'item' }); }
+    else if (id === 'bomb') { if (h.actions <= 0) return UI.toast(L('Lanzar una bomba gasta tu acción.', 'Lancer une bombe coûte ton action.')); if (this.items.bomb <= 0) return UI.toast(L('No os quedan bombas.', 'Vous n’avez plus de bombes.')); this.setMode({ key: 'bomb', type: 'bomb', color: 'item' }); }
     else if (id === 'undo') this.undoMove();
     else if (id === 'end') this.endTurn(h);
     else if (id === 'next') { const n = this.nextHero(); if (n && n !== h) this.selectHero(n); }
@@ -972,7 +978,7 @@ const GAME = {
   revealTrap(tr) {
     tr.revealed = true; tr.mesh.visible = true; this.eventful = true;
     audio.sfx('trap', { vol: 0.4 });
-    FX.text(new THREE.Vector3(tr.x * TILE, 1, tr.y * TILE), '¡Trampa!', 'warn');
+    FX.text(new THREE.Vector3(tr.x * TILE, 1, tr.y * TILE), L('¡Trampa!', 'Piège !'), 'warn');
     if (this.active) this.refreshPlan();
   },
   async springTrap(tr, h) {
@@ -984,9 +990,9 @@ const GAME = {
     FX.burst(theme === 'forge' ? 'fire' : theme === 'void' ? 'magic' : 'trap', { x: h.x * TILE, y: 0.4, z: h.y * TILE });
     if (theme === 'forge') audio.sfx('fire');
     await this.damage(h, 2, { source: 'trap' });
-    UI.log(`${h.name} activa una trampa y pierde 2 PV.`, 'bad');
+    UI.log(L(`${h.name} activa una trampa y pierde 2 PV.`, `${h.name} déclenche un piège et perd 2 PV.`), 'bad');
     if (!h.ko) {
-      FX.bubble(h, h.traits.trapSense ? '¿Cómo no la he visto?' : '¡Una trampa!');
+      FX.bubble(h, h.traits.trapSense ? L('¿Cómo no la he visto?', 'Comment ai-je pu le rater ?') : L('¡Una trampa!', 'Un piège !'));
       if (theme === 'forge') await this.addStatus(h, 'ardiendo', 1);
       else if (theme === 'crypt') await this.addStatus(h, 'envenenado', 2);
       else await this.addStatus(h, 'aterrado', 1);
@@ -1015,9 +1021,9 @@ const GAME = {
   lockNeed(door) { return door.lock === 'sello' ? 3 : 2; },
   lockAuto(h, door) { return door.lock === 'sello' ? !!(h.traits && h.traits.sealbreaker) : !!(h.traits && h.traits.locksmith); },
   lockText(h, door) {
-    if (this.lockAuto(h, door)) return door.lock === 'sello' ? `${h.name} conoce estas runas: lo abre sin tirar · gasta la acción.` : `${h.name} la abre sin tirar · gasta la acción.`;
+    if (this.lockAuto(h, door)) return door.lock === 'sello' ? L(`${h.name} conoce estas runas: lo abre sin tirar · gasta la acción.`, `${h.name} connaît ces runes : ouverture sans lancer de dés · coûte l’action.`) : L(`${h.name} la abre sin tirar · gasta la acción.`, `${h.name} l’ouvre sans lancer de dés · coûte l’action.`);
     const need = this.lockNeed(door), have = door.progress || 0;
-    return `Tira 3 dados; hacen falta ${need} calaveras en total${have ? ` (lleváis ${have})` : ''} · gasta la acción.${door.lock === 'sello' ? ' Si no sale ninguna, el sello muerde: −1 PV.' : ' Hace ruido: +1 Presagio.'}`;
+    return L(`Tira 3 dados; hacen falta ${need} calaveras en total${have ? ` (lleváis ${have})` : ''} · gasta la acción.${door.lock === 'sello' ? ' Si no sale ninguna, el sello muerde: −1 PV.' : ' Hace ruido: +1 Presagio.'}`, `Lance 3 dés ; il faut ${need} crânes au total${have ? ` (vous en avez ${have})` : ''} · coûte l’action.${door.lock === 'sello' ? ' Si aucun ne sort, le sceau mord : −1 PV.' : ' Ça fait du bruit : +1 Présage.'}`);
   },
   async tryLock(h, door) {
     if (h.actions <= 0 || !door.lock) return;
@@ -1025,20 +1031,20 @@ const GAME = {
     h.actions--; this.eventful = true;
     this.faceTo(h, door.x, door.y);
     let ok;
-    if (this.lockAuto(h, door)) { ok = true; FX.text(this.headPos(h), door.lock === 'sello' ? 'Runas descifradas' : 'Abierta', 'heal'); await U.sleep(300); }
+    if (this.lockAuto(h, door)) { ok = true; FX.text(this.headPos(h), door.lock === 'sello' ? L('Runas descifradas', 'Runes déchiffrées') : L('Abierta', 'Ouverte'), 'heal'); await U.sleep(300); }
     else {
       const need = this.lockNeed(door), have = door.progress || 0;
-      const r = await this.rollCheck(h, 3, need, { label: door.lock === 'sello' ? 'Romper el sello' : 'Forzar la cerradura', have, at: door });
+      const r = await this.rollCheck(h, 3, need, { label: door.lock === 'sello' ? L('Romper el sello', 'Briser le sceau') : L('Forzar la cerradura', 'Forcer la serrure'), have, at: door });
       door.progress = have + r.skulls; ok = door.progress >= need;
       if (door.lock === 'cerradura') { audio.sfx('doorSlam', { vol: 0.5 }); this.addDoom(1); }
       if (!ok) {
-        UI.log(`${h.name} no consigue abrirla del todo (${door.progress} de ${need}).`, 'neutral');
-        FX.text(this.headPos(h), `${door.progress} de ${need}`, 'block'); audio.sfx('deny');
+        UI.log(L(`${h.name} no consigue abrirla del todo (${door.progress} de ${need}).`, `${h.name} n’arrive pas à l’ouvrir tout à fait (${door.progress} sur ${need}).`), 'neutral');
+        FX.text(this.headPos(h), L(`${door.progress} de ${need}`, `${door.progress} sur ${need}`), 'block'); audio.sfx('deny');
         if (door.lock === 'sello' && r.skulls === 0) { FX.burst('magic', h.mesh.position, { color: '#c08bff' }); await this.damage(h, 1, { source: 'seal' }); }
       }
     }
     if (ok) {
-      UI.log(`${h.name} abre la puerta.`, 'good');
+      UI.log(L(`${h.name} abre la puerta.`, `${h.name} ouvre la porte.`), 'good');
       audio.sfx(door.lock === 'sello' ? 'magic' : 'block');
       WORLD.removeLock(door); door.lock = null; door.progress = 0;
       await this.openDoor(door, h);
@@ -1071,7 +1077,7 @@ const GAME = {
     const b = this.boss; if (!b) return;
     if (b.kind === 'aethelgard' && this.flags.aethDoubt && !b.doubted) {
       b.doubted = true; b.hp = Math.max(1, b.hp - 4); b.status.aturdido = 1;
-      FX.text(this.headPos(b), 'Duda', 'block'); UI.updateBoss();
+      FX.text(this.headPos(b), L('Duda', 'Doute'), 'block'); UI.updateBoss();
     }
   },
   riseUnit(e, fx = 'dust') {
@@ -1112,8 +1118,8 @@ const GAME = {
     }); });
     if (!best) return;
     audio.sfx('whisper', { dur: 2 }); audio.sfx('summon', { vol: 0.6 });
-    UI.banner('La Hondura se agita', 'Algo errante sube a buscaros', 'shadow');
-    UI.log(`<b>El Presagio se cumple.</b> ${ENEMY_TYPES[type].name} sube de la Hondura.`, 'bad');
+    UI.banner(L('La Hondura se agita', 'Les Tréfonds s’agitent'), L('Algo errante sube a buscaros', 'Une chose errante monte vous chercher'), 'shadow');
+    UI.log(L(`<b>El Presagio se cumple.</b> ${ENEMY_TYPES[type].name} sube de la Hondura.`, `<b>Le Présage s’accomplit.</b> ${ENEMY_TYPES[type].name} monte des Tréfonds.`), 'bad');
     await ENGINE.focusWait(best.x, best.y, { max: 700 });
     const e = await this.spawn(type, best.x, best.y);
     e.group = -1; e.wanderer = true;
@@ -1134,6 +1140,7 @@ const GAME = {
     const shieldFace = tgt.side === 'hero' ? 'white' : 'black';
     const sk = A.filter((f) => f === 'skull').length, sh = Math.max(0, D.filter((f) => f === shieldFace).length - ignore);
     const R = { skulls: sk, shields: sh, dmg: Math.max(0, sk - sh) };
+    if (att.side === 'hero' && !this.tutorial) SABER.count(A.length, sk); // Libro de Tiradas
     const quick = o.quick || (att.side === 'enemy' && SETTINGS.quickEnemyDice);
     // el Dado del Destino acompaña al primer ataque de cada acción de un héroe
     const destiny = o.destiny && att.side === 'hero' ? this.rollDestiny() : null;
@@ -1153,7 +1160,7 @@ const GAME = {
     const victim = tgt;
     const tp = new THREE.Vector3(victim.mesh.position.x, 1.1, victim.mesh.position.z);
     if (R.dmg > 0) {
-      const fxk = victim.T && victim.T.sfx === 'bone' ? 'bone' : victim.T && victim.T.sfx === 'glass' ? 'glass' : victim.side === 'hero' ? 'blood' : 'hit';
+      const fxk = victim.T && victim.T.sfx === 'bone' ? 'bone' : victim.T && victim.T.sfx === 'glass' ? 'glass' : victim.side === 'hero' ? 'hurt' : 'hit';
       FX.burst(fxk, tp); FX.burst('hit', tp);
       audio.sfx(victim.T && victim.T.sfx === 'glass' ? 'glass' : 'hit', { pan });
       if (victim.T && victim.T.sfx === 'bone') audio.sfx('bone', { pan });
@@ -1162,10 +1169,10 @@ const GAME = {
       if (o.light !== false) ENGINE.flashLight(tp, '#ffb070', 2.2, 0.25);
     } else {
       FX.burst('block', tp); audio.sfx('block', { pan });
-      FX.text(tp, 'Bloqueado', 'block');
+      FX.text(tp, L('Bloqueado', 'Bloqué'), 'block');
     }
     if (!ranged && !o.proj) { const md = m.userData.model; U.tween(220, (k) => { m.position.x = U.lerp(m.position.x, from.x, k); m.position.z = U.lerp(m.position.z, from.z, k); md.rotation.x = 0.2 * (1 - k); }); }
-    UI.log(`${att.name} → ${victim.name}${o.label && o.label !== att.name ? ` (${o.label.toLowerCase()})` : ''}: ${R.skulls} calavera${R.skulls === 1 ? '' : 's'} contra ${R.shields} escudo${R.shields === 1 ? '' : 's'}${R.dmg ? `, <b>${R.dmg} de daño</b>` : ', sin daño'}.`, att.side === 'hero' ? 'good' : 'bad');
+    UI.log(L(`${att.name} → ${victim.name}${o.label && o.label !== att.name ? ` (${o.label.toLowerCase()})` : ''}: ${R.skulls} calavera${R.skulls === 1 ? '' : 's'} contra ${R.shields} escudo${R.shields === 1 ? '' : 's'}${R.dmg ? `, <b>${R.dmg} de daño</b>` : ', sin daño'}.`, `${att.name} → ${victim.name}${o.label && o.label !== att.name ? ` (${o.label.toLowerCase()})` : ''} : ${R.skulls} crâne${R.skulls > 1 ? 's' : ''} contre ${R.shields} bouclier${R.shields > 1 ? 's' : ''}${R.dmg ? `, <b>${R.dmg} dégât${R.dmg > 1 ? 's' : ''}</b>` : ', aucun dégât'}.`), att.side === 'hero' ? 'good' : 'bad');
     if (R.dmg > 0) {
       await this.damage(victim, R.dmg, { by: att });
       if (this.up(victim)) {
@@ -1212,7 +1219,7 @@ const GAME = {
     delete a.status.desangrando;
     if (!this.D.wounds) return;
     a.wounds++; a.maxHp = Math.max(3, a.maxHp - 1); a.hp = Math.min(a.hp, a.maxHp);
-    FX.text(this.headPos(a), 'Herido −1 PV máx.', 'warn');
+    FX.text(this.headPos(a), L('Herido −1 PV máx.', `Blessé${FEM(a)} −1 PV max.`), 'warn');
   },
   standUp(u) {
     const ud = u.mesh.userData; const fig = ud.model;
@@ -1225,8 +1232,8 @@ const GAME = {
       const solo = this.party.length === 1;
       if (((u.tal && u.tal.has('indomable')) || solo) && !u.indomUsed) {
         u.indomUsed = true; u.hp = solo ? Math.ceil(u.maxHp / 2) : Math.min(3, u.maxHp);
-        FX.text(this.headPos(u), solo ? 'Último en pie' : 'Indomable', 'heal'); audio.sfx('levelUp', { vol: 0.6 }); FX.burst('heal', u.mesh.position);
-        FX.bubble(u, '¡Todavía no!', 1.6); UI.log(`${u.name} se niega a caer y sigue en pie con ${u.hp} PV.${solo ? ' (En solitario, una vez por capítulo.)' : ''}`, 'good'); UI.refresh();
+        FX.text(this.headPos(u), solo ? L('Último en pie', FEM(u) ? 'Dernière debout' : 'Dernier debout') : L('Indomable', 'Indomptable'), 'heal'); audio.sfx('levelUp', { vol: 0.6 }); FX.burst('heal', u.mesh.position);
+        FX.bubble(u, L('¡Todavía no!', 'Pas encore !'), 1.6); UI.log(L(`${u.name} se niega a caer y sigue en pie con ${u.hp} PV.${solo ? ' (En solitario, una vez por capítulo.)' : ''}`, `${u.name} refuse de tomber et reste debout avec ${u.hp} PV.${solo ? ' (En solo, une fois par chapitre.)' : ''}`), 'good'); UI.refresh();
         return;
       }
       u.ko = true; u.ended = true; u.mvLeft = 0; u.actions = 0; this.stats.falls++;
@@ -1236,9 +1243,9 @@ const GAME = {
       const ud = u.mesh.userData; ud.lockAnim = true;
       U.tween(600, (k) => { ud.model.rotation.x = -1.4 * U.easeOut(k); ud.model.position.y = 0.1 * k; });
       ud.base.userData.ring.material = MAT.std('#3a3a3a', 0.8);
-      const how = this.D.fall === 'auto' ? 'Se levantará solo al final de la ronda si queda alguien en pie.' : this.D.fall === 'bleed' ? `Se desangra: tenéis ${this.D.bleed} rondas para levantarle.` : 'Un aliado adyacente puede levantarle.';
-      UI.log(`<b>${u.name} ha caído.</b> ${how}`, 'bad');
-      FX.text(new THREE.Vector3(u.mesh.position.x, 2, u.mesh.position.z), 'Caído', 'warn');
+      const how = this.D.fall === 'auto' ? L('Se levantará solo al final de la ronda si queda alguien en pie.', `${FEM(u) ? 'Elle' : 'Il'} se relèvera seul${FEM(u)} à la fin de la manche si quelqu’un reste debout.`) : this.D.fall === 'bleed' ? L(`Se queda sin fuerzas: tenéis ${this.D.bleed} rondas para levantarle.`, `À bout de forces : vous avez ${this.D.bleed} manches pour l’aider à se relever.`) : L('Un aliado adyacente puede levantarle.', 'Un allié adjacent peut l’aider à se relever.');
+      UI.log(L(`<b>${u.name} ha caído.</b> ${how}`, `<b>${u.name} est à terre.</b> ${how}`), 'bad');
+      FX.text(new THREE.Vector3(u.mesh.position.x, 2, u.mesh.position.z), L('Caído', 'À terre'), 'warn');
       if (this.heroes.every((h) => h.ko) && this.state === 'play') { this.state = 'defeat'; setTimeout(() => this.defeat(), 1300); }
       return;
     }
@@ -1259,7 +1266,7 @@ const GAME = {
     if (this.state === 'play') {
       if ((T.traits || []).includes('lider') && !u.summoned) {
         const near = this.visibleEnemies().filter((e) => U.cheb(e.x, e.y, u.x, u.y) <= 6);
-        if (near.length) { UI.log(`Ha caído ${u.name}. Sus aliados vacilan.`, 'good'); await this.moraleCheck(near); }
+        if (near.length) { UI.log(L(`Ha caído ${u.name}. Sus aliados vacilan.`, `${u.name} tombe. Ses alliés vacillent.`), 'good'); await this.moraleCheck(near); }
       } else if (u.group != null && this.brokenGroups[u.group] && !this.brokenGroups[u.group].broken) {
         const g = this.brokenGroups[u.group], left = this.visibleEnemies().filter((e) => e.group === u.group && !e.boss);
         if (g.size >= 2 && left.length <= g.size / 2 && left.length) { g.broken = true; await this.moraleCheck(left); }
@@ -1274,15 +1281,15 @@ const GAME = {
     for (const e of list) {
       if (!e.alive || e.boss || e.status.huyendo || this.immuneTo(e, 'aterrado')) continue;
       const coward = (e.T.traits || []).includes('cobarde');
-      if (coward || Math.random() < 0.5) { e.status.huyendo = 2; FX.text(this.headPos(e), '¡Huye!', 'heal'); UI.log(`${e.name} pierde los nervios y huye.`, 'good'); if (e.T.barks && Math.random() < 0.5) FX.bubble(e, '¡No, no, no!', 1.6); }
-      else FX.text(this.headPos(e), 'Aguanta', 'block');
+      if (coward || Math.random() < 0.5) { e.status.huyendo = 2; FX.text(this.headPos(e), L('¡Huye!', 'En fuite !'), 'heal'); UI.log(L(`${e.name} pierde los nervios y huye.`, `${e.name} perd son sang-froid et s’enfuit.`), 'good'); if (e.T.barks && Math.random() < 0.5) FX.bubble(e, L('¡No, no, no!', 'Non, non, non !'), 1.6); }
+      else FX.text(this.headPos(e), L('Aguanta', 'Tient bon'), 'block');
       await U.sleep(120);
     }
   },
   addGold(n, pos) {
     if (this.descent) n = Math.max(1, Math.round(n * 0.6)); // en el Descenso solo se compra al acampar: el oro escasea más
     this.gold += n; this.stats.gold += n;
-    if (pos) { FX.text(pos, `+${n} oro`, 'gold'); FX.burst('gold', pos); }
+    if (pos) { FX.text(pos, L(`+${n} oro`, `+${n} or`), 'gold'); FX.burst('gold', pos); }
     audio.sfx('gold', { vol: 0.6 });
     UI.refresh();
   },
@@ -1309,16 +1316,16 @@ const GAME = {
       md.rotation.y = 0;
       let first = true;
       for (const e of foes) { await this.attack(h, e, { atk: si.dice, label: s.name, quick: !first, noFlank: true, destiny: first }); first = false; }
-      UI.log(`${h.name} gira con el hacha: ${foes.length} enemigo${foes.length === 1 ? '' : 's'} alcanzado${foes.length === 1 ? '' : 's'}.`, 'good');
+      UI.log(L(`${h.name} gira con el hacha: ${foes.length} enemigo${foes.length === 1 ? '' : 's'} alcanzado${foes.length === 1 ? '' : 's'}.`, `${h.name} tournoie avec sa hache : ${foes.length} ennemi${foes.length > 1 ? 's' : ''} touché${foes.length > 1 ? 's' : ''}.`), 'good');
     } else if (s.id === 'grito') {
       audio.sfx('reveal', { vol: 0.9 }); ENGINE.shake(0.4);
       FX.ring({ x: h.x * TILE, z: h.y * TILE }, '#ff7a50', si.radius * TILE + 1, 700);
       ENGINE.flashLight(at(h), '#ff9a6a', 3.5, 0.6);
       const near = this.visibleEnemies().filter((e) => !e.boss && U.cheb(e.x, e.y, h.x, h.y) <= si.radius);
       let n = 0;
-      for (const e of near) { if (await this.addStatus(e, 'aterrado', 2)) n++; else FX.text(this.headPos(e), 'No se asusta', 'block'); }
+      for (const e of near) { if (await this.addStatus(e, 'aterrado', 2)) n++; else FX.text(this.headPos(e), L('No se asusta', 'N’a pas peur'), 'block'); }
       if (h.hp < h.maxHp) await this.heal(h, si.heal);
-      UI.log(`${h.name} ruge: ${n} enemigo${n === 1 ? '' : 's'} aterrado${n === 1 ? '' : 's'}.`, 'good');
+      UI.log(L(`${h.name} ruge: ${n} enemigo${n === 1 ? '' : 's'} asustado${n === 1 ? '' : 's'}.`, `${h.name} rugit : ${n} ennemi${n > 1 ? 's' : ''} effrayé${n > 1 ? 's' : ''}.`), 'good');
     } else if (s.id === 'sismico') {
       const e = d.unit;
       ENGINE.shake(0.7); audio.sfx('quake', { vol: 0.8 });
@@ -1331,9 +1338,9 @@ const GAME = {
       h.status.muralla = 1; h.status.taunt = 1;
       audio.sfx('shield'); FX.burst('shield', h.mesh.position);
       ENGINE.flashLight(at(h), '#ffd0a0', 3, 0.8);
-      FX.text(this.headPos(h), 'Muralla', 'heal');
-      if (h.tal.has('murallaHierro')) this.heroes.forEach((a) => { if (a !== h && !a.ko && U.cheb(a.x, a.y, h.x, h.y) === 1) { a.status.guard = 1; FX.burst('shield', a.mesh.position); FX.text(this.headPos(a), 'Protegido', 'heal'); } });
-      UI.log(`${h.name} se planta: +2 dados de defensa y los enemigos cercanos irán a por él.`, 'good');
+      FX.text(this.headPos(h), L('Muralla', s.name), 'heal');
+      if (h.tal.has('murallaHierro')) this.heroes.forEach((a) => { if (a !== h && !a.ko && U.cheb(a.x, a.y, h.x, h.y) === 1) { a.status.guard = 1; FX.burst('shield', a.mesh.position); FX.text(this.headPos(a), L('Protegido', 'Protégé' + FEM(a)), 'heal'); } });
+      UI.log(L(`${h.name} se planta: +2 dados de defensa y los enemigos cercanos irán a por él.`, `${h.name} se dresse comme un rempart : +2 dés de défense, et les ennemis proches s’en prennent à lui.`), 'good');
     } else if (s.id === 'lluvia') {
       const cx = d.x, cy = d.y;
       this.faceTo(h, cx, cy);
@@ -1345,7 +1352,7 @@ const GAME = {
       const foes = this.visibleEnemies().filter((e) => U.cheb(e.x, e.y, cx, cy) <= 1);
       let first = true;
       for (const e of foes) { await this.attack(h, e, { atk: si.dice, ranged: true, proj: 'arrow', projFrom: new THREE.Vector3(e.x * TILE, 7, e.y * TILE), label: s.name, quick: !first, light: false, destiny: first }); first = false; }
-      if (!foes.length) UI.log('Las flechas se clavan en el suelo vacío.', 'neutral');
+      if (!foes.length) UI.log(L('Las flechas se clavan en el suelo vacío.', 'Les flèches se plantent dans le sol désert.'), 'neutral');
     } else if (s.id === 'salto') {
       const m = h.mesh, fx0 = m.position.x, fz0 = m.position.z, tx = d.x * TILE, tz = d.y * TILE;
       this.faceTo(h, d.x, d.y); audio.sfx('hop');
@@ -1355,7 +1362,7 @@ const GAME = {
       FX.burst('dust', m.position); audio.sfx('step');
       ENGINE.keyPos.set(tx, 0, tz);
       if (SETTINGS.follow) ENGINE.focusTile(d.x, d.y);
-      if (h.tal.has('viento')) { h.status.inspirado = 1; FX.text(this.headPos(h), 'Inspirada', 'heal'); }
+      if (h.tal.has('viento')) { h.status.inspirado = 1; FX.text(this.headPos(h), L('Inspirada', 'Inspirée'), 'heal'); }
       const t = this.T(d.x, d.y);
       if (t.trap && !t.trap.revealed && !t.trap.disarmed && !t.trap.sprung) { await this.springTrap(t.trap, h); h.mvLeft = 0; }
       if (!h.ko && h.traits.trapSense) this.detectTraps(h, h.traits.trapSense);
@@ -1367,12 +1374,12 @@ const GAME = {
       audio.sfx('fire'); FX.burst('fire', { x: e.x * TILE, y: 1, z: e.y * TILE }); FX.burst('explode', { x: e.x * TILE, y: 0.5, z: e.y * TILE });
       ENGINE.flashLight(new THREE.Vector3(e.x * TILE, 1.4, e.y * TILE), '#ff9a4a', 4, 0.6); ENGINE.shake(0.4);
       const splash = this.visibleEnemies().filter((o) => o !== e && U.cheb(o.x, o.y, e.x, e.y) === 1);
-      for (const o of splash) await this.attack(h, o, { atk: si.splash, ranged: true, proj: 'fire', projFrom: new THREE.Vector3(e.x * TILE, 1.2, e.y * TILE), label: 'Llamas', light: false, dtype: 'fire', quick: true, onHit: oh });
+      for (const o of splash) await this.attack(h, o, { atk: si.splash, ranged: true, proj: 'fire', projFrom: new THREE.Vector3(e.x * TILE, 1.2, e.y * TILE), label: L('Llamas', 'Flammes'), light: false, dtype: 'fire', quick: true, onHit: oh });
     } else if (s.id === 'luz') {
       const a = d.unit;
       if (a !== h) await FX.projectile(new THREE.Vector3(h.x * TILE, 1.6, h.y * TILE), new THREE.Vector3(a.x * TILE, 1.2, a.y * TILE), 'dawn');
       ENGINE.flashLight(at(a), '#fff0c0', 3, 0.6);
-      if (a.ko) { a.ko = false; a.ended = true; a.hp = 0; this.standUp(a); await this.heal(a, si.heal); this.woundOnRise(a); UI.log(`${a.name} vuelve a ponerse en pie.`, 'good'); }
+      if (a.ko) { a.ko = false; a.ended = true; a.hp = 0; this.standUp(a); await this.heal(a, si.heal); this.woundOnRise(a); UI.log(L(`${a.name} vuelve a ponerse en pie.`, `${a.name} se remet debout.`), 'good'); }
       else await this.heal(a, si.heal);
       if (h.tal.has('aurora')) for (const b of this.heroes.filter((x) => x !== a && !x.ko && x.hp < x.maxHp && U.cheb(x.x, x.y, a.x, a.y) <= 1)) await this.heal(b, 2);
       FX.bubble(h, U.pick(BARKS.hechicero.heal));
@@ -1395,10 +1402,10 @@ const GAME = {
       const allies = this.heroes.filter((a) => !a.ko && U.cheb(a.x, a.y, h.x, h.y) <= si.radius);
       for (const a of allies) {
         a.status.inspirado = 2; if (!a.ended) a.mvLeft += 2;
-        FX.burst('heal', a.mesh.position); FX.text(this.headPos(a), 'Inspirado · +2 mov.', 'heal');
+        FX.burst('heal', a.mesh.position); FX.text(this.headPos(a), L('Inspirado · +2 mov.', `Inspiré${FEM(a)} · +2 dépl.`), 'heal');
         if (h.tal.has('cancion') && a.hp < a.maxHp) await this.heal(a, 2);
       }
-      UI.log(`${h.name} lanza el grito de su tribu: ${allies.length} héroe${allies.length === 1 ? '' : 's'} inspirado${allies.length === 1 ? '' : 's'}.`, 'good');
+      UI.log(L(`${h.name} lanza el grito de su tribu: ${allies.length} héroe${allies.length === 1 ? '' : 's'} inspirado${allies.length === 1 ? '' : 's'}.`, `${h.name} pousse le cri de sa tribu : ${allies.length} héros inspiré${allies.length > 1 ? 's' : ''}.`), 'good');
     }
     UI.refresh();
   },
@@ -1411,7 +1418,7 @@ const GAME = {
     ENGINE.flashLight(new THREE.Vector3(x * TILE, 1.5, y * TILE), '#ffb070', 6, 0.7); ENGINE.fx.flash = 0.25;
     this.addDoom(1);
     const victims = this.allUnits().filter((u) => u.side !== 'npc' && this.up(u) && U.cheb(u.x, u.y, x, y) <= 1);
-    for (const v of victims) await this.diceHit('La bomba', v, 3, { label: 'Bomba alquímica', dir: new THREE.Vector3(v.x - x || 0.01, 0, v.y - y), dtype: 'fire', onHit: { st: 'ardiendo', dur: 1 } });
+    for (const v of victims) await this.diceHit(L('La bomba', 'La bombe'), v, 3, { label: L('Bomba alquímica', 'Bombe alchimique'), dir: new THREE.Vector3(v.x - x || 0.01, 0, v.y - y), dtype: 'fire', onHit: { st: 'ardiendo', dur: 1 } });
   },
   /* tirada sin atacante físico (bombas, erupciones) */
   async diceHit(name, tgt, atkN, o = {}) {
@@ -1428,35 +1435,36 @@ const GAME = {
     if (dmg > 0) {
       FX.burst('hit', tp); audio.sfx('hit'); this.hitReact(tgt, (o.dir || (o.by ? new THREE.Vector3(tgt.x - o.by.x || 0.01, 0, tgt.y - o.by.y) : new THREE.Vector3(1, 0, 0))).normalize()); await this.damage(tgt, dmg, { by: o.by });
       if (o.onHit && this.up(tgt)) await this.addStatus(tgt, o.onHit.st, o.onHit.dur);
-    } else { FX.burst('block', tp); audio.sfx('block'); FX.text(tp, 'Bloqueado', 'block'); }
-    UI.log(`${name} → ${tgt.name}: ${dmg ? `<b>${dmg} de daño</b>` : 'sin daño'}.`, tgt.side === 'hero' ? 'bad' : 'good');
+    } else { FX.burst('block', tp); audio.sfx('block'); FX.text(tp, L('Bloqueado', 'Bloqué'), 'block'); }
+    UI.log(L(`${name} → ${tgt.name}: ${dmg ? `<b>${dmg} de daño</b>` : 'sin daño'}.`, `${name} → ${tgt.name} : ${dmg ? `<b>${dmg} dégât${dmg > 1 ? 's' : ''}</b>` : 'aucun dégât'}.`), tgt.side === 'hero' ? 'bad' : 'good');
     return dmg;
   },
   async drink(h) {
-    if (this.items.potion <= 0) return UI.toast('No os quedan pociones.');
-    if (h.potionUsed) return UI.toast('Solo una poción por turno.');
-    if (h.hp >= h.maxHp && !h.status.envenenado) return UI.toast(`${h.name} ya está en plena forma.`);
+    if (this.items.potion <= 0) return UI.toast(L('No os quedan pociones.', 'Vous n’avez plus de potions.'));
+    if (h.potionUsed) return UI.toast(L('Solo una poción por turno.', 'Une seule potion par tour.'));
+    if (h.hp >= h.maxHp && !h.status.envenenado) return UI.toast(L(`${h.name} ya está en plena forma.`, `${h.name} est déjà en pleine forme.`));
     this.items.potion--; h.potionUsed = true;
     audio.sfx('potion');
+    const wasPoisoned = !!h.status.envenenado;
     delete h.status.envenenado;
     await this.heal(h, 4);
-    UI.log(`${h.name} bebe una poción${h.status.envenenado ? '' : ' (y se cura el veneno)'}.`, 'good');
+    UI.log(L(`${h.name} bebe una poción${wasPoisoned ? ' (y se cura el veneno)' : ''}.`, `${h.name} boit une potion${wasPoisoned ? ' (et guérit du poison)' : ''}.`), 'good');
   },
   async elixir(h) {
-    if (this.items.elixir <= 0) return UI.toast('No os quedan elixires.');
+    if (this.items.elixir <= 0) return UI.toast(L('No os quedan elixires.', 'Vous n’avez plus d’élixirs.'));
     this.items.elixir--; h.actions++;
     audio.sfx('levelUp'); FX.burst('magic', h.mesh.position, { color: '#9fe8ff', color2: '#3a8aff' });
-    FX.text(new THREE.Vector3(h.mesh.position.x, 1.9, h.mesh.position.z), '+1 acción', 'heal');
+    FX.text(new THREE.Vector3(h.mesh.position.x, 1.9, h.mesh.position.z), L('+1 acción', '+1 action'), 'heal');
   },
   /* ------------------------------------------------------------ interacción */
   /* Buscar: una vez por sala. Revela sus trampas y saca algo de una tabla al azar,
      como las cartas de tesoro de siempre: casi siempre bueno, a veces un susto */
   searchBlock(h) {
-    if (!h || h.actions <= 0) return 'Buscar gasta la acción, y ya no te queda.';
-    const room = this.roomOf(h); if (!room) return 'Aquí no hay nada que buscar.';
-    if (this.visibleEnemies().some((e) => this.T(e.x, e.y).room === room.id)) return 'No podéis buscar con enemigos en la sala.';
+    if (!h || h.actions <= 0) return L('Buscar gasta la acción, y ya no te queda.', 'Fouiller coûte l’action, et tu n’en as plus.');
+    const room = this.roomOf(h); if (!room) return L('Aquí no hay nada que buscar.', 'Rien à fouiller ici.');
+    if (this.visibleEnemies().some((e) => this.T(e.x, e.y).room === room.id)) return L('No podéis buscar con enemigos en la sala.', 'Impossible de fouiller avec des ennemis dans la salle.');
     const meta = this.ch.rooms[room.marker];
-    if (room.searched && !(meta && meta.search && !room.searchEvent)) return 'Esta sala ya está registrada.';
+    if (room.searched && !(meta && meta.search && !room.searchEvent)) return L('Esta sala ya está registrada.', 'Cette salle a déjà été fouillée.');
     return null;
   },
   async search(h) {
@@ -1466,50 +1474,50 @@ const GAME = {
     const special = meta && meta.search && !room.searchEvent;
     h.actions--; this.eventful = true;
     audio.sfx('page', { vol: 0.5 });
-    FX.bubble(h, 'Veamos…', 1.4);
+    FX.bubble(h, L('Veamos…', 'Voyons…'), 1.4);
     const fig = h.mesh.userData.model;
     await U.tween(500, (k) => (fig.rotation.x = Math.sin(k * Math.PI) * 0.35));
     UI.hintOnce('search');
     this.addDoom(1);
     let found = 0;
     this.L.traps.forEach((tr) => { if (!tr.revealed && !tr.disarmed && !tr.sprung && this.T(tr.x, tr.y).room === room.id) { this.revealTrap(tr); found++; } });
-    if (found) UI.log(`${h.name} descubre ${found} trampa${found > 1 ? 's' : ''}.`, 'good');
+    if (found) UI.log(L(`${h.name} descubre ${found} trampa${found > 1 ? 's' : ''}.`, `${h.name} découvre ${found} piège${found > 1 ? 's' : ''}.`), 'good');
     if (special) { room.searchEvent = true; room.searched = true; await this.run(meta.search, { hero: h, room }); UI.refresh(); return; }
     room.searched = true;
     const at = new THREE.Vector3(h.mesh.position.x, 1.6, h.mesh.position.z);
     // el Dado del Tesoro: oro, oro, poción, objeto, nada o peligro (en el tutorial, nunca peligro)
     const kind = await this.treasureRoll(h, this.tutorial);
     this.stats.treasure = this.stats.treasure || {}; this.stats.treasure[kind] = (this.stats.treasure[kind] || 0) + 1;
-    const itemName = { elixir: 'un elixir', bomb: 'una bomba', potion: 'una poción' };
+    const itemName = L({ elixir: 'un elixir', bomb: 'una bomba', potion: 'una poción' }, { elixir: 'un élixir', bomb: 'une bombe', potion: 'une potion' });
     if (kind === 'danger') {
       if (Math.random() < 0.5 || this.state !== 'play') {
-        UI.treasurePlaque(h, kind, 'Peligro: un dardo, −1 PV');
-        UI.log(`${h.name} levanta una losa… y un dardo sale disparado de la pared.`, 'bad');
+        UI.treasurePlaque(h, kind, L('Peligro: un dardo, −1 PV', 'Danger : une fléchette, −1 PV'));
+        UI.log(L(`${h.name} levanta una losa… y un dardo sale disparado de la pared.`, `${h.name} soulève une dalle… et une fléchette jaillit du mur.`), 'bad');
         FX.burst('trap', { x: h.x * TILE, y: 0.8, z: h.y * TILE }); audio.sfx('trap');
         await this.damage(h, 1, { source: 'trap' });
       } else {
-        UI.treasurePlaque(h, kind, 'Peligro: algo viene');
-        UI.log(`El ruido despierta algo en la Hondura. <b>Viene hacia aquí.</b>`, 'bad');
-        FX.text(at, '¡Algo se acerca!', 'warn'); audio.sfx('whisper', { dur: 1.2 });
+        UI.treasurePlaque(h, kind, L('Peligro: algo viene', 'Danger : quelque chose approche'));
+        UI.log(L(`El ruido despierta algo en la Hondura. <b>Viene hacia aquí.</b>`, `Le bruit réveille quelque chose dans les Tréfonds. <b>Ça vient par ici.</b>`), 'bad');
+        FX.text(at, L('¡Algo se acerca!', 'Quelque chose approche !'), 'warn'); audio.sfx('whisper', { dur: 1.2 });
         this.pendingWanderer = true;
       }
     } else if (kind === 'nothing') {
-      UI.treasurePlaque(h, kind, 'Nada');
-      UI.log(`${h.name} no encuentra más que polvo y huesos.`, 'neutral'); FX.text(this.headPos(h), 'Nada', 'block');
+      UI.treasurePlaque(h, kind, L('Nada', 'Rien'));
+      UI.log(L(`${h.name} no encuentra más que polvo y huesos.`, `${h.name} ne trouve que de la poussière et des os.`), 'neutral'); FX.text(this.headPos(h), L('Nada', 'Rien'), 'block');
     } else if (kind === 'gold') {
-      const g = U.randi(10, 20); UI.treasurePlaque(h, kind, `Oro: ${g} monedas`);
-      this.addGold(g, at); UI.log(`Bajo una losa suelta: ${g} monedas.`, 'good');
+      const g = U.randi(10, 20); UI.treasurePlaque(h, kind, L(`Oro: ${g} monedas`, `Or : ${g} pièces`));
+      this.addGold(g, at); UI.log(L(`Bajo una losa suelta: ${g} monedas.`, `Sous une dalle descellée : ${g} pièces.`), 'good');
       if (BARKS[h.id].gold && Math.random() < 0.6) FX.bubble(h, U.pick(BARKS[h.id].gold));
     } else if (kind === 'potion') {
-      const g = U.randi(6, 14); UI.treasurePlaque(h, kind, `Una poción y ${g} monedas`);
+      const g = U.randi(6, 14); UI.treasurePlaque(h, kind, L(`Una poción y ${g} monedas`, `Une potion et ${g} pièces`));
       this.addGold(g, at); this.items.potion++; audio.sfx('potion', { vol: 0.6 });
-      FX.text(new THREE.Vector3(at.x, 2, at.z), '+1 poción', 'heal'); UI.log(`${g} monedas y una poción intacta.`, 'good');
+      FX.text(new THREE.Vector3(at.x, 2, at.z), L('+1 poción', '+1 potion'), 'heal'); UI.log(L(`${g} monedas y una poción intacta.`, `${g} pièces et une potion intacte.`), 'good');
     } else {
       const it = U.pick(['elixir', 'bomb', 'potion', 'bomb']); this.items[it]++;
-      const g = U.randi(12, 24); UI.treasurePlaque(h, kind, `${itemName[it][0].toUpperCase() + itemName[it].slice(1)} y ${g} monedas`);
+      const g = U.randi(12, 24); UI.treasurePlaque(h, kind, L(`${itemName[it][0].toUpperCase() + itemName[it].slice(1)} y ${g} monedas`, `${itemName[it][0].toUpperCase() + itemName[it].slice(1)} et ${g} pièces`));
       this.addGold(g, at); audio.sfx('chest', { vol: 0.6 });
-      FX.text(new THREE.Vector3(at.x, 2, at.z), '+1 ' + { elixir: 'elixir', bomb: 'bomba', potion: 'poción' }[it], 'heal');
-      UI.log(`¡Un alijo escondido! ${g} monedas y ${itemName[it]}.`, 'good');
+      FX.text(new THREE.Vector3(at.x, 2, at.z), '+1 ' + L({ elixir: 'elixir', bomb: 'bomba', potion: 'poción' }, { elixir: 'élixir', bomb: 'bombe', potion: 'potion' })[it], 'heal');
+      UI.log(L(`¡Un alijo escondido! ${g} monedas y ${itemName[it]}.`, `Une cachette secrète ! ${g} pièces et ${itemName[it]}.`), 'good');
     }
     DICE3D.clearLater(2200); UI.plaqueDone(2200);
     UI.refresh();
@@ -1535,8 +1543,8 @@ const GAME = {
     const g = U.randi(28, 50);
     this.addGold(g, new THREE.Vector3(c.x * TILE, 1.4, c.y * TILE));
     let extra = '';
-    if (Math.random() < 0.55) { this.items.potion++; extra = ' y una poción'; }
-    UI.log(`Cofre: ${g} monedas${extra}.`, 'good');
+    if (Math.random() < 0.55) { this.items.potion++; extra = L(' y una poción', ' et une potion'); }
+    UI.log(L(`Cofre: ${g} monedas${extra}.`, `Coffre : ${g} pièces${extra}.`), 'good');
     setTimeout(() => (c.mesh.userData.glow.visible = false), 900);
     const ev = this.ch.chests[c.idx];
     if (ev) await this.run(ev, { hero: h, room: this.roomOf(h) });
@@ -1554,8 +1562,8 @@ const GAME = {
     this.standUp(a);
     await this.heal(a, 2);
     this.woundOnRise(a);
-    FX.bubble(a, { barbaro: 'Aún no ha nacido quien me tumbe.', enano: 'Ni una palabra de esto.', elfa: 'Gracias. Te debo una.', hechicero: 'Estoy… estoy bien.', amazona: 'En pie. Seguimos.' }[a.id] || 'Gracias.');
-    UI.log(`${h.name} levanta a ${a.name}.`, 'good');
+    FX.bubble(a, L({ barbaro: 'Aún no ha nacido quien me tumbe.', enano: 'Ni una palabra de esto.', elfa: 'Gracias. Te debo una.', hechicero: 'Estoy… estoy bien.', amazona: 'En pie. Seguimos.' }, { barbaro: 'Celui qui me mettra à terre n’est pas encore né.', enano: 'Pas un mot là-dessus.', elfa: 'Merci. Je te dois une fière chandelle.', hechicero: 'Je… je vais bien.', amazona: 'Debout. On continue.' })[a.id] || L('Gracias.', 'Merci.'));
+    UI.log(L(`${h.name} levanta a ${a.name}.`, `${h.name} relève ${a.name}.`), 'good');
   },
   /* Desarmar: 2 dados, basta una calavera. Sin ninguna, salta. El Enano no falla */
   async disarm(h, tr) {
@@ -1563,15 +1571,15 @@ const GAME = {
     h.actions--; this.eventful = true;
     this.faceTo(h, tr.x, tr.y);
     const sure = h.traits && h.traits.locksmith;
-    const r = sure ? { ok: true, skulls: 1 } : await this.rollCheck(h, 2, 1, { label: 'Desarmar la trampa', at: tr });
+    const r = sure ? { ok: true, skulls: 1 } : await this.rollCheck(h, 2, 1, { label: L('Desarmar la trampa', 'Désamorcer le piège'), at: tr });
     if (r.ok) {
       tr.disarmed = true; audio.sfx('block');
       tr.mesh.userData.spikes.visible = false;
       this.addGold(8, new THREE.Vector3(tr.x * TILE, 1, tr.y * TILE));
-      FX.text(new THREE.Vector3(tr.x * TILE, 1.2, tr.y * TILE), 'Desarmada', 'heal');
-      UI.log(`${h.name} desarma la trampa.`, 'good');
+      FX.text(new THREE.Vector3(tr.x * TILE, 1.2, tr.y * TILE), L('Desarmada', 'Désamorcé'), 'heal');
+      UI.log(L(`${h.name} desarma la trampa.`, `${h.name} désamorce le piège.`), 'good');
     } else {
-      UI.log(`${h.name} falla al desarmar la trampa y la dispara.`, 'bad');
+      UI.log(L(`${h.name} falla al desarmar la trampa y la dispara.`, `${h.name} rate son coup et déclenche le piège.`), 'bad');
       await this.springTrap(tr, h);
     }
   },
@@ -1588,7 +1596,7 @@ const GAME = {
       const acting = this.visibleEnemies();
       if (acting.length || this.eruptions.length) {
         audio.sfx('turnShadow');
-        UI.banner('Turno de la Sombra', acting.length ? `${acting.length} criatura${acting.length > 1 ? 's' : ''} se mueve${acting.length > 1 ? 'n' : ''}` : '', 'shadow');
+        UI.banner(L('Turno de la Sombra', 'Tour de l’Ombre'), acting.length ? L(`${acting.length} criatura${acting.length > 1 ? 's' : ''} se mueve${acting.length > 1 ? 'n' : ''}`, `${acting.length} créature${acting.length > 1 ? 's' : ''} se déplace${acting.length > 1 ? 'nt' : ''}`) : '', 'shadow');
         UI.shadowMode(true);
         await U.sleep(900);
       }
@@ -1601,7 +1609,7 @@ const GAME = {
       }
       if (this.state === 'play' && gen === this.gen && this.heroesUp().length) {
         // Relato: los caídos se levantan solos
-        if (this.D.fall === 'auto') for (const h of this.heroes) if (h.ko) { h.ko = false; h.hp = 0; this.standUp(h); await this.heal(h, 1); UI.log(`${h.name} se levanta, tambaleante.`, 'good'); }
+        if (this.D.fall === 'auto') for (const h of this.heroes) if (h.ko) { h.ko = false; h.hp = 0; this.standUp(h); await this.heal(h, 1); UI.log(L(`${h.name} se levanta, tambaleante.`, `${h.name} se relève en titubant.`), 'good'); }
         this.addDoom(1);
         if (this.pendingWanderer) await this.spawnWanderer();
       }
@@ -1614,7 +1622,7 @@ const GAME = {
   async enemyTurn(e) {
     await this.tickStart(e);
     if (!e.alive) return;
-    if (e.status.aturdido) { FX.text(this.headPos(e), 'Aturdido', 'block'); this.tickEnd(e); await U.sleep(200); return; }
+    if (e.status.aturdido) { FX.text(this.headPos(e), L('Aturdido', 'Étourdi'), 'block'); this.tickEnd(e); await U.sleep(200); return; }
     if (e.status.huyendo) await this.enemyFlee(e);
     else await this.enemyAct(e);
     if (e.alive) this.tickEnd(e);
@@ -1683,7 +1691,7 @@ const GAME = {
     audio.sfx('heal', { vol: 0.5 }); FX.burst('heal', hurt.mesh.position);
     hurt.hp = Math.min(hurt.maxHp, hurt.hp + 1);
     FX.text(new THREE.Vector3(hurt.mesh.position.x, 1.8, hurt.mesh.position.z), '+1', 'heal');
-    UI.log(`${e.name} cura a ${hurt.name}.`, 'bad'); await U.sleep(400);
+    UI.log(L(`${e.name} cura a ${hurt.name}.`, `${e.name} soigne ${hurt.name}.`), 'bad'); await U.sleep(400);
   },
   async enemyFlee(e) {
     const heroes = this.heroesUp(); if (!heroes.length) return;
@@ -1693,7 +1701,7 @@ const GAME = {
     R.stand.forEach((k) => { const [x, y] = k.split(',').map(Number); const s = md(x, y) * 2 - (R.prov.get(k) || 0) * 3; if (s > best.s) best = { x, y, s }; });
     if (best.x !== e.x || best.y !== e.y) { await this.moveEnemy(e, this.pathTo(R, best.x, best.y)); return; }
     const adj = heroes.find((h) => this.meleeOK(e.x, e.y, h.x, h.y));
-    if (adj && e.alive) await this.attack(e, adj, { label: 'Acorralado' });
+    if (adj && e.alive) await this.attack(e, adj, { label: L('Acorralado', 'Acculé') });
   },
   async moveEnemy(e, path) {
     if (!path || path.length < 2) return true;
@@ -1721,7 +1729,7 @@ const GAME = {
     if (b.kind === 'malakor') {
       const minions = this.enemies.filter((e) => e.alive && e.summoned).length;
       if ((this.round % 3 === 0 || minions === 0) && this.summonsLeft > 0 && minions < 3) {
-        FX.bubble(b, U.pick(['¡Levantaos!', 'Servidme otra vez.', 'La muerte no es excusa.']), 2.2);
+        FX.bubble(b, U.pick(L(['¡Levantaos!', 'Servidme otra vez.', 'El descanso puede esperar.'], ['Relevez-vous !', 'Servez-moi encore.', 'Le repos attendra.'])), 2.2);
         audio.sfx('summon'); ENGINE.flashLight(new THREE.Vector3(b.x * TILE, 2, b.y * TILE), '#6dffb0', 4, 1);
         await this.summon(b, 'risen', 2, 3);
         await U.sleep(300);
@@ -1731,21 +1739,21 @@ const GAME = {
     if (b.kind === 'ignis') {
       if (this.eruptions.length) {
         audio.sfx('quake'); ENGINE.shake(0.8);
-        FX.bubble(b, '¡ARDED!', 1.8);
+        FX.bubble(b, L('¡ARDED!', 'BRÛLEZ !'), 1.8);
         for (const t of this.eruptions) {
           FX.burst('fire', { x: t.x * TILE, y: 0.3, z: t.y * TILE }); FX.burst('explode', { x: t.x * TILE, y: 0.3, z: t.y * TILE });
           audio.sfx('lava'); ENGINE.flashLight(new THREE.Vector3(t.x * TILE, 1, t.y * TILE), '#ff6a1a', 4, 0.7);
           const u = this.unitAt(t.x, t.y);
-          if (u && u.side === 'hero' && !u.ko) await this.diceHit('La erupción', u, 4, { label: 'Erupción', dtype: 'fire', onHit: { st: 'ardiendo', dur: 1 } });
+          if (u && u.side === 'hero' && !u.ko) await this.diceHit(L('La erupción', 'L’éruption'), u, 4, { label: L('Erupción', 'Éruption'), dtype: 'fire', onHit: { st: 'ardiendo', dur: 1 } });
           await U.sleep(160);
         }
         this.eruptions = []; WORLD.setDanger([]);
       }
       const adj = near(b);
       if (adj.length >= 2) {
-        FX.bubble(b, '¡Aplastaros a todos!', 1.8);
+        FX.bubble(b, L('¡Aplastaros a todos!', 'Je vais tous vous écraser !'), 1.8);
         audio.sfx('bossRoar'); ENGINE.shake(1);
-        for (const h of adj) await this.attack(b, h, { label: 'Golpe de magma', onHit: { st: 'aturdido', dur: 1, minDmg: 2 } });
+        for (const h of adj) await this.attack(b, h, { label: L('Golpe de magma', 'Coup de magma'), onHit: { st: 'aturdido', dur: 1, minDmg: 2 } });
         await this.markEruptions(b);
         return true;
       }
@@ -1760,14 +1768,14 @@ const GAME = {
         const weak = heroes.slice().sort((a, c) => a.hp - c.hp)[0];
         const p = this.freeTileNear(weak.x, weak.y, 1, false);
         if (p) {
-          FX.bubble(b, 'No hay sombra donde esconderse.', 2);
+          FX.bubble(b, L('No hay sombra donde esconderse.', 'Nulle ombre où vous cacher.'), 2);
           audio.sfx('dark'); FX.burst('magic', b.mesh.position, { color: '#e8f7ff', color2: '#4ab0ff' });
           const m = b.mesh; await U.tween(220, (k) => m.scale.setScalar(1 - 0.95 * k));
           b.x = p.x; b.y = p.y; m.position.set(p.x * TILE, 0, p.y * TILE); this.faceTo(b, weak.x, weak.y);
           ENGINE.focusTile(p.x, p.y);
           FX.burst('magic', m.position, { color: '#e8f7ff', color2: '#4ab0ff' }); ENGINE.flashLight(new THREE.Vector3(p.x * TILE, 2, p.y * TILE), '#bfe8ff', 4, 0.6);
           await U.tween(260, (k) => m.scale.setScalar(0.05 + 0.95 * k));
-          if (this.meleeOK(b.x, b.y, weak.x, weak.y)) await this.attack(b, weak, { label: 'Estocada espectral' });
+          if (this.meleeOK(b.x, b.y, weak.x, weak.y)) await this.attack(b, weak, { label: L('Estocada espectral', 'Estocade spectrale') });
           return true;
         }
       }
@@ -1776,7 +1784,7 @@ const GAME = {
     if (b.kind === 'isolde') {
       const wraiths = this.enemies.filter((e) => e.alive && e.summoned).length;
       if (this.round % 3 === 0 && wraiths < 2 && this.summonsLeft > 0) {
-        FX.bubble(b, U.pick(['Hijos míos, venid.', 'El Ojo tiene muchos hijos.']), 2);
+        FX.bubble(b, U.pick(L(['Hijos míos, venid.', 'El Ojo tiene muchos hijos.'], ['Venez, mes enfants.', 'L’Œil a bien des enfants.'])), 2);
         audio.sfx('summon');
         await this.summon(b, 'wraith', 2, 2);
       }
@@ -1795,9 +1803,9 @@ const GAME = {
       }
       targets.sort((a, c) => a.hp - c.hp);
       const n = b.hp <= b.maxHp / 2 ? 2 : 1;
-      if (n === 2 && !b.phase2) { b.phase2 = true; FX.bubble(b, '¡Mirad dentro del Ojo!', 2.4); ENGINE.fx.flash = 0.3; audio.sfx('scare'); WORLD.setLightsMult(0.5); }
+      if (n === 2 && !b.phase2) { b.phase2 = true; FX.bubble(b, L('¡Mirad dentro del Ojo!', 'Regardez au fond de l’Œil !'), 2.4); ENGINE.fx.flash = 0.3; audio.sfx('scare'); WORLD.setLightsMult(0.5); }
       for (const h of targets.slice(0, n)) {
-        const dmg = await this.attack(b, h, { label: 'Mirada del Vacío', proj: 'void', ranged: true });
+        const dmg = await this.attack(b, h, { label: L('Mirada del Vacío', 'Regard du Vide'), proj: 'void', ranged: true });
         if (dmg > 0 && b.alive) { b.hp = Math.min(b.maxHp, b.hp + 1); FX.text(new THREE.Vector3(b.mesh.position.x, 2.6, b.mesh.position.z), '+1', 'heal'); UI.refresh(); }
       }
       return true;
@@ -1811,8 +1819,8 @@ const GAME = {
     U.shuffle(heroes.slice()).slice(0, 3).forEach((h) => tiles.push({ x: h.x, y: h.y }));
     if (!tiles.length) return;
     this.eruptions = tiles; WORLD.setDanger(tiles);
-    audio.sfx('lava'); FX.bubble(b, 'El suelo arderá bajo vuestros pies.', 2.4);
-    UI.log('<b>Ignis marca el suelo.</b> Apartaos de las runas rojas antes de que acabe el turno.', 'bad');
+    audio.sfx('lava'); FX.bubble(b, L('El suelo arderá bajo vuestros pies.', 'Le sol brûlera sous vos pieds.'), 2.4);
+    UI.log(L('<b>Ignis marca el suelo.</b> Apartaos de las runas rojas antes de que acabe el turno.', '<b>Ignis marque le sol.</b> Écartez-vous des runes rouges avant la fin du tour.'), 'bad');
     await U.sleep(500);
   },
   async bossDefeated(b) {
@@ -1875,11 +1883,11 @@ const GAME = {
   },
   /* Antes de bajar: se puede cambiar quién va (con la recomendación del capítulo siguiente) */
   async campParty(next) {
-    const p = await UI.partyPick({ mode: 'camp', current: this.party, recommend: next && next.recommend, title: next ? `Capítulo ${next.num} · ${next.title}` : '' });
+    const p = await UI.partyPick({ mode: 'camp', current: this.party, recommend: next && next.recommend, title: next ? L(`Capítulo ${next.num} · ${next.title}`, `Chapitre ${next.num} · ${next.title}`) : '' });
     if (!p || (p.length === this.party.length && p.every((id, i) => id === this.party[i]))) return;
     this.party = this.validParty(p);
     this.placeCampHeroes();
-    UI.log(`Bajan: ${this.groupNames()}.`, 'good');
+    UI.log(L(`Bajan: ${this.groupNames()}.`, `Descendent : ${this.groupNames()}.`), 'good');
   },
   async camp(idx) {
     this.state = 'camp';
@@ -1903,7 +1911,10 @@ const GAME = {
     await this.campParty(CHAPTERS[idx + 1]);
     await this.campTalents(Math.min(idx, 1));
     if (!this.flags['vigil' + idx]) await this.vigil(idx);
+    // capa de saber: dilema de la noche y crónica para la familia
+    if (!this.flags['dilemma' + idx] && SABER.CAMPAIGN[idx]) { this.flags['dilemma' + idx] = true; await SABER.dilemma(SABER.CAMPAIGN[idx], idx + 1); }
     this.save('camp');
+    await SABER.chronicle();
     await UI.shop();
     this.campOrbit = false;
     await this.startChapter(idx + 1);
@@ -1918,19 +1929,24 @@ const GAME = {
     this.flags['vigil' + idx] = true;
     const opts = V.options.map((o) => {
       const q = Object.assign({}, o);
-      if (o.req && !o.req.some((id) => this.party.includes(id))) q.locked = 'Necesita ' + o.req.map((id) => HERO_DEFS[id].role.toLowerCase()).join(' o ');
+      if (o.req && !o.req.some((id) => this.party.includes(id))) q.locked = L('Necesita ', 'Requiert : ') + o.req.map((id) => HERO_DEFS[id].role.toLowerCase()).join(L(' o ', ' ou '));
       return q;
     });
-    const pick = await UI.choice(V.prompt, opts, { title: 'Velada' });
+    const pick = await UI.choice(V.prompt, opts, { title: L('Velada', 'Veillée') });
     if (!pick) return;
     const who = pick.req ? this.heroes.find((h) => pick.req.includes(h.id)) : this.lanternHolder();
-    const nm = who ? who.name : 'Alguien';
-    const text = {
+    const nm = who ? who.name : L('Alguien', 'Quelqu’un');
+    const text = L({
       vigor: 'Dormís de un tirón por primera vez en días. (Todos empiezan el próximo capítulo con +2 de vida máxima)',
       traps: `${nm} vuelve antes del alba con el camino marcado con tiza. (Las trampas del próximo capítulo empiezan señaladas)`,
       sharp: `El chirrido de la piedra de afilar de ${nm} acompaña la noche. (Todos empiezan el próximo capítulo Inspirados)`,
       trueName: `${nm} no duerme. Al amanecer hay un nombre escrito en el margen del cuaderno, y no es Isolde. (El enemigo final será más débil)`
-    }[pick.reward];
+    }, {
+      vigor: 'Pour la première fois depuis des jours, vous dormez d’une traite. (Tous commencent le prochain chapitre avec +2 de vie maximale)',
+      traps: `${nm} revient avant l’aube, le chemin balisé à la craie. (Les pièges du prochain chapitre sont signalés dès le départ)`,
+      sharp: `Le crissement de la pierre à aiguiser de ${nm} accompagne la nuit. (Tous commencent le prochain chapitre Inspirés)`,
+      trueName: `${nm} ne dort pas. À l’aube, un nom est écrit dans la marge du carnet, et ce n’est pas Isolde. (L’ennemi final sera plus faible)`
+    })[pick.reward];
     if (pick.reward === 'vigor') this.flags.vigorCh = idx + 1;
     if (pick.reward === 'traps') this.flags.trapsKnownCh = idx + 1;
     if (pick.reward === 'sharp') this.flags.sharpCh = idx + 1;
@@ -1940,7 +1956,7 @@ const GAME = {
   },
   async heroDies(h) {
     this.state = 'defeat';
-    UI.log(`<b>${h.name} ha muerto.</b>`, 'bad');
+    UI.log(L(`<b>${h.name} no puede seguir. El grupo se retira.</b>`, `<b>${h.name} ne peut pas continuer. Le groupe se replie.</b>`), 'bad');
     audio.sfx('heroDown'); ENGINE.fx.desatT = 0.9;
     this.deathOf = h;
     setTimeout(() => this.defeat(), 900);
@@ -1973,7 +1989,7 @@ const GAME = {
   /* Nombres en los textos: {lider} es quien lleva el farol, {grupo} todo el grupo */
   groupNames() {
     const n = this.party.map((id) => HERO_DEFS[id].name);
-    return n.length <= 1 ? (n[0] || '') : n.slice(0, -1).join(', ') + ' y ' + n[n.length - 1];
+    return n.length <= 1 ? (n[0] || '') : n.slice(0, -1).join(', ') + L(' y ', ' et ') + n[n.length - 1];
   },
   fmt(s) {
     if (typeof s !== 'string') return s;
@@ -2025,13 +2041,13 @@ const GAME = {
           case 'fear': { const list = a[0] === 'all' ? this.heroesUp() : [this.stepUnit(a[0], ctx)].filter((h) => h && !h.ko); for (const h of list) await this.addStatus(h, 'aterrado', a[1] || 1); break; }
           case 'ambush': {
             const h = ctx.hero || this.active || this.heroesUp()[0]; if (!h || h.ko) break;
-            if (h.id === 'elfa' || h.id === 'amazona') { FX.text(this.headPos(h), 'Esquiva', 'heal'); UI.log(`${h.name} lo ve venir y se aparta a tiempo.`, 'good'); audio.sfx('swing'); }
-            else { UI.log(`${h.name} recibe el golpe por sorpresa.`, 'bad'); await this.damage(h, a[0] || 2, { source: 'story' }); }
+            if (h.id === 'elfa' || h.id === 'amazona') { FX.text(this.headPos(h), L('Esquiva', 'Esquive'), 'heal'); UI.log(L(`${h.name} lo ve venir y se aparta a tiempo.`, `${h.name} le voit venir et s’écarte à temps.`), 'good'); audio.sfx('swing'); }
+            else { UI.log(L(`${h.name} recibe el golpe por sorpresa.`, `${h.name} est pris${FEM(h)} par surprise.`), 'bad'); await this.damage(h, a[0] || 2, { source: 'story' }); }
             break;
           }
           case 'strike': {
             const h = this.stepUnit(a[0], ctx), b = this.enemies.find((e) => e.boss && e.alive);
-            if (h && !h.ko) await this.diceHit(b ? b.name : 'El golpe', h, a[1] || 3, { label: 'Golpe sin defensa', by: b || null });
+            if (h && !h.ko) await this.diceHit(b ? b.name : L('El golpe', 'Le coup'), h, a[1] || 3, { label: L('Golpe sin defensa', 'Coup sans défense'), by: b || null });
             break;
           }
           case 'lights': await this.lights(a[0]); break;
@@ -2061,8 +2077,8 @@ const GAME = {
     const opts = options.map((o) => (Array.isArray(o) ? { label: o[0], desc: o[1], steps: o[2] } : Object.assign({}, o)));
     opts.forEach((o) => {
       o.label = this.fmt(o.label); o.desc = this.fmt(o.desc);
-      if (Array.isArray(o.req)) { if (!o.req.some((id) => this.party.includes(id))) o.locked = o.reqText || 'No disponible'; }
-      else if (o.req && !this.flags[o.req]) o.locked = o.reqText || 'No disponible';
+      if (Array.isArray(o.req)) { if (!o.req.some((id) => this.party.includes(id))) o.locked = o.reqText || L('No disponible', 'Indisponible'); }
+      else if (o.req && !this.flags[o.req]) o.locked = o.reqText || L('No disponible', 'Indisponible');
     });
     const pick = await UI.choice(this.fmt(prompt), opts);
     if (pick && pick.steps) await this.run(pick.steps, ctx);
@@ -2073,10 +2089,10 @@ const GAME = {
     this.willFail = [];
     for (const h of this.heroesUp()) {
       let imm = this.immuneTo(h, 'aterrado');
-      if (!imm && this.flags.tomasTruth) imm = 'Recuerda a Tomás';
-      if (imm) { FX.text(this.headPos(h), imm, 'block'); UI.log(`${h.name} no escucha la voz de Isolde (${imm}).`, 'good'); continue; }
-      this.willFail.push(h); FX.text(this.headPos(h), 'La voz se queda dentro', 'warn');
-      UI.log(`La voz de Isolde se queda en la cabeza de ${h.name}.`, 'bad');
+      if (!imm && this.flags.tomasTruth) imm = L('Recuerda a Tomás', 'Se souvient de Tomás');
+      if (imm) { FX.text(this.headPos(h), imm, 'block'); UI.log(L(`${h.name} no escucha la voz de Isolde (${imm}).`, `${h.name} n’écoute pas la voix d’Isolde (${imm}).`), 'good'); continue; }
+      this.willFail.push(h); FX.text(this.headPos(h), L('La voz se queda dentro', 'La voix reste en tête'), 'warn');
+      UI.log(L(`La voz de Isolde se queda en la cabeza de ${h.name}.`, `La voix d’Isolde reste dans la tête de ${h.name}.`), 'bad');
       await U.sleep(200);
     }
   },
@@ -2140,7 +2156,7 @@ const GAME = {
       const p = new THREE.Vector3(el.mesh.position.x, 1.8, el.mesh.position.z);
       await FX.projectile(p, new THREE.Vector3(al.x * TILE, 1.8, (al.y - 1) * TILE), 'void');
     }
-    ENGINE.fx.flash = 0.6; audio.sfx('scare'); ENGINE.shake(1);
+    ENGINE.fx.flash = 0.3; audio.sfx('scare'); ENGINE.shake(0.5);
     await this.run(this.ch.twist, {});
   },
   async spawnFinalBoss(type) {
@@ -2163,7 +2179,7 @@ const GAME = {
     await ENGINE.focusWait(p.x, p.y, { dist: 16 });
     await U.tween(900, (k) => m.scale.setScalar(Math.max(0.01, k)), U.easeOutBack);
     this.boss = b;
-    if (this.flags.tomasTruth || this.flags.trueName) UI.log('Lo que sabéis de ella la debilita: Isolde empieza con menos fuerza.', 'good');
+    if (this.flags.tomasTruth || this.flags.trueName) UI.log(L('Lo que sabéis de ella la debilita: Isolde empieza con menos fuerza.', 'Ce que vous savez d’elle l’affaiblit : Isolde commence avec moins de force.'), 'good');
     for (const h of this.willFail || []) if (!h.ko) await this.addStatus(h, 'aterrado', 2);
     this.willFail = [];
   }

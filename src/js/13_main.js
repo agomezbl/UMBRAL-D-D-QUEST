@@ -4,7 +4,7 @@
 const SETTINGS = Object.assign({
   quality: (() => { const touch = U.isTouch(), cores = navigator.hardwareConcurrency || 4; if (touch && Math.min(screen.width, screen.height) < 820) return 'medio'; return cores <= 4 ? 'medio' : 'alto'; })(),
   autoQ: true, tilt: true, shake: true, flashes: true, music: 0.55, sfx: 0.85, amb: 0.6, voice: 'narrador', textSpeed: 'normal', autoText: false,
-  speed: 1, follow: true, confirmTouch: true, quickEnemyDice: true, textSize: 'normal', contrast: false
+  speed: 1, follow: true, confirmTouch: true, quickEnemyDice: true, textSize: 'normal', contrast: false, scares: 'suaves', tahur: true
 }, U.store.get('umbral.settings', {}));
 
 const INPUT = {
@@ -122,19 +122,19 @@ const MAIN = {
     const ld = document.getElementById('loading-text');
     const say = (t) => { if (ld) ld.textContent = t; };
     if (!window.THREE || !THREE.EffectComposer || !THREE.UnrealBloomPass) {
-      say('No se pudo cargar el motor 3D. Comprueba tu conexión a internet y recarga la página.');
+      say(L('No se pudo cargar el motor 3D. Comprueba tu conexión a internet y recarga la página.', 'Impossible de charger le moteur 3D. Vérifie ta connexion internet et recharge la page.'));
       return;
     }
     try {
       ENGINE.qName = SETTINGS.quality; TEX.size = SETTINGS.quality === 'bajo' || SETTINGS.quality === 'minimo' ? 256 : 512;
-      say('Encendiendo las antorchas…');
+      say(L('Encendiendo las antorchas…', 'On allume les torches…'));
       await U.nextFrame();
       ENGINE.tiltOn = SETTINGS.tilt;
       ENGINE.init(document.getElementById('stage'));
       DICE3D.init(ENGINE.scene, { size: 0.84, selfLit: 0.22 });
       FX.init(); UI.init(); INPUT.init();
       this.applySettings(false, true);
-      say('Tallando las miniaturas…');
+      say(L('Tallando las miniaturas…', 'On sculpte les figurines…'));
       await U.nextFrame();
       UI.portraits = ENGINE.portraits([
         { id: 'barbaro', kind: 'barbaro', bg: '#2a1410' }, { id: 'enano', kind: 'enano', bg: '#2a1a10' }, { id: 'elfa', kind: 'cazadora', bg: '#14221a' },
@@ -142,7 +142,7 @@ const MAIN = {
         { id: 'isolde', kind: 'isolde', opts: { small: true }, bg: '#241f1a' }, { id: 'malakor', kind: 'malakor', bg: '#0c1a12' }, { id: 'ignis', kind: 'ignis', bg: '#2a0d06' },
         { id: 'aethelgard', kind: 'aethelgard', bg: '#0c1a2a' }, { id: 'thrain', kind: 'thrain', bg: '#0c1a22' }, { id: 'tomas', kind: 'tomas', bg: '#101a24' }
       ]);
-      say('Abriendo la Hondura…');
+      say(L('Abriendo la Hondura…', 'Ouverture des Tréfonds…'));
       await U.nextFrame();
       this.titleScene();
       document.getElementById('loading').classList.add('done');
@@ -151,7 +151,7 @@ const MAIN = {
       UI.title();
     } catch (err) {
       console.error(err);
-      say('Algo ha fallado al preparar la mazmorra: ' + (err && err.message ? err.message : err));
+      say(L('Algo ha fallado al preparar la mazmorra: ', 'Un problème est survenu en préparant le donjon : ') + (err && err.message ? err.message : err));
     }
   },
   loop(t) {
@@ -175,7 +175,7 @@ const MAIN = {
         if (this.slow >= 2 && ENGINE.qName !== 'minimo') {
           const nq = ENGINE.qName === 'alto' ? 'medio' : ENGINE.qName === 'medio' ? 'bajo' : 'minimo';
           SETTINGS.quality = nq; this.applySettings(true, true); this.slow = 0;
-          UI.toast(`Calidad gráfica ajustada a ${QUALITY[nq].label.toLowerCase()} para que el juego vaya fluido.`);
+          UI.toast(L(`Calidad gráfica ajustada a ${QUALITY[nq].label.toLowerCase()} para que el juego vaya fluido.`, `Qualité graphique réglée sur « ${QUALITY[nq].label.toLowerCase()} » pour que le jeu reste fluide.`));
         }
       } else this.slow = 0;
     }
@@ -201,9 +201,9 @@ const MAIN = {
     try {
       const d = document, el = d.documentElement;
       if (d.fullscreenElement) d.exitFullscreen && d.exitFullscreen().catch(() => {});
-      else if (el.requestFullscreen) el.requestFullscreen().catch(() => UI.toast('Este navegador no permite pantalla completa aquí.'));
-      else UI.toast('Este navegador no permite pantalla completa aquí.');
-    } catch (e) { UI.toast('Este navegador no permite pantalla completa aquí.'); }
+      else if (el.requestFullscreen) el.requestFullscreen().catch(() => UI.toast(L('Este navegador no permite pantalla completa aquí.', "Ce navigateur n'autorise pas le plein écran ici.")));
+      else UI.toast(L('Este navegador no permite pantalla completa aquí.', "Ce navigateur n'autorise pas le plein écran ici."));
+    } catch (e) { UI.toast(L('Este navegador no permite pantalla completa aquí.', "Ce navigateur n'autorise pas le plein écran ici.")); }
   },
   async wake() { try { if ('wakeLock' in navigator && !this.lock) { this.lock = await navigator.wakeLock.request('screen'); this.lock.addEventListener('release', () => (this.lock = null)); } } catch (e) {} },
   applySettings(qChanged, silent) {

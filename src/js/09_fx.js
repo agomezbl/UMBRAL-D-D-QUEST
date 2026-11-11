@@ -123,7 +123,8 @@ const FX = {
     else if (kind === 'heal') this.ring(P, '#9dffc8', 1.1, 600);
     switch (kind) {
       case 'hit': this.emit({ pos: P, count: 22, spread: 0.15, radial: 3.2, up: 2.4, gravity: 6, life: 0.6, size: 0.11, color: '#ffb36b', color2: '#ff3d1e', drag: 2 }); break;
-      case 'blood': this.emit({ pos: P, count: 14, spread: 0.15, radial: 2.4, up: 2, gravity: 8, life: 0.7, size: 0.1, color: '#b0101a', color2: '#5a0008', drag: 1.5 }); break;
+      // al herir a un héroe: chispas doradas (sin sangre: PEGI 7)
+      case 'hurt': this.emit({ pos: P, count: 16, spread: 0.15, radial: 2.6, up: 2.2, gravity: 6, life: 0.6, size: 0.1, color: '#fff1b0', color2: '#ffb030', drag: 1.8 }); break;
       case 'bone': this.emit({ pos: P, count: 18, spread: 0.2, radial: 2.5, up: 2.5, gravity: 8, life: 0.9, size: 0.09, color: '#f0e6cc', color2: '#a89c80', drag: 1 }); break;
       case 'block': this.emit({ pos: P, count: 16, spread: 0.1, radial: 3.6, up: 1.5, gravity: 4, life: 0.45, size: 0.08, color: '#cfe6ff', color2: '#7fb8ff', drag: 2 }); break;
       case 'magic': this.emit({ pos: P, count: 30, spread: 0.2, radial: 2.6, up: 1.8, gravity: -0.5, life: 0.9, size: 0.14, color: o.color || '#c9b0ff', color2: o.color2 || '#6a3aff', drag: 2.2 }); break;

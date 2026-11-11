@@ -12,7 +12,7 @@ R = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.normpath(os.path.join(R, '..', '..', 'src', 'js'))
 read = lambda p: open(p, encoding='utf-8').read()
 
-game = [read(os.path.join(SRC, f)) for f in ['01_util.js', '02_icons.js', '03_audio.js', '04_textures.js', '05_shaders.js', '06_models.js', '10_story.js']]
+game = [read(os.path.join(SRC, f)) for f in ['00_i18n.js', '01_util.js', '02_icons.js', '03_audio.js', '04_textures.js', '05_shaders.js', '06_models.js', '10_story.js']]
 # el tema de la cripta, copiado de 08_world.js tal cual
 w = read(os.path.join(SRC, '08_world.js')).splitlines()
 i = next(k for k, l in enumerate(w) if l.startswith('  crypt: {'))

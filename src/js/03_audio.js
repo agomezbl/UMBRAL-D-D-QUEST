@@ -250,9 +250,11 @@ class AudioEngine {
         this.noise(t, 1.8, 0.15 * v, { filter: 'bandpass', freq: 200, fglide: 2400, q: 1.2, color: 'pink', hold: 0.4, release: 1.2 });
         [0, 3, 7, 10].forEach((s, i) => this.tone(293.66 * Math.pow(2, s / 12), t + 0.2 + i * 0.12, 2.2, 0.04 * v, { type: 'triangle', attack: 0.3 })); break;
       case 'scare':
-        [0, 1, 6, 11, 13].forEach((s) => this.tone(185 * Math.pow(2, s / 12), t, 1.6, 0.06 * v, { type: 'sawtooth', attack: 0.004, release: 1.2, filter: 'lowpass', freq: 3000, fglide: 500, vibrato: 7, vibDepth: 25 }));
-        this.noise(t, 1.2, 0.28 * v, { filter: 'highpass', freq: 800, fglide: 4000, color: 'white', hold: 0.15, release: 0.8 });
-        this.tone(40, t, 1.4, 0.4 * v, { glide: 28 }); break;
+        // PEGI 7: un acorde misterioso que entra suave, sin chirrido ni golpe seco
+        if (typeof SETTINGS !== 'undefined' && SETTINGS.scares === 'ninguno') { this.whisper(1, 0.4 * v); break; }
+        [0, 3, 6, 10].forEach((s) => this.tone(185 * Math.pow(2, s / 12), t, 1.8, 0.035 * v, { type: 'triangle', attack: 0.08, release: 1.4, vibrato: 5, vibDepth: 10 }));
+        this.noise(t, 1, 0.08 * v, { filter: 'bandpass', freq: 600, fglide: 1600, color: 'pink', hold: 0.2, release: 0.8 });
+        this.tone(55, t, 1.4, 0.18 * v, { glide: 45, attack: 0.05 }); break;
       case 'whisper': this.whisper(o.dur || 2.2, v); break;
       case 'heartbeat': this.tone(60, t, 0.18, 0.5 * v, { glide: 40, attack: 0.003, rev: false }); this.tone(55, t + 0.22, 0.2, 0.38 * v, { glide: 38, attack: 0.003, rev: false }); break;
       case 'turnHero': [0, 7, 12].forEach((s, i) => this.tone(293.66 * Math.pow(2, s / 12), t + i * 0.09, 0.9, 0.06 * v, { type: 'triangle', attack: 0.01 })); break;
@@ -462,8 +464,10 @@ class AudioEngine {
     if (!('speechSynthesis' in window)) return null;
     const vs = speechSynthesis.getVoices();
     if (!vs || !vs.length) return null;
-    const es = vs.filter((v) => /^es/i.test(v.lang));
-    const score = (v) => (/natural|neural|online/i.test(v.name) ? 10 : 0) + (/es-ES/i.test(v.lang) ? 4 : 0) + (/google/i.test(v.name) ? 3 : 0) + (/microsoft/i.test(v.name) ? 2 : 0);
+    // voz del idioma elegido (español de España o francés de Francia, si las hay)
+    const lg = LANG === 'fr' ? 'fr' : 'es', main = LANG === 'fr' ? /fr-FR/i : /es-ES/i;
+    const es = vs.filter((v) => new RegExp('^' + lg, 'i').test(v.lang));
+    const score = (v) => (/natural|neural|online/i.test(v.name) ? 10 : 0) + (main.test(v.lang) ? 4 : 0) + (/google/i.test(v.name) ? 3 : 0) + (/microsoft/i.test(v.name) ? 2 : 0);
     es.sort((a, b) => score(b) - score(a));
     return es[0] || null;
   }
@@ -475,7 +479,7 @@ class AudioEngine {
       const u = new SpeechSynthesisUtterance(text.replace(/[«»—]/g, ' '));
       const v = this.pickVoice();
       if (v) u.voice = v;
-      u.lang = (v && v.lang) || 'es-ES';
+      u.lang = (v && v.lang) || (LANG === 'fr' ? 'fr-FR' : 'es-ES');
       const prof = { narrador: [0.92, 0.82], isolde: [0.86, 1.08], voz: [0.75, 0.4], aldric: [0.95, 0.78], sera: [1.04, 1.12], elian: [1, 1], malakor: [0.82, 0.5], ignis: [0.85, 0.35], aethelgard: [0.8, 0.6], thrain: [0.9, 0.55], tomas: [0.9, 0.9] }[who] || [0.95, 0.9];
       u.rate = prof[0]; u.pitch = prof[1]; u.volume = U.clamp(this.vol.voice, 0, 1);
       speechSynthesis.speak(u);

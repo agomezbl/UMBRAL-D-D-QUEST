@@ -6,6 +6,8 @@ Mazmorra táctica por turnos en 3D, con dados de calavera y escudo, al estilo de
 
 Funciona en ordenador (ratón y teclado) y en móvil (pantalla táctil). No necesita conexión: el motor 3D y las letras van dentro del archivo. En el móvil, desde el navegador, «Añadir a la pantalla de inicio» lo instala como una app.
 
+**Novedades de la v1.1 beta:** en **español y francés**, apto para **PEGI 7** (sustos suaves o sin sustos) y con **saber dentro**: el *Ojo de Tahúr* te reta a estimar probabilidades antes de atacar, cada campamento trae un *Dilema de la noche* sin respuesta correcta y la *Crónica de la noche* resume lo aprendido con una pregunta para hablar en familia. Detalle en [`DISENO.md`](DISENO.md) §13 y en [`CAMBIOS.md`](CAMBIOS.md).
+
 ## Lo que incluye
 
 - **Cinco héroes clásicos, y tú eliges cuántos bajan (de 1 a 5):**
@@ -57,6 +59,8 @@ El estudio de diseño completo (estrategias comparadas, solución elegida y resu
 | `src/vendor/` | Motor 3D y tipografías que van dentro del juego, con sus licencias. |
 | `src/` | El código fuente, dividido por partes (historia, mapas, gráficos, audio, interfaz…). |
 | `src/js/10_rules.js` | Reglas: estados, dificultades, cuántos enemigos según el tamaño del grupo, talentos, equipo y veladas. Aquí se ajusta el equilibrio. |
+| `src/js/00_i18n.js` | Idiomas: cada texto va como `L('español', 'français')`. |
+| `src/js/10_saber.js` | Capa de saber: Ojo de Tahúr, Libro de Tiradas, Dilema y Crónica de la noche. |
 | `src/js/10_story.js` | Diálogos, mapas de los capítulos, héroes, enemigos y tienda. Aquí se cambia la historia. |
 | `src/js/10_descent.js` | Generador de mazmorras del modo Descenso: tamaños, criaturas, nombres y frases. |
 | `src/js/11_game_descent.js` | Reglas del Descenso: escaleras, campamentos, velas y récord. |

@@ -263,7 +263,7 @@ b.dmg { color: #ff6a4a; } b.none { color: var(--ash); } b.good { color: var(--ca
 
 /* ------------------------------------------------ sustos */
 .scare { position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: 0; }
-.scare.flash.go { animation: sflash 0.7s ease-out; background: radial-gradient(circle, rgba(255, 240, 230, 0.9), rgba(160, 20, 20, 0.6) 60%, rgba(0, 0, 0, 0.9)); }
+.scare.flash.go { animation: sflash 0.8s ease-out; background: radial-gradient(circle, rgba(255, 246, 225, 0.55), rgba(120, 80, 170, 0.35) 60%, rgba(0, 0, 0, 0.6)); }
 @keyframes sflash { 0% { opacity: 1; } 100% { opacity: 0; } }
 .scare.eyes { background: #000; }
 .scare.eyes.go { animation: sfade 1.7s ease-in-out forwards; }
@@ -316,6 +316,12 @@ b.dmg { color: #ff6a4a; } b.none { color: var(--ash); } b.good { color: var(--ca
 .tt-menu .btn { justify-content: flex-start; }
 .tt-menu .btn small { margin-left: auto; }
 .tt-foot { font-size: var(--t-xs); color: var(--ash); letter-spacing: 0.04em; max-width: 44ch; }
+/* selector de idioma bajo el menú de inicio: ES · FR */
+.tt-lang { display: flex; gap: 6px; margin-top: -12px; }
+.tt-lang button { min-width: 46px; min-height: 34px; padding: 4px 10px; cursor: pointer; font-family: var(--f-sc); font-size: var(--t-s); letter-spacing: 0.1em; color: var(--ash); background: rgba(17, 13, 11, 0.6); border: 1px solid var(--bronze-dim); border-radius: 2px; transition: border-color 0.15s, color 0.15s; }
+.tt-lang button:hover { border-color: var(--candle); color: var(--bone); }
+.tt-lang button.on { color: var(--candle-hi); border-color: var(--candle); background: linear-gradient(180deg, #5a3a1c, #2a1a0b); cursor: default; }
+.tt-lang button:focus-visible { outline: 2px solid var(--candle); outline-offset: 2px; }
 .diff-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .diff-opt { text-align: left; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--bronze-dim); }
 .diff-opt b { font-family: var(--f-display); font-size: 26px; font-weight: 500; color: var(--bone); }

@@ -32,7 +32,7 @@ def face(fam, w, st, f):
 fontcss = '\n'.join(face(*f) for f in FONTS)
 
 meta = ('<title>Umbral</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n'
-        '<meta name="description" content="Umbral: crónicas de la Última Llama. Táctica por turnos en 3D con dados, historia y sustos.">\n'
+        '<meta name="description" content="Umbral · Crónicas / Chroniques. Táctica por turnos en 3D con dados · Tactique au tour par tour en 3D avec des dés.">\n'
         '<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" href="icon-192.png">\n<link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
         '<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="mobile-web-app-capable" content="yes">\n'
         '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="Umbral">')
@@ -48,8 +48,8 @@ open(f'{R}/index.html', 'w', encoding='utf-8').write(html)
 
 # --- instalación en el móvil ---
 manifest = {
-    'name': 'Umbral · Crónicas de la Última Llama', 'short_name': 'Umbral', 'lang': 'es',
-    'description': 'Mazmorra táctica por turnos en 3D con dados de calavera.',
+    'name': 'Umbral · Crónicas / Chroniques', 'short_name': 'Umbral', 'lang': 'es',
+    'description': 'Mazmorra táctica por turnos en 3D · Donjon tactique au tour par tour en 3D.',
     'start_url': './', 'scope': './', 'display': 'fullscreen', 'orientation': 'any',
     'background_color': '#0b0908', 'theme_color': '#0b0908',
     'icons': [{'src': 'icon-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any maskable'},

@@ -38,12 +38,12 @@ const TUTOR = {
     ['panWorld', 'pan', 'rotate', 'zoom', 'tilt'].forEach((k) => before(ENGINE, k, () => T.emit('cam')));
     // piezas de la interfaz
     const panel = U.el('div', 'plate', `
-      <div class="tu-top"><span class="eyebrow">Tutorial · <b class="tu-n"></b></span><button class="tu-exit" type="button">Salir del tutorial</button></div>
+      <div class="tu-top"><span class="eyebrow">${L('Tutorial', 'Tutoriel')} · <b class="tu-n"></b></span><button class="tu-exit" type="button">${L('Salir del tutorial', 'Quitter le tutoriel')}</button></div>
       <div class="tu-bar"><i></i></div>
       <h4 class="tu-title"></h4>
       <p class="tu-text"></p>
       <p class="tu-aside" hidden></p>
-      <div class="tu-foot"><span class="tu-wait">${icon('hand')} Hazlo para seguir</span><button class="tu-pass" type="button">Saltar paso</button><button class="btn small primary tu-next" type="button">${icon('check')} Entendido</button></div>`);
+      <div class="tu-foot"><span class="tu-wait">${icon('hand')} ${L('Hazlo para seguir', 'Fais-le pour continuer')}</span><button class="tu-pass" type="button">${L('Saltar paso', 'Passer l’étape')}</button><button class="btn small primary tu-next" type="button">${icon('check')} ${L('Entendido', 'Compris')}</button></div>`);
     panel.id = 'tutor'; panel.hidden = true; panel.setAttribute('aria-live', 'polite');
     const ring = U.el('div', '', ''); ring.id = 'tu-ring'; ring.hidden = true;
     const arrow = U.el('div', '', '<span></span><i></i>'); arrow.id = 'tu-arrow'; arrow.hidden = true;
@@ -76,8 +76,9 @@ const TUTOR = {
 
   /* ---------------- pasos ---------------- */
   makeSteps() {
-    const T = U.isTouch(), tap = T ? 'Toca' : 'Haz clic en', L = GAME.L;
-    const door1 = L.doors.find((d) => d.x === 6 && d.y === 3), door2 = L.doors.find((d) => d.x === 14 && d.y === 3), chest = L.chests[0];
+    // «LV» es el nivel (GAME.L); se llama así para no tapar la función de idiomas L()
+    const T = U.isTouch(), tap = T ? L('Toca', 'Touche') : L('Haz clic en', 'Clique sur'), LV = GAME.L;
+    const door1 = LV.doors.find((d) => d.x === 6 && d.y === 3), door2 = LV.doors.find((d) => d.x === 14 && d.y === 3), chest = LV.chests[0];
     const H = (id) => GAME.heroes.find((h) => h.id === id);
     const foes = () => GAME.enemies.filter((e) => e.alive && (e.kind === 'dummy' || e.kind === 'dummyArcher'));
     const nearest = () => { const a = GAME.active || GAME.heroesUp()[0]; const f = foes().filter((e) => e.active); if (!a || !f.length) return null; return f.sort((p, q) => U.cheb(a.x, a.y, p.x, p.y) - U.cheb(a.x, a.y, q.x, q.y))[0]; };
@@ -85,66 +86,66 @@ const TUTOR = {
     const cam = ENGINE.cam.t;
     this.refs = { door1, door2, chest, foes };
     return [
-      { id: 'party', title: 'Tu grupo', ring: '#party', next: true,
-        text: 'Estos son tus tres héroes: Korvak el Bárbaro, Lyriel la Elfa arquera y Aldebrán el Hechicero. En la partida podrás bajar con 1 a 5. Cada uno juega su turno por separado: el del borde iluminado es el que mueves ahora. La barra roja es su vida.' },
-      { id: 'move', title: 'Moverse', arrow: () => ({ x: 4, y: 3 }), label: 'Aquí', skipIf: () => this.flags.moved,
-        text: T ? 'Las casillas iluminadas son las que alcanza Korvak este turno. Toca una para ver la ruta y vuelve a tocarla para confirmar.' : 'Las casillas iluminadas son las que alcanza Korvak este turno. Pasa el ratón para ver la ruta y haz clic para moverle.',
+      { id: 'party', title: L('Tu grupo', 'Ton groupe'), ring: '#party', next: true,
+        text: L('Estos son tus tres héroes: Korvak el Bárbaro, Lyriel la Elfa arquera y Aldebrán el Hechicero. En la partida podrás bajar con 1 a 5. Cada uno juega su turno por separado: el del borde iluminado es el que mueves ahora. La barra roja es su vida.', 'Voici tes trois héros : Korvak le Barbare, Lyriel l’Elfe archère et Aldebrán l’Enchanteur. En partie, tu pourras descendre avec 1 à 5 héros. Chacun joue son tour séparément : celui dont le bord brille est celui que tu déplaces maintenant. La barre rouge, c’est sa vie.') },
+      { id: 'move', title: L('Moverse', 'Se déplacer'), arrow: () => ({ x: 4, y: 3 }), label: L('Aquí', 'Ici'), skipIf: () => this.flags.moved,
+        text: T ? L('Las casillas iluminadas son las que alcanza Korvak este turno. Toca una para ver la ruta y vuelve a tocarla para confirmar.', 'Les cases illuminées sont celles que Korvak peut atteindre ce tour-ci. Touches-en une pour voir le chemin, puis touche-la encore pour confirmer.') : L('Las casillas iluminadas son las que alcanza Korvak este turno. Pasa el ratón para ver la ruta y haz clic para moverle.', 'Les cases illuminées sont celles que Korvak peut atteindre ce tour-ci. Passe la souris dessus pour voir le chemin et clique pour le déplacer.'),
         on: { moved: true } },
-      { id: 'undo', title: 'Deshacer', ring: '#undo-move', next: true, skipIf: () => !GAME.undo,
-        text: '¿Te has equivocado? Mientras no descubras nada nuevo, «Deshacer movimiento» devuelve al héroe a donde estaba. Muy útil con el dedo.' },
-      { id: 'camera', title: 'Mira a tu alrededor', next: true,
+      { id: 'undo', title: L('Deshacer', 'Annuler'), ring: '#undo-move', next: true, skipIf: () => !GAME.undo,
+        text: L('¿Te has equivocado? Mientras no descubras nada nuevo, «Deshacer movimiento» devuelve al héroe a donde estaba. Muy útil con el dedo.', 'Une erreur ? Tant que tu ne découvres rien de nouveau, « Annuler le déplacement » ramène le héros là où il était. Très pratique avec le doigt.') },
+      { id: 'camera', title: L('Mira a tu alrededor', 'Regarde autour de toi'), next: true,
         start: () => { this._cam0 = { yaw: cam.yaw, dist: cam.dist }; this.flags.cam = false; },
         until: () => this.flags.cam || Math.abs(cam.yaw - this._cam0.yaw) > 0.3 || Math.abs(cam.dist - this._cam0.dist) > 2.5,
-        text: T ? 'Arrastra el tablero con un dedo para mover la cámara, pellizca para acercarte y gira con dos dedos. Pruébalo.' : 'Arrastra el tablero para mover la cámara, usa la rueda para acercarte y gira con el botón derecho (o con Q y E). Pruébalo.' },
-      { id: 'switch', title: 'Cambiar de héroe', ring: '.hero-card[data-hero="elfa"]', skipIf: () => door1.open || H('elfa').ended,
-        text: `No hace falta que Korvak termine. ${tap} el retrato de Lyriel para manejarla a ella${T ? '' : ' (o pulsa Tab)'}.`,
+        text: T ? L('Arrastra el tablero con un dedo para mover la cámara, pellizca para acercarte y gira con dos dedos. Pruébalo.', 'Fais glisser le plateau d’un doigt pour déplacer la caméra, pince pour zoomer et tourne avec deux doigts. Essaie.') : L('Arrastra el tablero para mover la cámara, usa la rueda para acercarte y gira con el botón derecho (o con Q y E). Pruébalo.', 'Fais glisser le plateau pour déplacer la caméra, utilise la molette pour zoomer et tourne avec le bouton droit (ou avec Q et E). Essaie.') },
+      { id: 'switch', title: L('Cambiar de héroe', 'Changer de héros'), ring: '.hero-card[data-hero="elfa"]', skipIf: () => door1.open || H('elfa').ended,
+        text: L(`No hace falta que Korvak termine. ${tap} el retrato de Lyriel para manejarla a ella${T ? '' : ' (o pulsa Tab)'}.`, `Pas besoin que Korvak ait fini. ${tap} le portrait de Lyriel pour la jouer${T ? '' : ' (ou appuie sur Tab)'}.`),
         until: () => GAME.active && GAME.active.id === 'elfa' },
-      { id: 'door', title: 'Abrir puertas', arrow: () => door1, label: 'Puerta', focus: true, skipIf: () => door1.open,
-        text: `Las salas están ocultas hasta que abres su puerta. ${tap} la puerta: el héroe se acerca y la abre. Abrir puertas no gasta la acción.`,
+      { id: 'door', title: L('Abrir puertas', 'Ouvrir les portes'), arrow: () => door1, label: L('Puerta', 'Porte'), focus: true, skipIf: () => door1.open,
+        text: L(`Las salas están ocultas hasta que abres su puerta. ${tap} la puerta: el héroe se acerca y la abre. Abrir puertas no gasta la acción.`, `Les salles restent cachées tant que tu n’as pas ouvert leur porte. ${tap} la porte : le héros s’approche et l’ouvre. Ouvrir une porte ne coûte pas l’action.`),
         until: () => door1.open },
-      { id: 'peek', title: 'Conoce al enemigo', arrow: nearest, label: 'Esqueleto', skipIf: () => !foes().length, next: true,
-        text: T ? 'Toca un esqueleto una sola vez: verás su ficha (vida, dados y cómo piensa) sin atacar todavía.' : 'Pasa el ratón por encima de un esqueleto: verás su ficha (vida, dados y cómo piensa) y, en rojo, hasta dónde puede golpear.',
+      { id: 'peek', title: L('Conoce al enemigo', 'Connais ton ennemi'), arrow: nearest, label: L('Esqueleto', 'Squelette'), skipIf: () => !foes().length, next: true,
+        text: T ? L('Toca un esqueleto una sola vez: verás su ficha (vida, dados y cómo piensa) sin atacar todavía.', 'Touche un squelette une seule fois : tu verras sa fiche (vie, dés et façon de penser) sans encore attaquer.') : L('Pasa el ratón por encima de un esqueleto: verás su ficha (vida, dados y cómo piensa) y, en rojo, hasta dónde puede golpear.', 'Passe la souris sur un squelette : tu verras sa fiche (vie, dés et façon de penser) et, en rouge, jusqu’où il peut frapper.'),
         on: { peek: true } },
-      { id: 'attack', title: 'Atacar', arrow: nearest, needsAction: true, skipIf: () => !foes().length || this.flags.attacked,
-        text: T ? 'Para atacar, toca al esqueleto y vuelve a tocarlo para confirmar. Antes verás cuántos dados tiras y tu probabilidad de herir. Lyriel dispara desde lejos; si alguien no llega, se acerca solo.' : 'Haz clic en un esqueleto para atacarlo. Antes verás cuántos dados tiras y tu probabilidad de herir. Lyriel dispara desde lejos; si alguien no llega, se acerca solo.',
+      { id: 'attack', title: L('Atacar', 'Attaquer'), arrow: nearest, needsAction: true, skipIf: () => !foes().length || this.flags.attacked,
+        text: T ? L('Para atacar, toca al esqueleto y vuelve a tocarlo para confirmar. Antes verás cuántos dados tiras y tu probabilidad de herir. Lyriel dispara desde lejos; si alguien no llega, se acerca solo.', 'Pour attaquer, touche le squelette, puis touche-le encore pour confirmer. Avant, tu verras combien de dés tu lances et tes chances de blesser. Lyriel tire de loin ; si un héros est trop loin, il s’approche tout seul.') : L('Haz clic en un esqueleto para atacarlo. Antes verás cuántos dados tiras y tu probabilidad de herir. Lyriel dispara desde lejos; si alguien no llega, se acerca solo.', 'Clique sur un squelette pour l’attaquer. Avant, tu verras combien de dés tu lances et tes chances de blesser. Lyriel tire de loin ; si un héros est trop loin, il s’approche tout seul.'),
         on: { attack: true, skill: (d) => d && d.s && d.s.target === 'enemy' } },
-      { id: 'dice', title: 'Los dados', next: true,
-        text: 'Los dados ruedan en el tablero y el cartel de arriba dice el resultado. Cada calavera es un golpe. Los monstruos paran con escudos negros (1 cara de 6) y los héroes con escudos blancos (2 de 6). Daño = calaveras − escudos.' },
-      { id: 'destiny', title: 'El Dado del Destino', next: true,
-        text: 'El dado dorado acompaña a cada ataque de un héroe. Máscara alegre: el premio de ese héroe (Korvak rebota el golpe contra otro enemigo, Lyriel gana movimiento, Aldebrán recarga antes una habilidad). Máscara triste: ruido, +1 Presagio. Cara lisa: nada.' },
-      { id: 'skill', title: 'Habilidades', needsAction: 'hechicero',
+      { id: 'dice', title: L('Los dados', 'Les dés'), next: true,
+        text: L('Los dados ruedan en el tablero y el cartel de arriba dice el resultado. Cada calavera es un golpe. Los monstruos paran con escudos negros (1 cara de 6) y los héroes con escudos blancos (2 de 6). Daño = calaveras − escudos.', 'Les dés roulent sur le plateau et le panneau du haut annonce le résultat. Chaque crâne est un coup. Les monstres parent avec des boucliers noirs (1 face sur 6) et les héros avec des boucliers blancs (2 sur 6). Dégâts = crânes − boucliers.') },
+      { id: 'destiny', title: L('El Dado del Destino', 'Le Dé du Destin'), next: true,
+        text: L('El dado dorado acompaña a cada ataque de un héroe. Máscara alegre: el premio de ese héroe (Korvak rebota el golpe contra otro enemigo, Lyriel gana movimiento, Aldebrán recarga antes una habilidad). Máscara triste: ruido, +1 Presagio. Cara lisa: nada.', 'Le dé doré accompagne chaque attaque d’un héros. Masque joyeux : la récompense de ce héros (Korvak fait ricocher le coup sur un autre ennemi, Lyriel gagne du déplacement, Aldebrán recharge plus tôt une compétence). Masque triste : du bruit, +1 Présage. Face vierge : rien.') },
+      { id: 'skill', title: L('Habilidades', 'Compétences'), needsAction: 'hechicero',
         ring: () => (GAME.active && GAME.active.id === 'hechicero' ? '#actions [data-act="s0"]' : '.hero-card[data-hero="hechicero"]'),
         arrow: () => (GAME.mode && GAME.mode.type === 'skill' ? nearest() : null),
         skipIf: () => !foes().length || this.flags.mageSkill,
-        text: 'Cada héroe tiene un ataque y dos habilidades. Tras usar una, se recarga durante unas rondas (el número sobre el botón). Selecciona a Aldebrán, pulsa «Bola de fuego» y elige un esqueleto: también quema a los que estén a su lado. Si no llega, acércale primero.',
+        text: L('Cada héroe tiene un ataque y dos habilidades. Tras usar una, se recarga durante unas rondas (el número sobre el botón). Selecciona a Aldebrán, pulsa «Bola de fuego» y elige un esqueleto: también quema a los que estén a su lado. Si no llega, acércale primero.', 'Chaque héros a une attaque et deux compétences. Une fois utilisée, une compétence se recharge pendant quelques manches (le chiffre sur le bouton). Sélectionne Aldebrán, appuie sur « Boule de feu » et choisis un squelette : elle brûle aussi ceux qui sont à côté. S’il est trop loin, rapproche-le d’abord.'),
         on: { skill: (d) => d && d.h && d.h.id === 'hechicero' } },
       { id: 'end', ring: () => (GAME.phase === 'hero' ? '#actions [data-act="end"]' : null), skipIf: () => this.flags.roundSeen || !foes().length,
-        title: () => (GAME.phase === 'shadow' ? 'Turno de la Sombra' : 'Fin del turno'),
-        text: () => (GAME.phase === 'shadow' ? 'Ahora actúan los enemigos. Las criaturas torpes van a por el más cercano; las listas, a por el más débil.' : `Cuando hayas hecho lo que quieras con los tres, ${T ? 'toca' : 'pulsa'} «Fin de turno»${T ? '' : ' (o la barra espaciadora)'}. Si a un héroe no le queda movimiento ni acción, su turno acaba solo.`),
+        title: () => (GAME.phase === 'shadow' ? L('Turno de la Sombra', 'Tour de l’Ombre') : L('Fin del turno', 'Fin du tour')),
+        text: () => (GAME.phase === 'shadow' ? L('Ahora actúan los enemigos. Las criaturas torpes van a por el más cercano; las listas, a por el más débil.', 'Maintenant, ce sont les ennemis qui agissent. Les créatures maladroites foncent sur le plus proche ; les plus rusées, sur le plus faible.') : L(`Cuando hayas hecho lo que quieras con los tres, ${T ? 'toca' : 'pulsa'} «Fin de turno»${T ? '' : ' (o la barra espaciadora)'}. Si a un héroe no le queda movimiento ni acción, su turno acaba solo.`, `Quand tu as fini avec les trois, ${T ? 'touche' : 'appuie sur'} « Fin du tour »${T ? '' : ' (ou la barre d’espace)'}. Si un héros n’a plus ni déplacement ni action, son tour se termine tout seul.`)),
         on: { round: true } },
-      { id: 'position', title: 'Flanqueo', next: true, skipIf: () => !foes().length,
-        text: 'Si otro héroe está junto a tu objetivo, atacas con un dado más. Y nadie te golpea por moverte: colócate con libertad, rodead a los enemigos y proteged al Hechicero.' },
-      { id: 'clear', title: 'Limpiad la sala', skipIf: () => !foes().length,
-        text: 'Acabad con los esqueletos. Korvak aguanta en primera fila, Lyriel dispara desde lejos y Aldebrán quema con su magia o cura con Luz sanadora.',
+      { id: 'position', title: L('Flanqueo', 'Prise de flanc'), next: true, skipIf: () => !foes().length,
+        text: L('Si otro héroe está junto a tu objetivo, atacas con un dado más. Y nadie te golpea por moverte: colócate con libertad, rodead a los enemigos y proteged al Hechicero.', 'Si un autre héros est à côté de ta cible, tu attaques avec un dé de plus. Et personne ne te frappe parce que tu te déplaces : place-toi librement, encerclez les ennemis et protégez l’Enchanteur.') },
+      { id: 'clear', title: L('Limpiad la sala', 'Nettoyez la salle'), skipIf: () => !foes().length,
+        text: L('Acabad con los esqueletos. Korvak aguanta en primera fila, Lyriel dispara desde lejos y Aldebrán quema con su magia o cura con Luz sanadora.', 'Venez à bout des squelettes. Korvak tient la première ligne, Lyriel tire de loin et Aldebrán brûle avec sa magie ou soigne avec Lumière guérisseuse.'),
         until: () => !foes().length },
-      { id: 'sheet', title: 'La ficha del grupo', ring: '#btn-party',
-        text: `La corona de arriba abre la ficha del grupo: vida, ataque, defensa, movimiento, habilidades y equipo de cada héroe. ${tap} la corona${T ? '' : ' (o pulsa G)'}.`,
+      { id: 'sheet', title: L('La ficha del grupo', 'La fiche du groupe'), ring: '#btn-party',
+        text: L(`La corona de arriba abre la ficha del grupo: vida, ataque, defensa, movimiento, habilidades y equipo de cada héroe. ${tap} la corona${T ? '' : ' (o pulsa G)'}.`, `La couronne en haut ouvre la fiche du groupe : vie, attaque, défense, déplacement, compétences et équipement de chaque héros. ${tap} la couronne${T ? '' : ' (ou appuie sur G)'}.`),
         until: sheetOpen },
-      { id: 'sheetClose', title: 'Cierra la ficha', ring: '#sheet [data-close]', skipIf: () => !sheetOpen(),
-        text: 'Mira las pestañas de los tres y cierra la ficha cuando quieras.', until: () => !sheetOpen() },
-      { id: 'lock', title: 'Puertas cerradas', arrow: () => door2, label: 'Cerradura', focus: true, needsAction: true, skipIf: () => door2.open,
-        text: `Esta puerta tiene cerradura. ${tap} ella con un héroe que tenga su acción: tira 3 dados y las calaveras se van sumando hasta llegar a 2. Si no se abre a la primera, seguid intentándolo. El Enano las abre sin tirar.`,
+      { id: 'sheetClose', title: L('Cierra la ficha', 'Ferme la fiche'), ring: '#sheet [data-close]', skipIf: () => !sheetOpen(),
+        text: L('Mira las pestañas de los tres y cierra la ficha cuando quieras.', 'Regarde les onglets des trois héros et ferme la fiche quand tu veux.'), until: () => !sheetOpen() },
+      { id: 'lock', title: L('Puertas cerradas', 'Portes verrouillées'), arrow: () => door2, label: L('Cerradura', 'Serrure'), focus: true, needsAction: true, skipIf: () => door2.open,
+        text: L(`Esta puerta tiene cerradura. ${T ? 'Tócala' : 'Haz clic en ella'} con un héroe que tenga su acción: tira 3 dados y las calaveras se van sumando hasta llegar a 2. Si no se abre a la primera, seguid intentándolo. El Enano las abre sin tirar.`, `Cette porte a une serrure. ${T ? 'Touche-la' : 'Clique dessus'} avec un héros qui a encore son action : il lance 3 dés et les crânes s’additionnent jusqu’à 2. Si elle ne s’ouvre pas du premier coup, continuez d’essayer. Le Nain les ouvre sans lancer de dés.`),
         until: () => door2.open },
-      { id: 'chest', title: 'Botín', arrow: () => chest, label: 'Cofre', focus: true, needsAction: true, skipIf: () => chest.looted,
-        text: `${tap} el cofre para abrirlo (gasta la acción). Al lado hay un atril: leer no cuesta nada.`,
+      { id: 'chest', title: L('Botín', 'Butin'), arrow: () => chest, label: L('Cofre', 'Coffre'), focus: true, needsAction: true, skipIf: () => chest.looted,
+        text: L(`${tap} el cofre para abrirlo (gasta la acción). Al lado hay un atril: leer no cuesta nada.`, `${tap} le coffre pour l’ouvrir (ça coûte l’action). Juste à côté, il y a un lutrin : lire ne coûte rien.`),
         until: () => chest.looted && !GAME.busy },
-      { id: 'search', title: 'Buscar', ring: '#actions [data-act="search"]', needsAction: true, skipIf: () => this.flags.searched,
-        text: `Con la sala tranquila, ${T ? 'toca' : 'pulsa'} «Buscar» (la lupa)${T ? '' : ' o la tecla 4'}: revela las trampas de la sala y tira el Dado del Tesoro: oro, una poción, un objeto… o nada. Se busca una vez por sala y hace ruido; fuera de aquí, la cara de peligro trae un dardo o algo que sube a por vosotros.`,
+      { id: 'search', title: L('Buscar', 'Fouiller'), ring: '#actions [data-act="search"]', needsAction: true, skipIf: () => this.flags.searched,
+        text: L(`Con la sala tranquila, ${T ? 'toca' : 'pulsa'} «Buscar» (la lupa)${T ? '' : ' o la tecla 4'}: revela las trampas de la sala y tira el Dado del Tesoro: oro, una poción, un objeto… o nada. Se busca una vez por sala y hace ruido; fuera de aquí, la cara de peligro trae un dardo o algo que sube a por vosotros.`, `Quand la salle est calme, ${T ? 'touche' : 'appuie sur'} « Fouiller » (la loupe)${T ? '' : ' ou la touche 4'}. Tu découvres les pièges de la salle et tu lances le Dé du Trésor : de l’or, une potion, un objet… ou rien. On fouille une fois par salle, et ça fait du bruit ; ailleurs qu’ici, la face danger amène une fléchette, ou quelque chose qui monte vous chercher.`),
         on: { search: true } },
-      { id: 'items', title: 'Objetos', ring: '#actions [data-act="items"]', next: true,
-        text: 'En «Objetos» están las pociones (beberla no gasta la acción), los elixires (una acción más) y las bombas.' },
-      { id: 'doom', title: 'El Presagio', ring: '#r-doom', next: true,
-        text: 'El ojo de arriba es el Presagio: crece cada ronda y con el ruido. Cuando se llena, algo errante sube de la Hondura a buscaros. Aquí no pasará; abajo, sí.' }
+      { id: 'items', title: L('Objetos', 'Objets'), ring: '#actions [data-act="items"]', next: true,
+        text: L('En «Objetos» están las pociones (beberla no gasta la acción), los elixires (una acción más) y las bombas.', 'Dans « Objets », tu trouves les potions (en boire une ne coûte pas l’action), les élixirs (une action de plus) et les bombes.') },
+      { id: 'doom', title: L('El Presagio', 'Le Présage'), ring: '#r-doom', next: true,
+        text: L('El ojo de arriba es el Presagio: crece cada ronda y con el ruido. Cuando se llena, algo errante sube de la Hondura a buscaros. Aquí no pasará; abajo, sí.', 'L’œil en haut, c’est le Présage : il grandit à chaque manche et avec le bruit. Quand il est plein, une créature errante monte des Tréfonds pour vous chercher. Ici, ça n’arrivera pas ; en bas, si.') }
     ];
   },
   val(v) { return typeof v === 'function' ? v() : v; },
@@ -168,7 +169,7 @@ const TUTOR = {
     if (!fresh && key === this._key) return;
     this._key = key;
     E.panel.classList.remove('done');
-    E.n.textContent = `${this.i + 1} de ${this.steps.length}`;
+    E.n.textContent = L(`${this.i + 1} de ${this.steps.length}`, `${this.i + 1} sur ${this.steps.length}`);
     E.bar.style.width = `${Math.round((100 * this.i) / this.steps.length)}%`;
     E.title.textContent = title; E.text.textContent = text;
     E.next.hidden = !st.next; E.wait.hidden = !!st.next; E.pass.hidden = !!st.next;
@@ -195,9 +196,9 @@ const TUTOR = {
     if (ev === 'round' && this.flags.shadowSeen) this.flags.roundSeen = true;
     // lecciones al vuelo, una vez cada una
     if (ev === 'shadow' && st && st.id === 'end') this.said.shadow = true;
-    if (ev === 'shadow' && GAME.visibleEnemies().length) this.once('shadow', 'Turno de la Sombra: ahora actúan los enemigos. Las criaturas torpes van a por el más cercano; las listas, a por el más débil.');
-    if (ev === 'down') this.once('down', 'Un héroe ha caído. En el tutorial se levanta solo al final de la ronda; en la campaña tendrá que levantarle un aliado.');
-    if (ev === 'lock' && d && !d.ok) this.once('lockFail', `Aún no: lleváis ${d.door.progress || 0} de 2 calaveras. Puede seguir otro héroe con su acción, o el mismo en el siguiente turno.`, true);
+    if (ev === 'shadow' && GAME.visibleEnemies().length) this.once('shadow', L('Turno de la Sombra: ahora actúan los enemigos. Las criaturas torpes van a por el más cercano; las listas, a por el más débil.', 'Tour de l’Ombre : maintenant, ce sont les ennemis qui agissent. Les créatures maladroites foncent sur le plus proche ; les plus rusées, sur le plus faible.'));
+    if (ev === 'down') this.once('down', L('Un héroe ha caído. En el tutorial se levanta solo al final de la ronda; en la campaña tendrá que levantarle un aliado.', 'Un héros est à terre. Dans le tutoriel, il se relève tout seul à la fin de la manche ; dans la campagne, il faudra qu’un allié le relève.'));
+    if (ev === 'lock' && d && !d.ok) this.once('lockFail', L(`Aún no: lleváis ${d.door.progress || 0} de 2 calaveras. Puede seguir otro héroe con su acción, o el mismo en el siguiente turno.`, `Pas encore : vous en êtes à ${d.door.progress || 0} crâne${(d.door.progress || 0) > 1 ? 's' : ''} sur 2. Un autre héros peut continuer avec son action, ou le même au tour suivant.`), true);
     if (!st || this.doneing) return;
     const on = st.on && st.on[ev];
     if (on && (on === true || on(d))) this.complete();
@@ -225,10 +226,10 @@ const TUTOR = {
       const who = st.needsAction === true ? GAME.heroesUp() : GAME.heroesUp().filter((h) => h.id === st.needsAction);
       const any = who.some((h) => !h.ended && h.actions > 0);
       const a = GAME.active;
-      if (!any) { this._endHint = true; this.aside(st.needsAction === true ? 'A nadie le queda acción este turno: pulsa «Fin de turno» y seguid en el siguiente.' : `${HERO_DEFS[st.needsAction].name} ya ha gastado su acción: pulsa «Fin de turno» y prueba en el siguiente.`); }
-      else if (a && a.actions <= 0 && st.needsAction === true) this.aside('A este héroe ya no le queda acción: elige a otro en su retrato.');
-      else if (a && st.needsAction !== true && a.id !== st.needsAction) this.aside(`Este paso es para ${HERO_DEFS[st.needsAction].name}: ${U.isTouch() ? 'toca' : 'haz clic en'} su retrato.`);
-      else if (this._aside && /acción|paso es para/.test(this._aside)) this.aside(null);
+      if (!any) { this._endHint = true; this.aside(st.needsAction === true ? L('A nadie le queda acción este turno: pulsa «Fin de turno» y seguid en el siguiente.', 'Plus personne n’a d’action ce tour-ci : appuie sur « Fin du tour » et continuez au suivant.') : L(`${HERO_DEFS[st.needsAction].name} ya ha gastado su acción: pulsa «Fin de turno» y prueba en el siguiente.`, `${HERO_DEFS[st.needsAction].name} a déjà utilisé son action : appuie sur « Fin du tour » et réessaie au suivant.`)); }
+      else if (a && a.actions <= 0 && st.needsAction === true) this.aside(L('A este héroe ya no le queda acción: elige a otro en su retrato.', 'Ce héros n’a plus d’action : choisis-en un autre avec son portrait.'));
+      else if (a && st.needsAction !== true && a.id !== st.needsAction) this.aside(L(`Este paso es para ${HERO_DEFS[st.needsAction].name}: ${U.isTouch() ? 'toca' : 'haz clic en'} su retrato.`, `Cette étape est pour ${HERO_DEFS[st.needsAction].name} : ${U.isTouch() ? 'touche' : 'clique sur'} son portrait.`));
+      else if (this._aside && /acción|paso es para|action|étape est pour/.test(this._aside)) this.aside(null);
     }
   },
 
@@ -295,17 +296,17 @@ const TUTOR = {
     GAME.state = 'menu'; GAME.tutorial = false; GAME.gen = (GAME.gen || 0) + 1;
     audio.heartbeat(false); audio.stinger('victory'); audio.setMusic('menu');
     UI.showHUD(false); UI.hideAll(); UI.bossBar(null); UI.shadowMode(false);
-    const s = UI.screen(`<div class="card tut-end"><div class="eyebrow">Tutorial completado</div><h2>Listos para descender</h2>
-      <p class="lead">Ya sabéis lo esencial. Lo demás se aprende abajo, con el farol en la mano.</p>
+    const s = UI.screen(`<div class="card tut-end"><div class="eyebrow">${L('Tutorial completado', 'Tutoriel terminé')}</div><h2>${L('Listos para descender', 'Prêts à descendre')}</h2>
+      <p class="lead">${L('Ya sabéis lo esencial. Lo demás se aprende abajo, con el farol en la mano.', 'Vous connaissez l’essentiel. Le reste s’apprend en bas, la lanterne à la main.')}</p>
       <ul class="tu-recap">
-        <li>${icon('boot')} Mover, mirar alrededor, cambiar de héroe y deshacer</li>
-        <li>${icon('skull')} Atacar: calaveras contra escudos</li>
-        <li>${icon('starfire')} Dos habilidades por héroe, que se recargan</li>
-        <li>${icon('search')} Cerraduras, cofres y buscar tesoro</li>
-        <li>${icon('eye')} El Presagio: no os entretengáis</li>
+        <li>${icon('boot')} ${L('Mover, mirar alrededor, cambiar de héroe y deshacer', 'Se déplacer, regarder autour de soi, changer de héros et annuler')}</li>
+        <li>${icon('skull')} ${L('Atacar: calaveras contra escudos', 'Attaquer : crânes contre boucliers')}</li>
+        <li>${icon('starfire')} ${L('Dos habilidades por héroe, que se recargan', 'Deux compétences par héros, qui se rechargent')}</li>
+        <li>${icon('search')} ${L('Cerraduras, cofres y buscar tesoro', 'Serrures, coffres et chasse au trésor')}</li>
+        <li>${icon('eye')} ${L('El Presagio: no os entretengáis', 'Le Présage : ne traînez pas')}</li>
       </ul>
-      <p class="small">Si dudas de algo durante la partida, el menú tiene «Cómo se juega», y la corona de arriba abre la ficha del grupo.</p>
-      <div class="row"><button class="btn primary" id="tu-camp">${icon('flame')} Empezar la campaña</button><button class="btn" id="tu-again">${icon('rotate')} Repetir el tutorial</button><button class="btn ghost" id="tu-title">Volver al inicio</button></div></div>`, 'dim');
+      <p class="small">${L('Si dudas de algo durante la partida, el menú tiene «Cómo se juega», y la corona de arriba abre la ficha del grupo.', 'Si tu as un doute pendant la partie, le menu propose « Comment jouer », et la couronne en haut ouvre la fiche du groupe.')}</p>
+      <div class="row"><button class="btn primary" id="tu-camp">${icon('flame')} ${L('Empezar la campaña', 'Commencer la campagne')}</button><button class="btn" id="tu-again">${icon('rotate')} ${L('Repetir el tutorial', 'Refaire le tutoriel')}</button><button class="btn ghost" id="tu-title">${L('Volver al inicio', 'Retour à l’accueil')}</button></div></div>`, 'dim');
     s.querySelector('#tu-camp').onclick = () => { audio.sfx('ui'); UI.difficulty(); };
     s.querySelector('#tu-again').onclick = () => UI.startTutorial();
     s.querySelector('#tu-title').onclick = () => { audio.sfx('uiBack'); UI.title(); };

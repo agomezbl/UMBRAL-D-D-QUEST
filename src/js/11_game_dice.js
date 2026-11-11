@@ -4,11 +4,11 @@
    de tirar; los dados 3D solo la enseñan.
    ========================================================================== */
 const DESTINY = {
-  barbaro: { name: 'Rebote', short: 'Rebote: 1 dado contra otro enemigo' },
-  enano: { name: 'Empujón', short: 'Empujón: lo apartas 1 casilla' },
-  elfa: { name: 'Paso ligero', short: 'Paso ligero: +2 de movimiento' },
-  hechicero: { name: 'Chispa', short: 'Chispa: una habilidad, 1 ronda antes' },
-  amazona: { name: '¡Conmigo!', short: '¡Conmigo!: un aliado, +1 dado' }
+  barbaro: { name: L('Rebote', 'Ricochet'), short: L('Rebote: 1 dado contra otro enemigo', 'Ricochet : 1 dé contre un autre ennemi') },
+  enano: { name: L('Empujón', 'Bousculade'), short: L('Empujón: lo apartas 1 casilla', 'Bousculade : tu le repousses d’1 case') },
+  elfa: { name: L('Paso ligero', 'Pas léger'), short: L('Paso ligero: +2 de movimiento', 'Pas léger : +2 de déplacement') },
+  hechicero: { name: L('Chispa', 'Étincelle'), short: L('Chispa: una habilidad, 1 ronda antes', 'Étincelle : une compétence, 1 manche plus tôt') },
+  amazona: { name: L('¡Conmigo!', 'Avec moi !'), short: L('¡Conmigo!: un aliado, +1 dado', 'Avec moi ! Un allié, +1 dé') }
 };
 
 Object.assign(GAME, {
@@ -119,7 +119,7 @@ Object.assign(GAME, {
     this.diceInView(M, sa);
     const got = await DICE3D.throw(dice.map((f, i) => ({ type: 'combat', face: this.faceIdx('combat', f), from: this.diceFrom(u, M), to: sa[i], delay: i * 50 })), { dur: 800 });
     const sk = got.filter((d) => d.kind === 'skull'), have = (o.have || 0) + sk.length, ok = have >= need;
-    UI.checkPlaque({ caption: o.label || 'Tirada', skulls: sk.length, have, need, ok, cumulative: o.have != null });
+    UI.checkPlaque({ caption: o.label || L('Tirada', 'Jet'), skulls: sk.length, have, need, ok, cumulative: o.have != null });
     audio.sfx(ok ? 'turnHero' : 'deny', { vol: 0.5 });
     await Promise.all([...sk.map((d) => DICE3D.glow(d, '#ff9a5a')), ...got.filter((d) => d.kind !== 'skull').map((d) => DICE3D.dim(d))]);
     DICE3D.clearLater(2000); UI.plaqueDone(2000);
@@ -127,49 +127,50 @@ Object.assign(GAME, {
   },
 
   /* ---------------- Dado del Destino ---------------- */
-  rollDestiny() { return DICE3D.roll('destiny').kind; },
+  rollDestiny() { return SABER.destiny(DICE3D.roll('destiny').kind); },
   async destinyEffect(h, kind, tgt) {
     if (!kind || kind === 'blank' || !this.up(h)) return;
     const head = this.headPos(h);
     this.stats.destiny = this.stats.destiny || { comedy: 0, tragedy: 0 };
     UI.hintOnce('destiny');
+    const fe = (u) => (u && (u.id === 'elfa' || u.id === 'amazona') ? 'e' : ''); // en francés, «Inspirée» para la Elfa y la Amazona
     if (kind === 'tragedy') {
       this.stats.destiny.tragedy++;
       const bossOn = this.boss && this.boss.alive && this.boss.active;
       audio.sfx('whisper', { dur: 0.8, vol: 0.6 });
-      if (!bossOn) { this.addDoom(1); FX.text(head, '+1 Presagio', 'warn'); UI.log(`Máscara trágica: el ruido de ${h.name} atrae a la Hondura (+1 Presagio).`, 'bad'); }
-      else { h.mvLeft = 0; FX.text(head, 'Desequilibrado', 'warn'); UI.log(`Máscara trágica: ${h.name} pierde el equilibrio y el movimiento que le quedaba.`, 'bad'); }
+      if (!bossOn) { this.addDoom(1); FX.text(head, L('+1 Presagio', '+1 Présage'), 'warn'); UI.log(L(`Máscara triste: el ruido de ${h.name} atrae a la Hondura (+1 Presagio).`, `Masque triste : le bruit de ${h.name} attire les Tréfonds (+1 Présage).`), 'bad'); }
+      else { h.mvLeft = 0; FX.text(head, L('Desequilibrado', `Déséquilibré${fe(h)}`), 'warn'); UI.log(L(`Máscara triste: ${h.name} pierde el equilibrio y el movimiento que le quedaba.`, `Masque triste : ${h.name} perd l’équilibre et le déplacement qui lui restait.`), 'bad'); }
       UI.refresh(); return;
     }
     this.stats.destiny.comedy++;
-    const D = DESTINY[h.id] || { name: 'Suerte' };
+    const D = DESTINY[h.id] || { name: L('Suerte', 'Chance') };
     audio.sfx('levelUp', { vol: 0.5 }); FX.burst('magic', h.mesh.position, { color: '#ffd060', color2: '#ffb000' });
     FX.text(head, D.name, 'heal');
-    const say = (t) => UI.plaqueDestiny(`<b class="good">Máscara alegre</b> · ${t}`);
-    const inspire = (u, why) => { u.status.inspirado = Math.max(u.status.inspirado || 0, 2); FX.text(this.headPos(u), 'Inspirado', 'heal'); UI.log(why, 'good'); say(h.id === 'amazona' ? `${D.name}: ${u === h ? 'Inspirada' : U.esc(u.name) + ' queda Inspirado'}, +1 dado en ${u === h ? 'tu' : 'su'} próximo ataque` : 'En su lugar, Inspirado: +1 dado en tu próximo ataque'); };
+    const say = (t) => UI.plaqueDestiny(`<b class="good">${L('Máscara alegre', 'Masque joyeux')}</b> · ${t}`);
+    const inspire = (u, why) => { u.status.inspirado = Math.max(u.status.inspirado || 0, 2); FX.text(this.headPos(u), L('Inspirado', `Inspiré${fe(u)}`), 'heal'); UI.log(why, 'good'); say(h.id === 'amazona' ? L(`${D.name}: ${u === h ? 'Inspirada' : U.esc(u.name) + ' queda Inspirado'}, +1 dado en ${u === h ? 'tu' : 'su'} próximo ataque`, `${D.name} ${u === h ? 'Inspirée' : U.esc(u.name) + ` est Inspiré${fe(u)}`}, +1 dé à ${u === h ? 'ta' : 'sa'} prochaine attaque`) : L('En su lugar, Inspirado: +1 dado en tu próximo ataque', `À la place, Inspiré${fe(h)} : +1 dé à ta prochaine attaque`)); };
     if (h.id === 'barbaro') {
       const others = this.visibleEnemies().filter((e) => e !== tgt && U.cheb(e.x, e.y, tgt.x, tgt.y) <= 1 && U.cheb(e.x, e.y, h.x, h.y) <= 2);
       const t2 = others.sort((a, b) => a.hp - b.hp)[0] || (this.up(tgt) ? tgt : null);
-      if (t2) { say(`Rebote: 1 dado contra ${U.esc(t2.name)}`); UI.log(`Máscara alegre: el hachazo de ${h.name} rebota hacia ${t2.name}.`, 'good'); await U.sleep(700); await this.diceHit(h.name, t2, 1, { label: 'Rebote', by: h }); }
-      else inspire(h, `Máscara alegre: ${h.name} queda Inspirado.`);
+      if (t2) { say(L(`Rebote: 1 dado contra ${U.esc(t2.name)}`, `Ricochet : 1 dé contre ${U.esc(t2.name)}`)); UI.log(L(`Máscara alegre: el hachazo de ${h.name} rebota hacia ${t2.name}.`, `Masque joyeux : le coup de hache de ${h.name} ricoche vers ${t2.name}.`), 'good'); await U.sleep(700); await this.diceHit(h.name, t2, 1, { label: L('Rebote', 'Ricochet'), by: h }); }
+      else inspire(h, L(`Máscara alegre: ${h.name} queda Inspirado.`, `Masque joyeux : ${h.name} est Inspiré${fe(h)}.`));
     } else if (h.id === 'enano') {
       const dx = Math.sign(tgt.x - h.x), dy = Math.sign(tgt.y - h.y), nx = tgt.x + dx, ny = tgt.y + dy;
       if (this.up(tgt) && !tgt.boss && (dx || dy) && this.passable(nx, ny, { side: 'enemy' }) && !this.unitAt(nx, ny)) {
         audio.sfx('quake', { vol: 0.5 }); ENGINE.shake(0.3);
-        say(`Empujón: ${U.esc(tgt.name)} retrocede una casilla`);
+        say(L(`Empujón: ${U.esc(tgt.name)} retrocede una casilla`, `Bousculade : ${U.esc(tgt.name)} recule d’une case`));
         await this.hop(tgt, nx, ny, { dur: 220, h: 0.2 }); this.faceTo(tgt, h.x, h.y);
-        UI.log(`Máscara alegre: ${h.name} aparta a ${tgt.name} de un empujón.`, 'good');
-      } else inspire(h, `Máscara alegre: ${h.name} queda Inspirado.`);
+        UI.log(L(`Máscara alegre: ${h.name} aparta a ${tgt.name} de un empujón.`, `Masque joyeux : ${h.name} repousse ${tgt.name} d’une bourrade.`), 'good');
+      } else inspire(h, L(`Máscara alegre: ${h.name} queda Inspirado.`, `Masque joyeux : ${h.name} est Inspiré${fe(h)}.`));
     } else if (h.id === 'elfa') {
-      h.mvLeft += 2; say('Paso ligero: +2 de movimiento'); FX.text(new THREE.Vector3(head.x, head.y + 0.5, head.z), '+2 movimiento', 'heal');
-      UI.log(`Máscara alegre: ${h.name} gana +2 de movimiento este turno.`, 'good');
+      h.mvLeft += 2; say(L('Paso ligero: +2 de movimiento', 'Pas léger : +2 de déplacement')); FX.text(new THREE.Vector3(head.x, head.y + 0.5, head.z), L('+2 movimiento', '+2 déplacement'), 'heal');
+      UI.log(L(`Máscara alegre: ${h.name} gana +2 de movimiento este turno.`, `Masque joyeux : ${h.name} gagne +2 de déplacement pour ce tour.`), 'good');
     } else if (h.id === 'hechicero') {
       const s = h.skills.filter((q) => q.cd > 0).sort((a, b) => b.cd - a.cd)[0];
-      if (s) { s.cd--; say(`Chispa: ${U.esc(s.name)} estará lista una ronda antes`); UI.log(`Máscara alegre: ${s.name} estará lista una ronda antes.`, 'good'); }
-      else inspire(h, `Máscara alegre: ${h.name} queda Inspirado.`);
+      if (s) { s.cd--; say(L(`Chispa: ${U.esc(s.name)} estará lista una ronda antes`, `Étincelle : ${U.esc(s.name)} se recharge une manche plus tôt`)); UI.log(L(`Máscara alegre: ${s.name} estará lista una ronda antes.`, `Masque joyeux : ${s.name} se recharge une manche plus tôt.`), 'good'); }
+      else inspire(h, L(`Máscara alegre: ${h.name} queda Inspirado.`, `Masque joyeux : ${h.name} est Inspiré${fe(h)}.`));
     } else if (h.id === 'amazona') {
       const al = this.heroes.filter((a) => a !== h && !a.ko && U.cheb(a.x, a.y, h.x, h.y) <= 3).sort((a, b) => U.cheb(a.x, a.y, h.x, h.y) - U.cheb(b.x, b.y, h.x, h.y))[0];
-      inspire(al || h, `Máscara alegre: ${(al || h).name} queda Inspirado (+1 dado en su próximo ataque).`);
+      inspire(al || h, L(`Máscara alegre: ${(al || h).name} queda Inspirado (+1 dado en su próximo ataque).`, `Masque joyeux : ${(al || h).name} est Inspiré${fe(al || h)} (+1 dé à sa prochaine attaque).`));
     }
     UI.refresh();
   },

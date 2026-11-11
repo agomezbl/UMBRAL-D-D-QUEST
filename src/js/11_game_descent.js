@@ -35,13 +35,13 @@ Object.assign(GAME, {
   },
 
   stairsInfo(h, x, y) {
-    const name = 'Escalera abajo';
-    if (this.boss && this.boss.alive) return { kind: 'none', text: name, sub: 'El guardián del nivel no os dejará pasar.' };
-    if (this.visibleEnemies().length) return { kind: 'none', text: name, sub: 'No podéis bajar con enemigos a la vista.' };
+    const name = L('Escalera abajo', 'Escalier descendant');
+    if (this.boss && this.boss.alive) return { kind: 'none', text: name, sub: L('El guardián del nivel no os dejará pasar.', 'Le gardien du niveau ne vous laissera pas passer.') };
+    if (this.visibleEnemies().length) return { kind: 'none', text: name, sub: L('No podéis bajar con enemigos a la vista.', 'Impossible de descendre avec des ennemis en vue.') };
     const ap = this.adjApproach(h, x, y);
-    if (!ap) return { kind: 'none', text: name, sub: 'Acércate a la escalera para bajar.' };
+    if (!ap) return { kind: 'none', text: name, sub: L('Acércate a la escalera para bajar.', 'Approche-toi de l’escalier pour descendre.') };
     const next = this.descent.depth + 1, camp = DESCENT.isBoss(this.descent.depth);
-    return { kind: 'stairs', x, y, via: ap, text: camp ? 'Bajar y acampar' : `Bajar al nivel ${next}`, sub: `Baja todo el grupo, también los caídos. ${camp ? 'Al pie de la escalera acamparéis: descanso completo, talentos y tienda.' : 'Recuperáis 2 PV; las heridas siguen hasta acampar.'}${this.provText(ap.p)}` };
+    return { kind: 'stairs', x, y, via: ap, text: camp ? L('Bajar y acampar', 'Descendre et camper') : L(`Bajar al nivel ${next}`, `Descendre au niveau ${next}`), sub: L(`Baja todo el grupo, también los caídos. ${camp ? 'Al pie de la escalera acamparéis: descanso completo, talentos y tienda.' : 'Recuperáis 2 PV; las heridas siguen hasta acampar.'}${this.provText(ap.p)}`, `Tout le groupe descend, même les héros à terre. ${camp ? 'Au pied de l’escalier, vous camperez : repos complet, talents et boutique.' : 'Vous récupérez 2 PV ; les blessures restent jusqu’au campement.'}${this.provText(ap.p)}`) };
   },
 
   async descend(h) {
@@ -54,7 +54,7 @@ Object.assign(GAME, {
     this.heroes.forEach((q) => { D.carry[q.id] = { hp: Math.min(q.maxHp, (q.ko ? 1 : q.hp) + 2), wounds: q.wounds || 0 }; });
     D.depth = done + 1;
     if (this.noteBest()) D.record = true;
-    UI.log(`El grupo baja al nivel ${D.depth}.`, 'good');
+    UI.log(L(`El grupo baja al nivel ${D.depth}.`, `Le groupe descend au niveau ${D.depth}.`), 'good');
     setTimeout(() => (DESCENT.isBoss(done) ? this.descentCamp() : this.startChapter(1000 + D.depth)), 80);
   },
 
@@ -71,15 +71,15 @@ Object.assign(GAME, {
     WORLD.buildCamp();
     this.heroes = []; this.enemies = []; this.npcs = [];
     const theme = DESCENT.theme(D.depth - 1);
-    this.ch = { id: 'dcamp', num: String(D.depth - 1), title: 'Campamento', rooms: {}, lantern: DESCENT.LANTERN[theme], descent: true };
+    this.ch = { id: 'dcamp', num: String(D.depth - 1), title: L('Campamento', 'Campement'), rooms: {}, lantern: DESCENT.LANTERN[theme], descent: true };
     this.placeCampHeroes();
     ENGINE.focus(5 * TILE, 3 * TILE, { dist: 13, pitch: 0.55, yaw: 0.2, instant: true });
     audio.startAmbient('camp'); audio.setMusic('camp');
     await UI.fadeIn();
-    UI.locationCard(`Al pie del nivel ${D.depth - 1}`);
+    UI.locationCard(L(`Al pie del nivel ${D.depth - 1}`, `Au pied du niveau ${D.depth - 1}`));
     ENGINE.cam.t.yaw = 0.2;
     this.campOrbit = true;
-    await this.run([['n', DESCENT.CAMP[(D.camps - 1) % DESCENT.CAMP.length]], ['n', 'Las heridas se cierran junto al fuego. Mañana, el nivel ' + D.depth + '.']], {});
+    await this.run([['n', DESCENT.CAMP[(D.camps - 1) % DESCENT.CAMP.length]], ['n', L('Las heridas se cierran junto al fuego. Mañana, el nivel ' + D.depth + '.', 'Les blessures se referment près du feu. Demain, le niveau ' + D.depth + '.')]], {});
     UI.endDialogue();
     // Ascenso: dos rangos de talentos; después, una mejora por campamento
     const tier = D.camps - 1;
@@ -95,7 +95,10 @@ Object.assign(GAME, {
       D.boonAt = D.depth;
       this.refreshCampHeroes();
     }
+    // capa de saber: un dilema por campamento (se van turnando) y la crónica de la noche
+    if (!this.flags['ddil' + D.depth]) { this.flags['ddil' + D.depth] = true; await SABER.dilemma(SABER.DESCENT[(D.camps - 1) % SABER.DESCENT.length], 1000 + D.depth); }
     this.save('dcamp');
+    await SABER.chronicle();
     await UI.shop();
     this.campOrbit = false;
     await this.startChapter(1000 + D.depth);
@@ -128,11 +131,11 @@ Object.assign(GAME, {
   /* Un cofre con una pieza de equipo: va al arcón para repartirla al acampar */
   gearLoot() {
     const pool = GEAR.filter((it) => !it.found && !this.ownerOf(it.id) && (!it.who || it.who.some((id) => this.party.includes(id))));
-    if (!pool.length) { const g = U.randi(25, 40); this.addGold(g); UI.log(`Bajo el oro, nada más: ${g} monedas extra.`, 'good'); return; }
+    if (!pool.length) { const g = U.randi(25, 40); this.addGold(g); UI.log(L(`Bajo el oro, nada más: ${g} monedas extra.`, `Sous l’or, rien de plus : ${g} pièces en bonus.`), 'good'); return; }
     const it = U.pick(pool);
     this.stash.push(it.id);
     audio.sfx('levelUp');
-    UI.banner(it.name, 'Al arcón: podréis dárselo a alguien al acampar', 'place');
-    UI.log(`Encontráis <b>${U.esc(it.name)}</b>. Va al arcón del grupo.`, 'good');
+    UI.banner(it.name, L('Al arcón: podréis dárselo a alguien al acampar', 'Dans la malle : vous pourrez le donner à quelqu’un au campement'), 'place');
+    UI.log(L(`Encontráis <b>${U.esc(it.name)}</b>. Va al arcón del grupo.`, `Vous trouvez <b>${U.esc(it.name)}</b> et le rangez dans la malle du groupe.`), 'good');
   }
 });

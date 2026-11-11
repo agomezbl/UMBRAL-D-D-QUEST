@@ -36,27 +36,27 @@ Object.assign(UI, {
     const foe = r.att && r.att.side === 'enemy';
     const mods = r.mods && r.mods.length ? ` <span class="pq-mods">${r.mods.map(([t, v]) => `<em class="${v > 0 ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v} ${U.esc(t)}</em>`).join('')}</span>` : '';
     this.plaque(r.caption + mods,
-      `${fi(r.aType, 'skull')}<b class="n">×${r.skulls}</b><i>−</i>${fi(r.dType, r.shieldFace)}<b class="n">×${blocks}</b><i>=</i>${r.dmg ? `<b class="dmg">${r.dmg} de daño</b>` : '<b class="none">Sin daño</b>'}`,
+      `${fi(r.aType, 'skull')}<b class="n">×${r.skulls}</b><i>−</i>${fi(r.dType, r.shieldFace)}<b class="n">×${blocks}</b><i>=</i>${r.dmg ? `<b class="dmg">${L(`${r.dmg} de daño`, `${r.dmg} dégât${r.dmg > 1 ? 's' : ''}`)}</b>` : `<b class="none">${L('Sin daño', 'Aucun dégât')}</b>`}`,
       (r.dmg ? 'hit' : 'miss') + (foe ? ' foe' : ''));
-    if (r.broken) this.plaqueSub(`${fi(r.dType, r.shieldFace)}<span>${r.broken === 1 ? 'Un escudo no cuenta' : `${r.broken} escudos no cuentan`}: ${r.att && r.att.traits && r.att.traits.shieldbreaker ? 'rompe-escudos' : 'tiro certero'}</span>`, 'none');
+    if (r.broken) this.plaqueSub(`${fi(r.dType, r.shieldFace)}<span>${L(`${r.broken === 1 ? 'Un escudo no cuenta' : `${r.broken} escudos no cuentan`}: ${r.att && r.att.traits && r.att.traits.shieldbreaker ? 'rompe-escudos' : 'tiro certero'}`, `${r.broken === 1 ? 'Un bouclier ne compte pas' : `${r.broken} boucliers ne comptent pas`} : ${r.att && r.att.traits && r.att.traits.shieldbreaker ? 'brise-boucliers' : 'tir précis'}`)}</span>`, 'none');
     if (r.destiny) {
-      const D = DESTINY[r.att.id] || { name: 'Suerte' };
+      const D = DESTINY[r.att.id] || { name: L('Suerte', 'Chance') };
       const bossOn = GAME.boss && GAME.boss.alive && GAME.boss.active;
-      if (r.destiny === 'comedy') this.plaqueSub(`${fi('destiny', 'comedy')}<span><b class="good">Máscara alegre</b> · ${D.name}…</span>`, 'good pq-destiny');
-      else if (r.destiny === 'tragedy') this.plaqueSub(`${fi('destiny', 'tragedy')}<span><b class="bad">Máscara trágica</b> · ${bossOn ? 'Desequilibrado: pierdes el movimiento' : 'Ruido: +1 Presagio'}</span>`, 'bad pq-destiny');
-      else this.plaqueSub(`${fi('destiny', 'blank')}<span>Destino en blanco: nada más</span>`, 'none pq-destiny');
+      if (r.destiny === 'comedy') this.plaqueSub(`${fi('destiny', 'comedy')}<span><b class="good">${L('Máscara alegre', 'Masque joyeux')}</b> · ${D.name}…</span>`, 'good pq-destiny');
+      else if (r.destiny === 'tragedy') this.plaqueSub(`${fi('destiny', 'tragedy')}<span><b class="bad">${L('Máscara triste', 'Masque triste')}</b> · ${bossOn ? L('Desequilibrado: pierdes el movimiento', 'Déséquilibré : tu perds ton déplacement') : L('Ruido: +1 Presagio', 'Bruit : +1 Présage')}</span>`, 'bad pq-destiny');
+      else this.plaqueSub(`${fi('destiny', 'blank')}<span>${L('Destino en blanco: nada más', 'Destin vierge : rien de plus')}</span>`, 'none pq-destiny');
     }
   },
   /* Cerraduras, sellos y trampas: calaveras que hacen falta */
   checkPlaque(r) {
     const fi = this.faceImg('combat', 'skull');
-    const verdict = r.ok ? '<b class="good">Conseguido</b>' : r.cumulative && r.have > 0 ? '<b class="none">Aún no</b>' : '<b class="bad">Fallo</b>';
-    this.plaque(`<b>${U.esc(r.caption)}</b> · hacen falta ${r.need} calavera${r.need === 1 ? '' : 's'}`, `${fi}<b class="n">×${r.skulls}</b><i>→</i>${verdict}`, r.ok ? 'hit' : 'miss');
-    if (r.cumulative && r.have !== r.skulls) this.plaqueSub(`<span>${r.ok ? 'Con lo de antes, basta' : `Con lo de antes, lleváis ${r.have} de ${r.need}`}</span>`, 'none');
+    const verdict = r.ok ? `<b class="good">${L('Conseguido', 'Réussi')}</b>` : r.cumulative && r.have > 0 ? `<b class="none">${L('Aún no', 'Pas encore')}</b>` : `<b class="bad">${L('Fallo', 'Échec')}</b>`;
+    this.plaque(`<b>${U.esc(r.caption)}</b> · ${L(`hacen falta ${r.need} calavera${r.need === 1 ? '' : 's'}`, `il faut ${r.need} crâne${r.need > 1 ? 's' : ''}`)}`, `${fi}<b class="n">×${r.skulls}</b><i>→</i>${verdict}`, r.ok ? 'hit' : 'miss');
+    if (r.cumulative && r.have !== r.skulls) this.plaqueSub(`<span>${r.ok ? L('Con lo de antes, basta', 'Avec les précédents, ça suffit') : L(`Con lo de antes, lleváis ${r.have} de ${r.need}`, `Avec les précédents, vous en êtes à ${r.have} sur ${r.need}`)}</span>`, 'none');
   },
   /* Buscar: la cara del Dado del Tesoro */
   treasurePlaque(h, kind, text) {
     const good = kind === 'gold' || kind === 'potion' || kind === 'item';
-    this.plaque(`<b>${U.esc(h.name)} busca</b> · Dado del Tesoro`, `${this.faceImg('treasure', kind)}<b class="${good ? 'good' : kind === 'danger' ? 'bad' : 'none'}">${text}</b>`, good ? 'hit' : 'miss');
+    this.plaque(L(`<b>${U.esc(h.name)} busca</b> · Dado del Tesoro`, `<b>${U.esc(h.name)} fouille</b> · Dé du Trésor`), `${this.faceImg('treasure', kind)}<b class="${good ? 'good' : kind === 'danger' ? 'bad' : 'none'}">${text}</b>`, good ? 'hit' : 'miss');
   }
 });

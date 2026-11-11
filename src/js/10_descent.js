@@ -20,37 +20,63 @@ const DESCENT = {
     forge: (k) => ({ a: 4, b: 4, c: k >= 1 ? 2 : 1, d: k >= 2 ? 1.5 : 0 }),
     void: (k) => ({ a: 3, b: 3, c: k >= 2 ? 1 : 0, d: 3 })
   },
+  /* Nombres de los niveles: «lugar» + «complemento» (p. ej. «Catacumbas» + «de los Sin Nombre»).
+     Los lugares van siempre en plural y los complementos son siempre preposicionales
+     («de…», «des…», «sans…»), así que en francés no tienen que concordar en género ni número
+     con el lugar: cualquier pareja queda bien («Catacombes des Sans-Nom», «Voûtes de l’Œil»).
+     Cada lista tiene la misma longitud en los dos idiomas: así la semilla da el mismo nivel. */
   NAMES: {
-    crypt: { place: ['Catacumbas', 'Osarios', 'Criptas', 'Galerías', 'Panteones', 'Nichos'], of: ['de los Sin Nombre', 'del Hueso Viejo', 'de la Cera Negra', 'de los Abades', 'del Silencio', 'de Fray Osric', 'de las Velas Muertas'],
-      rooms: ['Osario', 'Nichos', 'Capilla', 'Galería', 'Sala de los sarcófagos', 'Cripta menor', 'Pasillo de las velas', 'Celda', 'Relicario', 'Sala de las ofrendas', 'Pozo seco', 'Coro hundido'],
-      start: 'Pie de la escalera', exit: 'Escalera abajo' },
-    forge: { place: ['Fraguas', 'Minas', 'Hornos', 'Fundiciones', 'Pozos', 'Talleres'], of: ['de Karak-Azkul', 'de la Mano Negra', 'del Yunque Roto', 'de la Escoria', 'de los Enanos', 'del Magma', 'de la Ceniza'],
-      rooms: ['Fragua', 'Mina', 'Almacén', 'Horno', 'Taller', 'Fundición', 'Cuartel', 'Galería de vagonetas', 'Polvorín', 'Sala del yunque', 'Carbonera', 'Pozo de escoria'],
-      start: 'Rellano de hierro', exit: 'Rampa abajo' },
-    void: { place: ['Salas', 'Jardines', 'Bóvedas', 'Claustros', 'Cámaras', 'Galerías'], of: ['del Ojo', 'de Cristal', 'del Vacío', 'de la Voz', 'sin Fondo', 'del Reflejo', 'de la Luz Quieta'],
-      rooms: ['Bóveda', 'Jardín de cristal', 'Claustro', 'Galería de espejos', 'Cámara', 'Antesala', 'Puente', 'Observatorio', 'Biblioteca hundida', 'Santuario', 'Sala del eco', 'Nave'],
-      start: 'Umbral de cristal', exit: 'Escalera abajo' }
+    crypt: { place: [L('Catacumbas', 'Catacombes'), L('Osarios', 'Ossuaires'), L('Criptas', 'Cryptes'), L('Galerías', 'Galeries'), L('Panteones', 'Caveaux'), L('Nichos', 'Niches')],
+      of: [L('de los Sin Nombre', 'des Sans-Nom'), L('del Hueso Viejo', 'du Vieil Os'), L('de la Cera Negra', 'de la Cire Noire'), L('de los Abades', 'des Abbés'), L('del Silencio', 'du Silence'), L('de Fray Osric', 'de Frère Osric'), L('de las Velas Muertas', 'des Cierges Éteints')],
+      rooms: [L('Osario', 'Ossuaire'), L('Nichos', 'Niches'), L('Capilla', 'Chapelle'), L('Galería', 'Galerie'), L('Sala de los sarcófagos', 'Salle des sarcophages'), L('Cripta menor', 'Petite crypte'), L('Pasillo de las velas', 'Couloir des cierges'), L('Celda', 'Cellule'), L('Relicario', 'Reliquaire'), L('Sala de las ofrendas', 'Salle des offrandes'), L('Pozo seco', 'Puits à sec'), L('Coro hundido', 'Chœur effondré')],
+      start: L('Pie de la escalera', 'Bas de l’escalier'), exit: L('Escalera abajo', 'Escalier descendant') },
+    forge: { place: [L('Fraguas', 'Forges'), L('Minas', 'Mines'), L('Hornos', 'Fours'), L('Fundiciones', 'Fonderies'), L('Pozos', 'Puits'), L('Talleres', 'Ateliers')],
+      of: [L('de Karak-Azkul', 'de Karak-Azkul'), L('de la Mano Negra', 'de la Main Noire'), L('del Yunque Roto', 'de l’Enclume Brisée'), L('de la Escoria', 'des Scories'), L('de los Enanos', 'des Nains'), L('del Magma', 'du Magma'), L('de la Ceniza', 'des Cendres')],
+      rooms: [L('Fragua', 'Forge'), L('Mina', 'Mine'), L('Almacén', 'Entrepôt'), L('Horno', 'Four'), L('Taller', 'Atelier'), L('Fundición', 'Fonderie'), L('Cuartel', 'Caserne'), L('Galería de vagonetas', 'Galerie des wagonnets'), L('Polvorín', 'Poudrière'), L('Sala del yunque', 'Salle de l’enclume'), L('Carbonera', 'Charbonnière'), L('Pozo de escoria', 'Puits à scories')],
+      start: L('Rellano de hierro', 'Palier de fer'), exit: L('Rampa abajo', 'Rampe descendante') },
+    void: { place: [L('Salas', 'Salles'), L('Jardines', 'Jardins'), L('Bóvedas', 'Voûtes'), L('Claustros', 'Cloîtres'), L('Cámaras', 'Chambres'), L('Galerías', 'Galeries')],
+      of: [L('del Ojo', 'de l’Œil'), L('de Cristal', 'de Cristal'), L('del Vacío', 'du Vide'), L('de la Voz', 'de la Voix'), L('sin Fondo', 'sans Fond'), L('del Reflejo', 'du Reflet'), L('de la Luz Quieta', 'de la Lumière Immobile')],
+      rooms: [L('Bóveda', 'Voûte'), L('Jardín de cristal', 'Jardin de cristal'), L('Claustro', 'Cloître'), L('Galería de espejos', 'Galerie des miroirs'), L('Cámara', 'Chambre'), L('Antesala', 'Antichambre'), L('Puente', 'Pont'), L('Observatorio', 'Observatoire'), L('Biblioteca hundida', 'Bibliothèque engloutie'), L('Santuario', 'Sanctuaire'), L('Sala del eco', 'Salle de l’écho'), L('Nave', 'Nef')],
+      start: L('Umbral de cristal', 'Seuil de cristal'), exit: L('Escalera abajo', 'Escalier descendant') }
   },
   INTRO: {
-    crypt: ['Huele a cera vieja y a tierra removida. Algo arrastra los pies más allá de la luz.', 'Los nichos de este nivel tienen nombres. Todos tachados.', 'Las velas de este piso siguen encendidas. Nadie las ha encendido.', 'El eco de vuestros pasos tarda demasiado en volver.'],
-    forge: ['El aire quema la garganta. Abajo, alguien sigue avivando los hornos.', 'Martillazos lejanos marcan un ritmo que no es humano.', 'La piedra está caliente al tacto. Hay huellas de botas herradas en la ceniza.', 'Una vagoneta volcada bloquea media galería. Todavía humea.'],
-    void: ['El suelo brilla como el agua quieta. Vuestro reflejo tarda en moverse.', 'No hay eco aquí. Las palabras se apagan al salir de la boca.', 'Cristales violetas crecen de las paredes como dientes.', 'La luz del farol se curva hacia el fondo de la sala, como si algo la llamara.']
+    crypt: [L('Huele a cera vieja y a tierra removida. Algo arrastra los pies más allá de la luz.', 'Ça sent la vieille cire et la terre retournée. Quelque chose traîne les pieds au-delà de la lumière.'),
+      L('Los nichos de este nivel tienen nombres. Todos tachados.', 'Les niches de ce niveau portent des noms. Tous rayés.'),
+      L('Las velas de este piso siguen encendidas. Nadie las ha encendido.', 'Les cierges de cet étage brûlent encore. Personne ne les a allumés.'),
+      L('El eco de vuestros pasos tarda demasiado en volver.', 'L’écho de vos pas met trop longtemps à revenir.')],
+    forge: [L('El aire quema la garganta. Abajo, alguien sigue avivando los hornos.', 'L’air brûle la gorge. En bas, quelqu’un attise encore les fours.'),
+      L('Martillazos lejanos marcan un ritmo que no es humano.', 'Des coups de marteau lointains battent un rythme qui n’a rien d’humain.'),
+      L('La piedra está caliente al tacto. Hay huellas de botas herradas en la ceniza.', 'La pierre est chaude au toucher. Des bottes ferrées ont laissé leurs empreintes dans la cendre.'),
+      L('Una vagoneta volcada bloquea media galería. Todavía humea.', 'Un wagonnet renversé bloque la moitié de la galerie. Il fume encore.')],
+    void: [L('El suelo brilla como el agua quieta. Vuestro reflejo tarda en moverse.', 'Le sol luit comme une eau dormante. Votre reflet tarde à bouger.'),
+      L('No hay eco aquí. Las palabras se apagan al salir de la boca.', 'Ici, pas d’écho. Les mots s’éteignent à peine sortis de la bouche.'),
+      L('Cristales violetas crecen de las paredes como dientes.', 'Des cristaux violets poussent sur les murs comme des dents.'),
+      L('La luz del farol se curva hacia el fondo de la sala, como si algo la llamara.', 'La lumière de la lanterne s’incurve vers le fond de la salle, comme si quelque chose l’appelait.')]
   },
   NOTES: {
-    crypt: [['Lápida sin nombre', 'Aquí yace quien guardó la puerta. No preguntéis su nombre: ya no lo tiene.'], ['Diario de un saqueador', 'Bajamos seis. Subiremos tres, dice Hob. Hob siempre fue optimista.'], ['Inscripción en un nicho', 'La muerte no es el fondo. Hay más escalones.'], ['Plegaria rayada', 'Madre de la Llama, si me oyes, no bajes a buscarme.']],
-    forge: [['Albarán de la forja', 'Cien hojas para la Mano Negra. Pago: lo que queda de los enanos que no quisieron forjarlas.'], ['Runas en un yunque', 'El que golpea sin descanso, al final se queda sin brazo.'], ['Nota de un capataz', 'Que nadie baje al pozo de escoria. Lo que hay allí no es escoria.'], ['Cartel quemado', 'Turno de noche: dos orcos y un trasgo. El trasgo no cuenta.']],
-    void: [['Grabado en el cristal', 'Mira dentro y verás quién eres. Mira más y verás quién podrías ser.'], ['Página flotante', 'El Ojo no ve. Recuerda. Y todo lo que recuerda, vuelve.'], ['Anotación de un astrónomo', 'Aquí abajo las estrellas están más cerca. Y nos miran.'], ['Verso sin autor', 'Bajé buscando el fondo. El fondo me encontró a mí.']]
+    crypt: [[L('Lápida sin nombre', 'Pierre tombale sans nom'), L('Aquí yace quien guardó la puerta. No preguntéis su nombre: ya no lo tiene.', 'Ci-gît celui qui gardait la porte. Ne demandez pas son nom : il ne l’a plus.')],
+      [L('Diario de un saqueador', 'Journal d’un pilleur'), L('Bajamos seis. Hob dice que volveremos para la cena. Hob siempre fue optimista.', 'Nous sommes descendus à six. Hob dit qu’on sera rentrés pour le dîner. Hob a toujours été optimiste.')],
+      [L('Inscripción en un nicho', 'Inscription dans une niche'), L('La muerte no es el fondo. Hay más escalones.', 'La mort n’est pas le fond. Il y a d’autres marches.')],
+      [L('Plegaria rayada', 'Prière griffonnée'), L('Madre de la Llama, si me oyes, no bajes a buscarme.', 'Mère de la Flamme, si tu m’entends, ne descends pas me chercher.')]],
+    forge: [[L('Albarán de la forja', 'Bon de livraison de la forge'), L('Cien hojas para la Mano Negra. Pago: cero monedas. Los herreros trabajan porque no les dejan irse.', 'Cent lames pour la Main Noire. Paiement : zéro pièce. Les forgerons travaillent parce qu’on ne les laisse pas partir.')],
+      [L('Runas en un yunque', 'Runes sur une enclume'), L('El que golpea sin descanso, al final se queda sin brazo.', 'Qui frappe sans relâche finit par y laisser son bras.')],
+      [L('Nota de un capataz', 'Note d’un contremaître'), L('Que nadie baje al pozo de escoria. Lo que hay allí no es escoria.', 'Que personne ne descende au puits à scories. Ce qu’il y a là-dedans, ce ne sont pas des scories.')],
+      [L('Cartel quemado', 'Affiche brûlée'), L('Turno de noche: dos orcos y un trasgo. El trasgo no cuenta.', 'Équipe de nuit : deux orques et un gobelin. Le gobelin ne compte pas.')]],
+    void: [[L('Grabado en el cristal', 'Gravure dans le cristal'), L('Mira dentro y verás quién eres. Mira más y verás quién podrías ser.', 'Regarde dedans et tu verras qui tu es. Regarde encore et tu verras qui tu pourrais être.')],
+      [L('Página flotante', 'Page flottante'), L('El Ojo no ve. Recuerda. Y todo lo que recuerda, vuelve.', 'L’Œil ne voit pas. Il se souvient. Et tout ce dont il se souvient revient.')],
+      [L('Anotación de un astrónomo', 'Note d’un astronome'), L('Aquí abajo las estrellas están más cerca. Y nos miran.', 'Ici-bas, les étoiles sont plus proches. Et elles nous regardent.')],
+      [L('Verso sin autor', 'Vers sans auteur'), L('Bajé buscando el fondo. El fondo me encontró a mí.', 'Je suis descendu chercher le fond. C’est le fond qui m’a trouvé.')]]
   },
   TAUNT: {
-    malakor: ['Más corderos para mi rebaño.', '¿Habéis bajado hasta aquí para morir? Qué considerados.'],
-    ignis: ['¡Más leña para la forja!', 'Vuestros huesos templarán bien el acero.'],
-    aethelgard: ['Nadie cruza el Ojo dos veces.', 'Ya os he visto morir. Muchas veces.']
+    malakor: [L('Más corderos para mi rebaño.', 'Encore des agneaux pour mon troupeau.'), L('¿Habéis bajado hasta aquí para perder? Qué considerados.', 'Vous êtes descendus jusqu’ici pour perdre ? Comme c’est aimable.')],
+    ignis: [L('¡Más leña para la forja!', 'Encore du bois pour la forge !'), L('¡Os fundiré en lingotes!', 'Je vais vous fondre en lingots !')],
+    aethelgard: [L('Nadie cruza el Ojo dos veces.', 'Nul ne traverse l’Œil deux fois.'), L('Ya os he visto caer. Muchas veces.', 'Je vous ai déjà vus tomber. Bien des fois.')]
   },
   CAMP: [
-    'Encontráis un hueco seco entre dos galerías. El fuego prende a la segunda.',
-    'Alguien acampó aquí antes. Dejó leña, un caldero y ninguna explicación.',
-    'Por primera vez en horas no se oye nada. Ni siquiera la Hondura.',
-    'Las brasas iluminan las caras del grupo. Nadie habla de lo que hay más abajo.'
+    L('Encontráis un hueco seco entre dos galerías. El fuego prende a la segunda.', 'Vous trouvez un recoin sec entre deux galeries. Le feu prend au deuxième essai.'),
+    L('Alguien acampó aquí antes. Dejó leña, un caldero y ninguna explicación.', 'Quelqu’un a campé ici avant vous. Il a laissé du bois, un chaudron et aucune explication.'),
+    L('Por primera vez en horas no se oye nada. Ni siquiera la Hondura.', 'Pour la première fois depuis des heures, on n’entend rien. Pas même les Tréfonds.'),
+    L('Las brasas iluminan las caras del grupo. Nadie habla de lo que hay más abajo.', 'Les braises éclairent les visages du groupe. Personne ne parle de ce qui attend plus bas.')
   ],
   theme(depth) { return this.THEMES[Math.floor((depth - 1) / this.BAND) % this.THEMES.length]; },
   cycle(depth) { return Math.floor((depth - 1) / (this.BAND * this.THEMES.length)); },
@@ -188,8 +214,8 @@ const DESCENT = {
       if (!spot) return;
       G[spot[1]][spot[0]] = m;
       R.mark = m;
-      if (R.id === exitR) roomMeta[m] = boss ? { name: `Guarida de ${ENEMY_TYPES[bossType].name.split(',')[0]}` } : { name: N.exit, reveal: [['n', 'Unos peldaños gastados se hunden en la oscuridad: la escalera al nivel siguiente.'], ['objective', 'Baja por la escalera: acércate y tócala. Antes, si quieres, explora.']] };
-      else roomMeta[m] = { name: names.pop() || 'Sala' };
+      if (R.id === exitR) roomMeta[m] = boss ? { name: L(`Guarida de ${ENEMY_TYPES[bossType].name.split(',')[0]}`, `Repaire ${/^[aeiouyhâàéèêëîïôûœ]/i.test(ENEMY_TYPES[bossType].name) ? 'd’' : 'de '}${ENEMY_TYPES[bossType].name.split(',')[0]}`) } : { name: N.exit, reveal: [['n', L('Unos peldaños gastados se hunden en la oscuridad: la escalera al nivel siguiente.', 'Des marches usées s’enfoncent dans l’obscurité : l’escalier vers le niveau suivant.')], ['objective', L('Baja por la escalera: acércate y tócala. Antes, si quieres, explora.', 'Descends l’escalier : approche-toi et touche-le. Mais avant, explore si tu veux.')]] };
+      else roomMeta[m] = { name: names.pop() || L('Sala', 'Salle') };
     });
     // columnas, bloques y fosas en las salas grandes
     const blockCh = '&';
@@ -260,16 +286,16 @@ const DESCENT = {
     const title = `${pick(P.place)} ${pick(P.of)}`;
     const bossName = boss ? ENEMY_TYPES[bossType].name : '';
     return {
-      id: 'd' + depth, num: String(depth), descent: true, depth, eyebrow: `Descenso · Nivel ${depth}`, title,
-      subtitle: boss ? `Nivel del guardián · ${bossName.split(',')[0]}` : `A ${depth * 40} varas bajo Aldmere`,
+      id: 'd' + depth, num: String(depth), descent: true, depth, eyebrow: L(`Descenso · Nivel ${depth}`, `Descente · Niveau ${depth}`), title,
+      subtitle: boss ? L(`Nivel del guardián · ${bossName.split(',')[0]}`, `Niveau du gardien · ${bossName.split(',')[0]}`) : L(`A ${depth * 40} varas bajo Aldmere`, `À ${depth * 40} aunes sous Aldmere`),
       theme, ambient: theme, legend: this.LEGENDS[theme], bossType, lantern: this.LANTERN[theme], locks, map,
       exit, scale: { hp: Math.floor((depth - 1) / 6), atk: Math.floor((depth - 1) / 10), bossHp: Math.floor((depth - 1) / 4) * 2 },
       champChance: Math.min(0.3, Math.max(0, (depth - 2) * 0.03)),
-      intro: [['n', pick(this.INTRO[theme])], ['objective', boss ? 'Encuentra y derrota al guardián del nivel; tras él está la escalera.' : 'Encuentra la escalera que baja al nivel siguiente.']],
+      intro: [['n', pick(this.INTRO[theme])], ['objective', boss ? L('Encuentra y derrota al guardián del nivel; tras él está la escalera.', 'Trouve et vaincs le gardien du niveau ; l’escalier est derrière lui.') : L('Encuentra la escalera que baja al nivel siguiente.', 'Trouve l’escalier qui descend au niveau suivant.')]],
       rooms: roomMeta, notes, chests,
       boss: boss ? {
-        reveal: [['music', 'boss'], ['stinger', 'boss'], ['camBoss'], [bossType, pick(this.TAUNT[bossType])], ['bossbar'], ['objective', `Derrota a ${bossName.split(',')[0]}. La escalera está tras él.`]],
-        defeat: [['n', 'El guardián se desploma. Más allá, la escalera queda libre.'], ['objective', 'Baja por la escalera para acampar.']]
+        reveal: [['music', 'boss'], ['stinger', 'boss'], ['camBoss'], [bossType, pick(this.TAUNT[bossType])], ['bossbar'], ['objective', L(`Derrota a ${bossName.split(',')[0]}. La escalera está tras él.`, `Vaincs ${bossName.split(',')[0]}. L’escalier est derrière lui.`)]],
+        defeat: [['n', L('El guardián se desploma. Más allá, la escalera queda libre.', 'Le gardien s’effondre. Au-delà, l’escalier est libre.')], ['objective', L('Baja por la escalera para acampar.', 'Descends l’escalier pour camper.')]]
       } : null
     };
   }

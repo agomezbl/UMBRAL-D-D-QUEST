@@ -501,3 +501,58 @@ Lectura: con las dos marcas más, el juego queda en la misma franja que antes. L
 - Tutorial completo en ordenador y en móvil, con el paso nuevo «El Dado del Destino».
 - Partidas guardadas en mitad de una ronda (campaña y Descenso) que se reanudan igual.
 - Campaña completa con el jugador automático en las combinaciones de 12.5, sin errores.
+
+## 13. Ocio con saber dentro, PEGI 7 y francés (v1.1 beta, noviembre de 2026)
+
+### 13.1 Lo que se pidió
+
+- Que UMBRAL enseñe algo sin dejar de ser un juego de dados y estrategia. Se estudió desde la pedagogía, el diseño de juego y el negocio (documento aparte «UMBRAL educativo · estudio y guía»), y se eligió la **estrategia híbrida**: una capa de saber dentro de las mecánicas que ya existen, por fases, una crónica para la familia y, más adelante, un puente a la suite de juegos.
+- Que todo el juego sea **PEGI 7**, sí o sí.
+- Que esté en **español y francés**.
+
+### 13.2 Reglas de la capa de saber
+
+1. Saber da ventaja; no saber nunca castiga más que jugar como antes. Nada bloquea el paso.
+2. Es opcional y corto (un toque y una explicación).
+3. Los números son honestos: el juego enseña la probabilidad verdadera.
+4. Sin oro ni experiencia por acertar: el premio es una pequeña ventaja dentro del juego.
+5. Los dilemas no tienen respuesta correcta ni marcador moral.
+
+### 13.3 Fase 1 (hecha)
+
+| Pieza | Dónde | Cómo funciona |
+| --- | --- | --- |
+| **Ojo de Tahúr** | Antes del primer ataque de cada ronda | El porcentaje de la vista previa se oculta y sale una pregunta. Cuatro niveles: calaveras esperadas (n ÷ 2), «al menos una calavera» (suceso contrario, 1 − 1/2ⁿ), veces de cada 10 que hieres y daño medio (esperanza). Sube de nivel cada 3 aciertos. Si aciertas y el Dado del Destino sale liso, se vuelve máscara alegre. Se puede decir «Ahora no» o apagarlo en Ajustes. No sale en el tutorial. El nivel se guarda en el aparato (`umbral.saber`), no en la partida |
+| **Libro de Tiradas** | Crónica de la noche | Cuenta los dados de ataque de los héroes y las calaveras, y los compara con el 50 % esperado (ley de los grandes números) |
+| **Dilema de la noche** | Cada campamento, después de la velada | Campaña: el trasgo de la despensa (cap. I) y el orco de las cadenas rotas (cap. II). Descenso: la mochila de Hob, la pregunta del novicio y la trampa de la escalera, por turnos. Dos opciones con coste en los dos lados (poción, oro, bomba, trampas señaladas o Inspirados), un «¿por qué?» con tres razones dichas por héroes del grupo y el nombre del pensador que razonaba así (Mill, Kant, Aristóteles) |
+| **Crónica de la noche** | Al acampar, antes de la tienda | Estimaciones y aciertos, Libro de Tiradas, dilema elegido y una **pregunta para la cena** |
+
+Todo está en `src/js/10_saber.js`. Encaja con el temario: «sentido estocástico» de 1.º a 3.º de ESO (LOMLOE) y probabilidad del cycle 4 en Francia (equiprobabilidad, suceso contrario, estabilización de frecuencias).
+
+### 13.4 PEGI 7
+
+| Antes | Ahora |
+| --- | --- |
+| Destello rojo y chirrido en los sustos | Destello suave violeta, acorde misterioso sin golpe seco, menos temblor. Ajuste **Sustos: Suaves / Sin sustos** |
+| Chispas rojas («sangre») al herir a un héroe | Chispas doradas |
+| «Desangrándose», «ha muerto», «no volverá a levantarse» | «Sin fuerzas», «no puede seguir», «el grupo se retira a recuperar fuerzas» |
+| Sangre caliente, ¡SANGRE!, ¡Carne fresca!, Necrófago, «su sangre, fuego», «huesos roídos», «mi pueblo ardió desde dentro», «Mátalo», «Vuestros huesos templarán el acero» | Corazón ardiente, ¡FURIA!, ¡Intrusos!, Acechador de criptas, «arde como una fragua», «restos de comida», «mi pueblo tuvo que huir de la montaña», «Acaba con él», «¡Os fundiré en lingotes!» |
+| Aterrado | Asustado |
+
+La fantasía (esqueletos, espectros, un nigromante) se mantiene: es violencia no realista contra criaturas fantásticas, como en otros juegos PEGI 7.
+
+### 13.5 Francés
+
+- `src/js/00_i18n.js`: cada texto se escribe en los dos idiomas, uno junto al otro, `L('español', 'français')`. El idioma se elige en la pantalla de inicio (ES / FR) o en Ajustes; al cambiarlo, la página se recarga. También vale `?lang=fr` en la dirección. Sin elección, se usa el idioma del aparato.
+- En francés, los espacios antes de `: ; ! ? » %` se vuelven de no separación automáticamente.
+- La voz narrada usa una voz francesa del aparato si la hay.
+- Al reanudar una partida, los nombres de los enemigos se rehacen en el idioma actual.
+
+### 13.6 Verificación
+
+Chrome real, sin tarjeta gráfica: pantalla de inicio, ajustes, ayuda, tutorial, capítulo I con un ataque y su pregunta del Ojo de Tahúr, campamento completo (talentos, velada, dilema, «¿por qué?», pensador, crónica, tienda) y preparación del Descenso, en español y en francés, en ordenador (1280×720) y en móvil (390×844). Sin errores de consola.
+
+### 13.7 Próximas fases
+
+- Fase 2: «¡Contradicción!» (unir frases de Isolde con los escritos que las desmienten), Bestiario de Osric, Archivo de Aldmere.
+- Fase 3: sellos que se leen (runas, números romanos, cifrado César), mapa del cartógrafo (coordenadas y Pitágoras), los nombres raspados, la forja de Thráin.
