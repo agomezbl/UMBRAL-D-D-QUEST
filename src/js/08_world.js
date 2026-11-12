@@ -77,6 +77,7 @@ const WORLD = {
       ENGINE.scene.remove(this.group);
       this.group.traverse((o) => { if (o.isInstancedMesh) o.dispose(); if (o.geometry && o.userData.own) o.geometry.dispose(); });
     }
+    if (typeof BAKE !== 'undefined') BAKE.clear();
     this.group = null; this.L = null; this.anims = []; this.dyn = []; this.flames = []; this.liquids = []; this.mists = []; this.exitGlow = null; this.shafts = []; this.runePanels = [];
     ENGINE.clearLights();
   },
@@ -100,26 +101,41 @@ const WORLD = {
     this.units = new THREE.Group(); g.add(this.units);
     this.flames = []; this.liquids = []; this.mists = [];
     const rnd = U.mulberry(theme.seed * 7 + 1);
+    // cada sala recibe su estilo (capilla, osario, fragua, observatorio…) y su luz propia
+    SALAS.assign(L, def, theme);
+    BAKE.setup(L);
+    L.rooms.forEach((room) => BAKE.fill(room.id, room.style.luz, room.style.fondo));
 
-    // --- suelo instanciado ---
-    const FT = TEX.floor(theme);
-    const floorMat = new THREE.MeshStandardMaterial({ map: FT.map, normalMap: FT.normalMap, roughnessMap: FT.roughnessMap, roughness: 1, metalness: theme.id === 'void' ? 0.25 : 0.02, normalScale: new THREE.Vector2(1, 1) });
-    if (FT.emissiveMap) { floorMat.emissiveMap = FT.emissiveMap; floorMat.emissive = new THREE.Color('#ff5a1a'); floorMat.emissiveIntensity = 0.55; }
+    // --- suelo instanciado: una malla por clase de suelo, cada casilla con su variante y su tinte ---
     const floorTiles = [];
     for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) { const t = L.T[y][x]; if ((t.floor && !t.hazard && t.ch !== 'X') || t.door) floorTiles.push(t); }
+    const styleOf = (t) => { const r = L.rooms[t.door ? Math.max(t.doorRef.rooms[0], t.doorRef.rooms[1]) : t.room]; return (r && r.style) || { suelo: 'losa', tinte: [1, 1, 1] }; };
+    const byKind = {};
+    floorTiles.forEach((t) => { const k = t.door ? 'losa' : styleOf(t).suelo; (byKind[k] = byKind[k] || []).push(t); });
+    this.floorData = []; this.floorMeshes = [];
     const floorGeo = new THREE.BoxGeometry(TILE, 0.4, TILE);
     floorGeo.translate(0, -0.2, 0);
-    // UV de la cara superior: una losa por casilla
-    const fI = this.floorI = new THREE.InstancedMesh(floorGeo, floorMat, floorTiles.length);
-    fI.receiveShadow = true; fI.userData.own = true;
-    fI.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.floorData = floorTiles.map((t, i) => {
-      const d = { t, i, rooms: t.door ? t.doorRef.rooms : [t.room], shown: false, rot: Math.floor(rnd() * 4) * Math.PI / 2, x: t.x * TILE, z: t.y * TILE };
-      const c = 0.86 + rnd() * 0.22; fI.setColorAt(i, new THREE.Color(c, c * (0.98 + rnd() * 0.04), c));
-      t.floorIdx = i; return d;
+    Object.keys(byKind).forEach((kind) => {
+      const tiles = byKind[kind], FT = this.floorTex(kind, theme);
+      const geo = floorGeo.clone(), vars = new Float32Array(tiles.length * 2);
+      const mat = this.floorMat(FT, theme);
+      const fI = new THREE.InstancedMesh(geo, mat, tiles.length);
+      fI.receiveShadow = true; fI.userData.own = true;
+      fI.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      const col = new THREE.Color();
+      tiles.forEach((t, i) => {
+        const st = styleOf(t), v = Math.floor(rnd() * 4); vars[i * 2] = v % 2; vars[i * 2 + 1] = v >> 1;
+        const rot = FT.rotate ? Math.floor(rnd() * 4) * Math.PI / 2 : (rnd() < 0.5 ? 0 : Math.PI);
+        let c = 0.9 + rnd() * 0.16;
+        if (kind === 'ajedrez') c *= (t.x + t.y) % 2 ? 0.95 : 0.5;
+        const tn = t.door ? [1, 1, 1] : st.tinte;
+        col.setRGB(tn[0] * c, tn[1] * c, tn[2] * c); fI.setColorAt(i, col);
+        this.floorData.push({ t, i, im: fI, rooms: t.door ? t.doorRef.rooms : [t.room], shown: false, rot, x: t.x * TILE, z: t.y * TILE });
+      });
+      geo.setAttribute('aVar', new THREE.InstancedBufferAttribute(vars, 2));
+      this.hideAll(fI, this.floorData.filter((d) => d.im === fI));
+      g.add(fI); this.floorMeshes.push(fI);
     });
-    this.hideAll(fI, this.floorData);
-    g.add(fI);
 
     // --- muros instanciados ---
     const WT = TEX.wall(theme);
@@ -141,11 +157,13 @@ const WORLD = {
     wI.castShadow = true; wI.receiveShadow = true; wI.userData.own = true;
     wI.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     const capGeo = new THREE.BoxGeometry(TILE + 0.04, 0.12, TILE + 0.04); capGeo.translate(0, WH + 0.06, 0);
-    const capMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(theme.trim).multiplyScalar(0.55), roughness: 0.9 });
+    const capMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(theme.wall).multiplyScalar(0.5), roughness: 0.95, emissive: new THREE.Color(theme.wall).multiplyScalar(0.06) });
     const cI = this.capI = new THREE.InstancedMesh(capGeo, capMat, wallTiles.length);
     cI.userData.own = true; cI.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.wallData = wallTiles.map((w, i) => {
-      const c = 0.82 + rnd() * 0.22; wI.setColorAt(i, new THREE.Color(c, c, c));
+      const c = 0.82 + rnd() * 0.22, tn = [0, 0, 0];
+      w.rooms.forEach((ri) => { const st = L.rooms[ri] && L.rooms[ri].style; (st ? st.tinte : [1, 1, 1]).forEach((v, k) => (tn[k] += (0.55 + v * 0.45) / w.rooms.length)); });
+      wI.setColorAt(i, new THREE.Color(c * tn[0], c * tn[1], c * tn[2]));
       return { t: w.t, i, rooms: w.rooms, shown: false, rot: 0, x: w.t.x * TILE, z: w.t.y * TILE };
     });
     this.hideAll(wI, this.wallData); this.hideAll(cI, this.wallData);
@@ -177,6 +195,13 @@ const WORLD = {
       if (!t.floor) continue;
       const ch = t.ch;
       if (ch === 'O') addProp(t, MODELS.pillar(theme));
+      else if (ch === '&' && SALAS.block(L.rooms[t.room], theme, rnd)) {
+        const res = DECO.make(SALAS.block(L.rooms[t.room], theme, rnd), rnd, SALAS.opts(L.rooms[t.room].style));
+        const built = DECO.compose([{ res, m: new THREE.Matrix4().makeRotationY(Math.floor(rnd() * 4) * Math.PI / 2) }]);
+        addProp(t, built.group);
+        built.lights.forEach((l) => BAKE.add(t.room, t.x * TILE + l.x, t.y * TILE + l.z, l.color, l.intensity, l.dist));
+        built.flames.forEach((f) => this.addFlame(t.x * TILE + f.x, f.y, t.y * TILE + f.z, f.w, f.h, theme.flameA, theme.flameB, L.rooms[t.room]));
+      }
       else if (ch === '&') {
         let p;
         if (theme.block === 'sarcophagus') p = MODELS.sarcophagus();
@@ -206,9 +231,6 @@ const WORLD = {
       else if (t.trap) {
         const tm = this.trapMesh(); tm.position.set(t.x * TILE, 0.01, t.y * TILE); tm.visible = false; g.add(tm); t.trap.mesh = tm;
       }
-      // velas y telarañas en la cripta
-      if (theme.id === 'crypt' && t.ch === '.' && rnd() < 0.05 && this.nextToWall(t)) addProp(t, MODELS.candles(rnd), { dx: (rnd() - 0.5) * 0.6, dz: (rnd() - 0.5) * 0.6 });
-      if (theme.id === 'forge' && t.ch === '.' && rnd() < 0.035 && this.nextToWall(t)) addProp(t, MODELS.crate(), { ry: rnd() * 6 });
     }
 
     // --- líquidos (por sala) ---
@@ -237,7 +259,9 @@ const WORLD = {
     // --- antorchas automáticas en los muros, adornos y rayos de luz ---
     L.rooms.forEach((room) => this.placeTorches(room, theme, rnd));
     this.runePanels = [];
-    L.rooms.forEach((room) => this.placeDecor(room, theme, rnd));
+    const dens = SALAS.DENS[(typeof SETTINGS !== 'undefined' && SETTINGS.quality) || 'alto'] || 1;
+    L.rooms.forEach((room) => { if (!this.furnishRoom(room, theme, dens)) this.placeDecor(room, theme, rnd); });
+    this.stainRooms(theme, dens);
     this.placeShafts(theme, rnd);
 
     // --- telarañas en esquinas (cripta) ---
@@ -268,6 +292,71 @@ const WORLD = {
     return L;
   },
 
+  /* Paleta de cada clase de suelo: las de piedra toman el color del lugar, las demás el suyo */
+  floorTex(kind, theme) {
+    const stone = { base: theme.floor, accent: theme.floorAccent, mortar: theme.mortar, rough: theme.floorRough, bump: theme.floorBump, seed: theme.seed };
+    const own = {
+      tablas: { base: '#7a5638', accent: '#5e3f28', mortar: '#1a120c', rough: 0.8, bump: 5 },
+      tierra: { base: '#6a5846', accent: '#4e4034', mortar: '#2a2018', rough: 0.95, bump: 5 },
+      ladrillo: { base: theme.id === 'void' ? '#4e4466' : '#7a5446', accent: theme.id === 'void' ? '#3e3656' : '#5e3e34', mortar: '#1a1210', rough: 0.9, bump: 6 },
+      espiga: { base: theme.id === 'void' ? '#544a70' : '#7a5446', accent: theme.id === 'void' ? '#3e3656' : '#5e3e34', mortar: '#1a1210', rough: 0.88, bump: 6 },
+      chapa: { base: '#55504a', accent: '#3e3a36', mortar: '#14110f', rough: 0.55, bump: 5 },
+      ajedrez: { base: '#7a756c', accent: '#66625a', mortar: '#1a1816', rough: 0.35, bump: 3 },
+      mosaico: { base: theme.id === 'forge' ? '#7a5e48' : theme.id === 'void' ? '#5a5078' : '#76726a', accent: theme.id === 'forge' ? '#8a4a2e' : theme.id === 'void' ? '#3a7a8a' : '#6a3a34', mortar: '#1a1614', rough: 0.6, bump: 4 },
+      cristal: { base: '#2a2438', accent: '#3a3050', mortar: '#0c0a12', rough: 0.25, bump: 3, glow: theme.id === 'void' ? '#9d6bff' : theme.eye }
+    };
+    const pal = Object.assign({}, stone, own[kind] || {}, { seed: theme.seed + kind.length * 3 });
+    if (kind === 'losa' && theme.floorEmissive) pal.glow = '#ff5a1a';
+    return TEX.floorKind(kind, pal, { size: ENGINE.q && ENGINE.q.dpr < 1 ? 256 : TEX.size });
+  },
+  /* Material de suelo: elige la variante del atlas por casilla y suma la luz de la sala */
+  floorMat(FT, theme) {
+    const mat = new THREE.MeshStandardMaterial({ map: FT.map, normalMap: FT.normalMap, roughnessMap: FT.roughnessMap, roughness: 1, metalness: FT.metalness != null ? FT.metalness : (theme.id === 'void' ? 0.2 : 0.02) });
+    if (FT.emissiveMap) { mat.emissiveMap = FT.emissiveMap; mat.emissive = new THREE.Color('#ffffff'); mat.emissiveIntensity = 0.7; }
+    mat.onBeforeCompile = (sh) => {
+      BAKE.inject(sh);
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec2 aVar;')
+        .replace('#include <uv_vertex>', '#include <uv_vertex>\n#ifdef USE_UV\nvUv = vUv * 0.5 + aVar * 0.5;\n#endif');
+    };
+    mat.customProgramCacheKey = () => 'suelo-atlas';
+    return mat;
+  },
+  /* Muebles, adornos de pared y alfombras de una sala, fundidos en una sola pieza que sube al descubrirla */
+  furnishRoom(room, theme, dens) {
+    if (typeof DECO === 'undefined' || !room.style) return false;
+    const items = SALAS.furnish(room, this.L, theme, dens);
+    if (!items.length) return false;
+    const built = DECO.compose(items);
+    const rx = room.cx * TILE, rz = room.cy * TILE;
+    built.group.children.forEach((m) => m.geometry.translate(-rx, 0, -rz));
+    built.group.position.set(rx, 0, rz); built.group.visible = false;
+    this.group.add(built.group); room.props.push(built.group);
+    built.lights.forEach((l) => BAKE.add(room.id, l.x, l.z, l.color, l.intensity, l.dist));
+    built.flames.slice(0, 3).forEach((f) => this.addFlame(f.x, f.y, f.z, f.w, f.h, theme.flameA, theme.flameB, room));
+    return true;
+  },
+  /* Manchas del suelo (grietas, musgo, charcos, paja, polvo…): una malla plana por sala */
+  stainRooms(theme, dens) {
+    if (!TEX.decals) return;
+    const D = TEX.decals({ size: ENGINE.q && ENGINE.q.dpr < 1 ? 512 : 1024 }), n = D.n;
+    const mat = this.stainMat || (this.stainMat = new THREE.MeshStandardMaterial({ map: D.map, transparent: true, depthWrite: false, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
+    SALAS._T = this.L.T;
+    this.L.rooms.forEach((room) => {
+      if (!room.style) return;
+      const list = SALAS.stains(room, theme, D.cells, dens); if (!list.length) return;
+      const pos = [], uv = [], nor = [], idx = [];
+      list.forEach((s, k) => {
+        const c = Math.cos(s.rot), sn = Math.sin(s.rot), h = s.s / 2, [cx, cy] = s.cell;
+        const u0 = cx / n, u1 = (cx + 1) / n, v0 = 1 - (cy + 1) / n, v1 = 1 - cy / n;
+        [[-h, -h, u0, v1], [h, -h, u1, v1], [h, h, u1, v0], [-h, h, u0, v0]].forEach(([dx, dz, u, v]) => { pos.push(s.x + dx * c - dz * sn, 0.006 + k * 0.0003, s.z + dx * sn + dz * c); uv.push(u, v); nor.push(0, 1, 0); });
+        const b = k * 4; idx.push(b, b + 2, b + 1, b, b + 3, b + 2);
+      });
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+      const m = new THREE.Mesh(g, mat); m.receiveShadow = true; m.renderOrder = 1; m.visible = false; m.userData.own = true;
+      this.group.add(m); room.props.push(m);
+    });
+  },
   nextToWall(t) { const T = this.L.T; return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => T[t.y + dy] && T[t.y + dy][t.x + dx] && T[t.y + dy][t.x + dx].wall); },
   faceAwayFromWall(t) {
     const T = this.L.T;
@@ -347,8 +436,10 @@ const WORLD = {
       s.position.set(fx - c.dx * 0.02, 1.45, fz - c.dy * 0.02);
       s.rotation.y = Math.atan2(-c.dx, -c.dy);
       s.visible = false; this.group.add(s); room.props.push(s);
-      const flame = this.addFlame(fx - c.dx * 0.4, 1.92, fz - c.dy * 0.4, 0.42, 0.62, theme.flameA, theme.flameB, null);
-      const src = ENGINE.addLightSource({ pos: new THREE.Vector3(fx - c.dx * 0.75, 2.05, fz - c.dy * 0.75), color: new THREE.Color(theme.torch), intensity: 3.2, distance: 12, flicker: true, on: false, flame });
+      const st = room.style || {}, fl = st.llama || [theme.flameA, theme.flameB], tc = st.antorcha || theme.torch;
+      const flame = this.addFlame(fx - c.dx * 0.4, 1.92, fz - c.dy * 0.4, 0.42, 0.62, fl[0], fl[1], null);
+      const src = ENGINE.addLightSource({ pos: new THREE.Vector3(fx - c.dx * 0.75, 2.05, fz - c.dy * 0.75), color: new THREE.Color(tc), intensity: 3.2, distance: 12, flicker: true, on: false, flame });
+      BAKE.add(room.id, fx - c.dx * 0.9, fz - c.dy * 0.9, tc, 0.95, 9);
       room.torches.push(src);
     });
   },
@@ -436,14 +527,16 @@ const WORLD = {
     const ox = origin ? origin.x : room.cx, oy = origin ? origin.y : room.cy;
     const now = ENGINE.time;
     const sched = (data, im, kind) => {
+      const flag = kind === 'cap' ? 'capShown' : 'shown';
       data.forEach((d) => {
-        if (d.shown || !d.rooms.includes(roomId)) return;
-        d.shown = true;
+        if (d[flag] || !d.rooms.includes(roomId)) return;
+        d[flag] = true;
         const dist = Math.hypot(d.t.x - ox, d.t.y - oy);
         this.anims.push({ kind, d, im, t0: now + (instant ? 0 : dist * 0.045), dur: instant ? 0.001 : 0.55 });
       });
     };
-    sched(this.floorData, this.floorI, 'floor');
+    this.floorData.forEach((d) => { if (!d.shown && d.rooms.includes(roomId)) sched([d], d.im, 'floor'); });
+    BAKE.reveal(roomId, instant, instant ? 0 : 0.35);
     sched(this.wallData, this.wallI, 'wall');
     sched(this.wallData, this.capI, 'cap');
     L.doors.forEach((d) => { if (d.rooms.includes(roomId)) d.mesh.visible = true; });
@@ -487,7 +580,7 @@ const WORLD = {
       } else leak.visible = false;
     });
   },
-  setLightsMult(m) { this.L && this.L.rooms.forEach((r) => r.torches.forEach((s) => (s.mult = m))); this.flames.forEach((f) => (f.material.uniforms.uInt.value = f.userData.lit ? m : 0)); },
+  setLightsMult(m) { if (typeof BAKE !== 'undefined') BAKE.setMult(m); this.L && this.L.rooms.forEach((r) => r.torches.forEach((s) => (s.mult = m))); this.flames.forEach((f) => (f.material.uniforms.uInt.value = f.userData.lit ? m : 0)); },
 
   /* ----------------- resaltados ----------------- */
   buildHighlights() {
@@ -647,6 +740,7 @@ const WORLD = {
   update(dt) {
     if (!this.group) return;
     MINI.update(ENGINE.camera);
+    BAKE.update(dt);
     const now = ENGINE.time, m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), yAxis = new THREE.Vector3(0, 1, 0);
     // animaciones de revelado de instancias
     if (this.anims.length) {

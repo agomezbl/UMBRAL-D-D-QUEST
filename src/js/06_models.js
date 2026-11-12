@@ -48,6 +48,7 @@ const MINI = {
   patch(mat, mu) {
     const m = mat.clone();
     m.onBeforeCompile = (sh) => {
+      if (typeof BAKE !== 'undefined') BAKE.inject(sh);   // las figuras también toman la luz de la sala
       sh.uniforms.uUpView = MINI.shared.uUpView; sh.uniforms.uFlash = mu.uFlash; sh.uniforms.uFlashCol = mu.uFlashCol; sh.uniforms.uRimCol = mu.uRimCol; sh.uniforms.uRim = mu.uRim;
       sh.fragmentShader = sh.fragmentShader
         .replace('#include <common>', '#include <common>\nuniform vec3 uUpView; uniform float uFlash; uniform vec3 uFlashCol; uniform vec3 uRimCol; uniform float uRim;')
@@ -907,8 +908,8 @@ const MODELS = (() => {
     return g;
   }
   function bones(rnd) {
-    const g = new THREE.Group(), bone = MAT.std('#cfc5ad', 0.85);
-    for (let k = 0; k < 5; k++) P(g, G.cyl(0.025, 0.025, 0.3 + rnd() * 0.2, 5), bone, [(rnd() - 0.5) * 1.3, 0.03, (rnd() - 0.5) * 1.3], [Math.PI / 2, rnd() * 3, 0]);
+    const g = new THREE.Group(), bone = MAT.std('#9a9280', 0.9);
+    for (let k = 0; k < 4; k++) P(g, G.cyl(0.025, 0.025, 0.3 + rnd() * 0.2, 5), bone, [(rnd() - 0.5) * 1.3, 0.03, (rnd() - 0.5) * 1.3], [Math.PI / 2, rnd() * 3, 0]);
     if (rnd() < 0.6) P(g, G.sph(0.09, 8, 6), bone, [(rnd() - 0.5) * 1.0, 0.07, (rnd() - 0.5) * 1.0], [0.3, rnd() * 6, 0.4], [0.9, 1, 1.1]);
     return g;
   }

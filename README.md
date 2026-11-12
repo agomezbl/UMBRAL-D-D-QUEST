@@ -6,6 +6,8 @@ Mazmorra táctica por turnos en 3D, con dados de calavera y escudo, al estilo de
 
 Funciona en ordenador (ratón y teclado) y en móvil (pantalla táctil). No necesita conexión: el motor 3D y las letras van dentro del archivo. En el móvil, desde el navegador, «Añadir a la pantalla de inicio» lo instala como una app.
 
+**Novedades de la v1.2 beta:** *salas con carácter*: cada sala tiene su suelo (12 clases), su color de luz, sus muebles y adornos en paredes y rincones (unas 120 piezas propias), alfombras y manchas, sin cambiar por dónde se puede andar. Detalle en [`DISENO.md`](DISENO.md) §14.
+
 **Novedades de la v1.1 beta:** en **español y francés**, apto para **PEGI 7** (sustos suaves o sin sustos) y con **saber dentro**: el *Ojo de Tahúr* te reta a estimar probabilidades antes de atacar, cada campamento trae un *Dilema de la noche* sin respuesta correcta y la *Crónica de la noche* resume lo aprendido con una pregunta para hablar en familia. Detalle en [`DISENO.md`](DISENO.md) §13 y en [`CAMBIOS.md`](CAMBIOS.md).
 
 ## Lo que incluye
@@ -61,6 +63,9 @@ El estudio de diseño completo (estrategias comparadas, solución elegida y resu
 | `src/js/10_rules.js` | Reglas: estados, dificultades, cuántos enemigos según el tamaño del grupo, talentos, equipo y veladas. Aquí se ajusta el equilibrio. |
 | `src/js/00_i18n.js` | Idiomas: cada texto va como `L('español', 'français')`. |
 | `src/js/10_saber.js` | Capa de saber: Ojo de Tahúr, Libro de Tiradas, Dilema y Crónica de la noche. |
+| `src/js/07_salas.js` | Estilo de cada sala (capilla, osario, fragua, observatorio…): su suelo, su luz, sus muebles y sus manchas. Aquí se cambia el aspecto de las salas. |
+| `src/js/06_deco*.js` | Muebles y adornos (unas 120 piezas): `06_deco.js` explica cómo se hacen; el resto son las piezas por lugar. Se ven en `lab/atrezo` (`python3 lab/atrezo/foto.py`). |
+| `src/js/05_bake.js` | Luz de cada sala pintada en una textura: así todas las salas tienen su color y sus antorchas sin coste. |
 | `src/js/10_story.js` | Diálogos, mapas de los capítulos, héroes, enemigos y tienda. Aquí se cambia la historia. |
 | `src/js/10_descent.js` | Generador de mazmorras del modo Descenso: tamaños, criaturas, nombres y frases. |
 | `src/js/11_game_descent.js` | Reglas del Descenso: escaleras, campamentos, velas y récord. |

@@ -1,6 +1,6 @@
 # UMBRAL — ficha para Claude
 
-Mazmorra táctica 3D por turnos estilo HeroQuest, **ocio con saber dentro**, **PEGI 7**, en **español y francés** (v1.1 beta): 5 héroes, campaña de 3 capítulos y modo Descenso.
+Mazmorra táctica 3D por turnos estilo HeroQuest, **ocio con saber dentro**, **PEGI 7**, en **español y francés** (v1.2 beta): 5 héroes, campaña de 3 capítulos y modo Descenso.
 En Curionauta: `/juegos/umbral/` (clave `umbral.save.v3`). Detalle de carpetas en `README.md` y diseño en `DISENO.md`.
 
 ## Construir
@@ -8,6 +8,7 @@ En Curionauta: `/juegos/umbral/` (clave `umbral.save.v3`). Detalle de carpetas e
 - `python build.py` genera `index.html`, `sw.js` y `manifest.webmanifest`; subir los tres a `main`.
 - Decisiones: sin virtudes ni cooperativo en el mismo aparato; app Android solo cuando la web esté bien.
 - Textos: siempre `L('español', 'français')` (ver `src/js/00_i18n.js`). Todo nuevo texto en los dos idiomas y apto para PEGI 7 (sin sangre ni muertes explícitas).
+- Aspecto de las salas (v1.2): `src/js/07_salas.js` (estilos), `src/js/06_deco*.js` (piezas; ver la cabecera de `06_deco.js` y probarlas con `python3 lab/atrezo/foto.py`), `TEX.floorKind`/`TEX.decals` en `04_textures.js` y la luz horneada en `05_bake.js`. Detalle en `DISENO.md` §14.
 - Capa de saber en `src/js/10_saber.js` (Ojo de Tahúr, Dilema y Crónica de la noche). Reglas en `DISENO.md` §13: saber da ventaja, no saber nunca castiga, nada bloquea el paso. Historial en `CAMBIOS.md`.
 
 ## Cómo trabajar con Alejandro

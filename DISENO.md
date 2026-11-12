@@ -556,3 +556,26 @@ Chrome real, sin tarjeta gráfica: pantalla de inicio, ajustes, ayuda, tutorial,
 
 - Fase 2: «¡Contradicción!» (unir frases de Isolde con los escritos que las desmienten), Bestiario de Osric, Archivo de Aldmere.
 - Fase 3: sellos que se leen (runas, números romanos, cifrado César), mapa del cartógrafo (coordenadas y Pitágoras), los nombres raspados, la forja de Thráin.
+
+## 14. Salas con carácter (v1.2 beta, noviembre de 2026)
+
+### 14.1 Lo que se pidió
+Acercarse a la riqueza visual de los mejores juegos de mazmorras comerciales: salas de colores distintos, suelos detallados y distintos en cada sala, cosas en las paredes, muebles, tesoros y trampas. Inspiración en la densidad y la calidad, **sin copiar** diseños, personajes ni nombres: todas las piezas son propias y hechas por código.
+
+### 14.2 Cómo funciona
+| Pieza | Archivo | Qué hace |
+| --- | --- | --- |
+| Estilos de sala | `07_salas.js` | Entre 8 y 11 estilos por lugar (cripta: archivo, capilla, osario, nichos, guardia, bodega, laboratorio, celdas, tesoro, pasillo, santuario; forja: fragua, mina, barracón, salón, tumba, taberna, armería…; vacío: observatorio, biblioteca, espejos, jardín…). Cada uno decide suelo, tinte, color de luz, piezas (por etiquetas), refuerzo de los muros (pilastra, viga, arco) y manchas. El guion puede fijarlo (`rooms: { '4': { style: 'nichos' } }`); si no, se reparte sin repetir entre vecinas |
+| Suelos | `04_textures.js` → `TEX.floorKind` | 12 clases. Cada una es un atlas de 4 variantes de una casilla, con media junta en el borde para que la cuadrícula del tablero se siga leyendo. Una malla instanciada por clase; la variante y el tinte van por casilla. 30–70 ms por clase |
+| Atrezo | `06_deco*.js` | Unas 120 piezas en 5 huecos: pared, colgado, rincón, casilla entera (solo en casillas `&` que ya bloqueaban) y suelo (planas, se pisan). Las piezas de una sala se funden en 3 mallas como mucho (mate, metal, brillo) |
+| Luz horneada | `05_bake.js` | La luz de cada sala (fondo de color + antorchas + velas y brillos de las piezas) se pinta en una textura vista desde arriba, 4 puntos por casilla, sin atravesar muros, y todos los materiales la suman. Se enciende al descubrir la sala y se apaga con los sustos de «luces fuera» |
+| Manchas | `TEX.decals` + `WORLD.stainRooms` | 16 dibujos (grietas, musgo, humedad, charco, hollín, arena, paja, papeles, raíces, cenizas, esquirlas, marcas de tiza, cascotes, monedas, huellas); una malla plana por sala, nunca encima de la alfombra |
+
+### 14.3 Reglas
+1. **El juego no cambia:** nada del decorado bloquea casillas nuevas ni tapa objetos del juego (cofres, atriles, trampas). Junto a las puertas no se pone nada (la hoja barre el muro).
+2. Volúmenes por hueco (en `06_deco.js`): pared ≤ 0,40 de fondo para no pisar la peana de las figuras; colgado entre 1,0 y 2,1 de alto.
+3. **PEGI 7:** sin sangre, restos ni instrumentos de tortura. Calaveras y huesos limpios de fantasía, sí.
+4. **Móvil:** con la calidad «mínima» se pone un 55 % de las piezas (80 % en «baja») y, en pantallas de poca resolución, las texturas del suelo bajan a 256. El decorado añade unas 34 llamadas de dibujo por nivel (unas 4 por sala) sobre las ~400 que ya había.
+
+### 14.4 Laboratorio
+`python3 lab/atrezo/foto.py salida.png pieza1,pieza2 3 1500 800 "fig=0"` monta una página con las piezas sobre su casilla, dibuja el volumen permitido y avisa si alguna se sale.

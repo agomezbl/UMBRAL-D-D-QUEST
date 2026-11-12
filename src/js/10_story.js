@@ -171,13 +171,13 @@ const CHAPTERS = [
       ['hint', 'move'], ['hint', 'touch']
     ],
     rooms: {
-      '1': { name: L('Antecámara', 'Antichambre') },
-      '4': { name: L('Galería de los Nichos', 'Galerie des Niches'), reveal: [
+      '1': { style: 'pasillo', name: L('Antecámara', 'Antichambre') },
+      '4': { style: 'nichos', name: L('Galería de los Nichos', 'Galerie des Niches'), reveal: [
         ['n', L('Nichos excavados en la roca, cientos, hasta donde alcanza la luz. En cada uno, un nombre borrado a cincel.', 'Des niches creusées dans la roche, des centaines, aussi loin que porte la lumière. Dans chacune, un nom effacé au burin.')],
         ['h', { elfa: L('Alguien ha raspado los nombres. Esto no es obra de saqueadores.', "Quelqu'un a gratté les noms. Ce n'est pas l'œuvre de pilleurs."), hechicero: L('Nombres raspados… Sin nombre, un muerto no descansa: obedece.', 'Des noms grattés… Sans nom, un mort ne repose pas : il obéit.'), any: L('Alguien ha raspado los nombres de los muertos.', "Quelqu'un a gratté les noms des morts.") }],
         ['sfx', 'bone'], ['bark', 'lider', L('¡En guardia!', 'En garde !')], ['hint', 'attack']
       ] },
-      '5': { name: L('Osario', 'Ossuaire'), reveal: [
+      '5': { style: 'osario', name: L('Osario', 'Ossuaire'), reveal: [
         ['n', L('Huesos apilados en muros, en columnas, en bóvedas. Un osario sin fondo.', 'Des os empilés en murs, en colonnes, en voûtes. Un ossuaire sans fond.')]
       ], enter: [
         ['lights', 'out'], ['music', 'silence'], ['wait', 700], ['sfx', 'whisper', 2.4],
@@ -187,19 +187,19 @@ const CHAPTERS = [
         ['lights', 'on'], ['scare'], ['spawn', 'ghoul', 'near'], ['shake', 0.6],
         ['bark', 'lider', L('¡Detrás!', 'Derrière !')], ['music', 'combat']
       ] },
-      '6': { name: L('Capilla de los Susurros', 'Chapelle des Murmures'), reveal: [
+      '6': { style: 'capilla', name: L('Capilla de los Susurros', 'Chapelle des Murmures'), reveal: [
         ['n', L('Una capilla pequeña. Cuatro sarcófagos rodean un cofre sellado con cera negra.', 'Une petite chapelle. Quatre sarcophages entourent un coffre scellé de cire noire.')],
         ['h', { hechicero: L('Huele a incienso. Reciente.', "Ça sent l'encens. Récent."), any: L('Incienso. Alguien estuvo aquí hace poco.', "De l'encens. Quelqu'un est passé ici il y a peu.") }]
       ] },
-      '7': { name: L('Pozo Necrótico', 'Puits nécrotique'), reveal: [
+      '7': { style: 'laboratorio', name: L('Pozo Necrótico', 'Puits nécrotique'), reveal: [
         ['n', L('Un pozo de miasma verde burbujea en el centro de la sala. Sobre las pasarelas, arqueros de hueso tensan cuerdas viejas.', "Un puits de miasmes verts bouillonne au centre de la salle. Sur les passerelles, des archers d'os tendent de vieilles cordes.")],
         ['h', { enano: L('No piséis eso verde. Ni lo miréis mucho rato.', 'Ne marchez pas dans ce truc vert. Et ne le regardez pas trop longtemps.'), hechicero: L('No toquéis ese líquido. Ni lo miréis demasiado rato.', 'Ne touchez pas ce liquide. Ne le regardez même pas trop longtemps.'), any: L('Lejos de ese pozo.', 'Loin de ce puits.') }]
       ] },
-      '9': { name: L('Cámara del Tesoro', 'Salle du Trésor'), reveal: [
+      '9': { style: 'tesoro', name: L('Cámara del Tesoro', 'Salle du Trésor'), reveal: [
         ['n', L('Monedas antiguas cubiertas de polvo. Demasiado fácil.', 'Des pièces anciennes couvertes de poussière. Trop facile.')],
         ['h', { elfa: L('Cuando algo parece demasiado fácil, mira dónde pisas.', 'Quand une chose paraît trop facile, regarde où tu mets les pieds.'), enano: L('Monedas sueltas en el suelo. O es un regalo o es una trampa.', "Des pièces qui traînent par terre. Soit c'est un cadeau, soit c'est un piège."), any: L('Cuidado. Esto huele a trampa.', 'Prudence. Ça sent le piège.') }], ['hint', 'search']
       ] },
-      '8': { name: L('La Celda', 'La Cellule'), reveal: [
+      '8': { style: 'celdas', name: L('La Celda', 'La Cellule'), reveal: [
         ['n', L('Una celda estrecha. En la pared, cientos de rayas que cuentan días. Y un nombre grabado una y otra vez: TOMÁS.', 'Une cellule étroite. Au mur, des centaines de traits qui comptent les jours. Et un nom gravé encore et encore : TOMÁS.')],
         ['npc', 'tomas', 'room'], ['music', 'silence'], ['sfx', 'whisper', 1.5],
         ['tomas', L('Más portadores de farol. Llegáis tarde. O demasiado pronto.', "D'autres porteurs de lanterne. Vous arrivez trop tard. Ou bien trop tôt.")],
@@ -220,7 +220,7 @@ const CHAPTERS = [
         ['h2', { hechicero: L('Madre Isolde nunca nos mentiría… ¿verdad?', "Mère Isolde ne nous mentirait jamais… n'est-ce pas ?"), amazona: L('Un eco no miente a propósito. Los vivos, sí.', 'Un écho ne ment pas exprès. Les vivants, si.'), barbaro: L('No me gustan los fantasmas. Pero ese parecía sincero.', "Je n'aime pas les fantômes. Mais celui-là avait l'air sincère."), any: L('Era una voz cansada. No una trampa.', "C'était une voix fatiguée. Pas un piège.") }],
         ['music', 'explore']
       ] },
-      '0': { name: L('Cripta de Malakor', 'Crypte de Malakor') }
+      '0': { style: 'santuario', name: L('Cripta de Malakor', 'Crypte de Malakor') }
     },
     notes: [
       [['sfx', 'page'], ['note', L('Diario de Fray Osric · Folio I', 'Journal de Frère Osric · Folio I'), L('Día tres. Los nombres de los muertos han sido raspados. Sin nombre, un muerto no descansa: obedece. Quien lo hizo conocía los ritos del Archivo.', 'Jour trois. Les noms des morts ont été grattés. Sans nom, un mort ne repose pas : il obéit. Celui qui a fait cela connaissait les rites des Archives.')],
@@ -294,20 +294,20 @@ const CHAPTERS = [
       ['objective', L('Alcanza el Yunque Rúnico y derrota a Ignis.', "Atteins l'Enclume runique et bats Ignis.")]
     ],
     rooms: {
-      '1': { name: L('La Gran Puerta', 'La Grande Porte') },
-      '4': { name: L('Barracones', 'Baraquements'), reveal: [
+      '1': { style: 'armeria', name: L('La Gran Puerta', 'La Grande Porte') },
+      '4': { style: 'barracon', name: L('Barracones', 'Baraquements'), reveal: [
         ['n', L('Jergones revueltos, restos de comida y un olor a establo. Los orcos no esperaban visita.', "Des paillasses en désordre, des restes de repas et une odeur d'écurie. Les orques n'attendaient pas de visite.")],
         ['bark', 'enemy', L('¡Intrusos!', 'Intrus !')]
       ] },
-      '5': { name: L('Fundición', 'Fonderie'), reveal: [
+      '5': { style: 'fragua', name: L('Fundición', 'Fonderie'), reveal: [
         ['n', L('Moldes de piedra del tamaño de un hombre. De uno de ellos todavía gotea metal.', "Des moules de pierre de la taille d'un homme. De l'un d'eux goutte encore du métal.")],
         ['h', { elfa: L('Trasgos. Odio a los trasgos. Muerden los tobillos.', 'Des gobelins. Je déteste les gobelins. Ils mordent les chevilles.'), barbaro: L('Trasgos. Ni para calentar.', "Des gobelins. Même pas de quoi s'échauffer."), any: L('Trasgos. Rápidos y cobardes.', 'Des gobelins. Rapides et lâches.') }]
       ] },
-      '6': { name: L('Puente de Ceniza', 'Pont de Cendre'), reveal: [
+      '6': { style: 'mina', name: L('Puente de Ceniza', 'Pont de Cendre'), reveal: [
         ['n', L('Un río de roca fundida corta la sala en dos. Solo un puente estrecho cruza al otro lado.', "Un fleuve de roche en fusion coupe la salle en deux. Seul un pont étroit mène de l'autre côté.")],
         ['h', { hechicero: L('Ese calor derrite el acero. Mejor no acercarse.', "Cette chaleur fait fondre l'acier. Mieux vaut ne pas s'approcher."), any: L('Nadie se acerca al borde.', "Personne ne s'approche du bord.") }]
       ] },
-      '7': { name: L('Salón de los Martillos', 'Salle des Marteaux'), reveal: [
+      '7': { style: 'salon', name: L('Salón de los Martillos', 'Salle des Marteaux'), reveal: [
         ['n', L('Columnas talladas con rostros de enanos. Todos tienen los ojos cerrados… salvo uno.', 'Des colonnes sculptées de visages de nains. Tous ont les yeux fermés… sauf un.')]
       ], enter: [
         ['sfx', 'scare'], ['shake', 0.8],
@@ -315,7 +315,7 @@ const CHAPTERS = [
         ['ambush', 2],
         ['spawn', 'berserker', 'near'], ['bark', 'enemy', L('¡FURIA!', 'FUREUR !')], ['music', 'combat']
       ] },
-      '8': { name: L('Tumba de Thráin', 'Tombeau de Thráin'), reveal: [
+      '8': { style: 'tumba', name: L('Tumba de Thráin', 'Tombeau de Thráin'), reveal: [
         ['n', L('Una tumba enana, intacta. Ni siquiera los orcos se han atrevido a entrar.', "Un tombeau nain, intact. Même les orques n'ont pas osé y entrer.")],
         ['npc', 'thrain', 'room'], ['music', 'silence'],
         ['thrain', L('Forasteros. Y con un farol del Archivo. Hacía siglos que no veía uno. La última vez fue el día que cayó mi pueblo.', "Des étrangers. Et avec une lanterne des Archives. Il y avait des siècles que je n'en avais vu. La dernière fois, c'était le jour où mon peuple est tombé.")],
@@ -343,11 +343,11 @@ const CHAPTERS = [
         ['npcGone', 'thrain'],
         ['music', 'explore']
       ] },
-      '9': { name: L('Cámara de Lingotes', 'Salle des Lingots'), reveal: [
+      '9': { style: 'tesoro', name: L('Cámara de Lingotes', 'Salle des Lingots'), reveal: [
         ['n', L('Lingotes enanos apilados con cuidado. Los orcos no saben contar, pero saben esconder.', 'Des lingots nains empilés avec soin. Les orques ne savent pas compter, mais ils savent cacher.')]
       ] },
-      'R': { name: L('Canal de Escoria', 'Canal de Scories') },
-      '0': { name: L('El Yunque Rúnico', "L'Enclume runique") }
+      'R': { style: 'fragua', name: L('Canal de Escoria', 'Canal de Scories') },
+      '0': { style: 'santuario', name: L('El Yunque Rúnico', "L'Enclume runique") }
     },
     notes: [
       [['sfx', 'page'], ['note', L('Diario de Fray Osric · Folio III', 'Journal de Frère Osric · Folio III'), L('Día doce. Bajamos a la forja. Isolde acercó el farol al Sello de Fuego. Los orcos llegaron esa misma noche, como si alguien les hubiera abierto una puerta.', "Jour douze. Nous sommes descendus à la forge. Isolde a approché la lanterne du Sceau de Feu. Les orques sont arrivés la nuit même, comme si quelqu'un leur avait ouvert une porte.")],
@@ -413,8 +413,8 @@ const CHAPTERS = [
       ['objective', L('Llega al Ojo de Cristal.', "Atteins l'Œil de Cristal.")]
     ],
     rooms: {
-      '1': { name: L('Escalinata del Abismo', "Escalier de l'Abîme") },
-      '4': { name: L('Vestíbulo de los Espejos', 'Vestibule des Miroirs'), reveal: [
+      '1': { style: 'pasillo', name: L('Escalinata del Abismo', "Escalier de l'Abîme") },
+      '4': { style: 'espejos', name: L('Vestíbulo de los Espejos', 'Vestibule des Miroirs'), reveal: [
         ['n', L('Espejos de marco dorado cubren las paredes. Vuestros reflejos tardan un instante en seguiros.', 'Des miroirs aux cadres dorés couvrent les murs. Vos reflets mettent un instant à vous suivre.')]
       ], enter: [
         ['sfx', 'glass'], ['shake', 0.5], ['scare'],
@@ -424,20 +424,20 @@ const CHAPTERS = [
         ['fear', 'all', 1],
         ['h2', { elfa: L('Pues pégale fuerte. Siempre he querido hacerlo.', "Alors frappe fort. J'en ai toujours rêvé."), any: L('Pues pégale fuerte.', 'Alors frappe fort.') }], ['music', 'combat']
       ] },
-      '5': { name: L('Biblioteca Ahogada', 'Bibliothèque noyée'), reveal: [
+      '5': { style: 'biblioteca', name: L('Biblioteca Ahogada', 'Bibliothèque noyée'), reveal: [
         ['n', L('Estanterías hundidas en cristal. Libros atrapados como insectos en ámbar.', "Des étagères englouties dans le cristal. Des livres pris comme des insectes dans l'ambre.")]
       ] },
-      '6': { name: L('Galería de los Ecos', 'Galerie des Échos'), reveal: [
+      '6': { style: 'observatorio', name: L('Galería de los Ecos', 'Galerie des Échos'), reveal: [
         ['n', L('Cada paso resuena tres veces. El tercero no es vuestro.', "Chaque pas résonne trois fois. Le troisième n'est pas le vôtre.")], ['sfx', 'whisper', 2]
       ] },
-      '7': { name: L('Jardín de Cristal', 'Jardin de Cristal'), reveal: [
+      '7': { style: 'jardin', name: L('Jardín de Cristal', 'Jardin de Cristal'), reveal: [
         ['n', L('Cristales del tamaño de árboles. Uno de ellos se mueve.', "Des cristaux grands comme des arbres. L'un d'eux bouge.")],
         ['h', { enano: L('Un gólem. A esos se les rompe a martillazos, nada de flechitas.', 'Un golem. Ça se casse à coups de marteau, pas avec des petites flèches.'), hechicero: L('Es un gólem. Antiguo. Las flechas y la magia apenas le hacen nada.', 'Un golem. Très ancien. Les flèches et la magie ne lui font presque rien.'), any: L('Un gólem de cristal. Las flechas y la magia le hacen poco.', 'Un golem de cristal. Les flèches et la magie ne lui font pas grand-chose.') }]
       ] },
-      '9': { name: L('Relicario', 'Reliquaire'), reveal: [
+      '9': { style: 'tesoro', name: L('Relicario', 'Reliquaire'), reveal: [
         ['n', L('Un relicario sellado por dentro. Quien lo cerró no quería salir.', "Un reliquaire scellé de l'intérieur. Celui qui l'a fermé ne voulait pas sortir.")]
       ] },
-      '8': { name: L('Santuario del Eco', "Sanctuaire de l'Écho"), reveal: [
+      '8': { style: 'laboratorio', name: L('Santuario del Eco', "Sanctuaire de l'Écho"), reveal: [
         ['npc', 'tomas', 'room'], ['music', 'silence'],
         ['tomas', L('Llegasteis hasta el fondo. Pocos lo hacen.', "Vous êtes arrivés jusqu'au fond. Bien peu y parviennent.")],
         ['h', { any: L('Esta vez te escucharemos hasta el final.', "Cette fois, nous t'écouterons jusqu'au bout.") }],
@@ -449,7 +449,7 @@ const CHAPTERS = [
         ['n', L('El eco de Tomás se deshace en luz. (Todos recuperan 3 PV)', "L'écho de Tomás se dissout en lumière. (Tout le monde récupère 3 PV)")],
         ['music', 'explore']
       ] },
-      '0': { name: L('El Ojo', "L'Œil") }
+      '0': { style: 'santuario', name: L('El Ojo', "L'Œil") }
     },
     notes: [
       [['sfx', 'page'], ['note', L('Inscripción en el cristal', 'Inscription dans le cristal'), L('Lo que duerme no puede despertar solo. Necesita los ojos de otro para ver la salida, y las manos de un inocente para abrir la puerta.', "Ce qui dort ne peut s'éveiller seul. Il lui faut les yeux d'un autre pour voir la sortie, et les mains d'un innocent pour ouvrir la porte.")],
@@ -594,9 +594,9 @@ const TUTORIAL = {
     ['objective', L('Tutorial: aprende a moverte, luchar y abrir puertas.', 'Tutoriel : apprends à te déplacer, à combattre et à ouvrir les portes.')]
   ],
   rooms: {
-    '1': { name: L('Sala de armas', "Salle d'armes") },
-    '4': { name: L('Patio de prácticas', "Cour d'entraînement"), reveal: [['barbaro', L('Ahí los tenéis. Pegan flojo, pero pegan.', 'Les voilà. Ils frappent mollement, mais ils frappent.')], ['objective', L('Derrota a los esqueletos de prácticas.', "Bats les squelettes d'entraînement.")]] },
-    '5': { name: L('Armería', 'Armurerie'), reveal: [['elfa', L('Un cofre. Ahora sí hablamos el mismo idioma.', 'Un coffre. Là, on parle enfin la même langue.')], ['objective', L('Abre el cofre de la armería.', "Ouvre le coffre de l'armurerie.")]] }
+    '1': { style: 'guardia', name: L('Sala de armas', "Salle d'armes") },
+    '4': { style: 'pasillo', name: L('Patio de prácticas', "Cour d'entraînement"), reveal: [['barbaro', L('Ahí los tenéis. Pegan flojo, pero pegan.', 'Les voilà. Ils frappent mollement, mais ils frappent.')], ['objective', L('Derrota a los esqueletos de prácticas.', "Bats les squelettes d'entraînement.")]] },
+    '5': { style: 'guardia', name: L('Armería', 'Armurerie'), reveal: [['elfa', L('Un cofre. Ahora sí hablamos el mismo idioma.', 'Un coffre. Là, on parle enfin la même langue.')], ['objective', L('Abre el cofre de la armería.', "Ouvre le coffre de l'armurerie.")]] }
   },
   notes: [
     [['sfx', 'page'], ['note', L('Reglamento de la Orden · Artículo III', "Règlement de l'Ordre · Article III"), L('Un guerrero no deja atrás a un hermano caído. Un explorador mira dónde pisa. Un mago no gasta su magia en vano. Y ninguno baja solo… salvo que no quede nadie más.', "Un guerrier n'abandonne pas un frère tombé. Un éclaireur regarde où il met les pieds. Un mage ne gaspille pas sa magie. Et nul ne descend seul… à moins qu'il ne reste personne d'autre.")],
